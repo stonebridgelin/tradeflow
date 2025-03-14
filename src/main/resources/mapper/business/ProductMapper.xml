@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stonebridge.tradeflow.business.mapper.ProductMapper">
+    <resultMap id="ProductResultMap" type="com.stonebridge.tradeflow.business.entity.Product">
+        <id property="productId" column="product_id"/>
+        <result property="productName" column="product_name"/>
+        <result property="brand" column="brand"/>
+        <result property="category" column="category"/>
+        <result property="purchaseChannel" column="purchase_channel"/>
+        <result property="purchaseLink" column="purchase_link"/>
+        <result property="imgUrl" column="img_url"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findByCategory" resultMap="ProductResultMap">
+        SELECT * FROM products WHERE category = #{category}
+    </select>
+</mapper>
