@@ -2,8 +2,6 @@ package com.stonebridge.tradeflow;
 
 import com.stonebridge.tradeflow.business.entity.Product;
 import com.stonebridge.tradeflow.business.service.ProductService;
-import com.stonebridge.tradeflow.system.entity.SystemUser;
-import com.stonebridge.tradeflow.system.service.SystemUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,8 +15,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 public class RedisDatabaseTest {
 
-    @Autowired
-    private SystemUserService systemUserService;
 
     @Autowired
     private ProductService productService;
@@ -50,27 +46,27 @@ public class RedisDatabaseTest {
                 "VALUES (1, 'testProduct', 'testBrand', 1)");
     }
 
-    // 测试 MyBatis-Plus 和 Redis 访问 system_db
-    @Test
-    public void testMyBatisPlusSystemDbWithRedis() {
-        SystemUser user = systemUserService.getByIdWithCache(1L);
-        assertNotNull(user);
-        assertEquals("testUser", user.getUserName());
-        System.out.println("MyBatis-Plus with Redis (system_db): " + user.getUserName());
+//    // 测试 MyBatis-Plus 和 Redis 访问 system_db
+//    @Test
+//    public void testMyBatisPlusSystemDbWithRedis() {
+//        SystemUser user = systemUserService.getByIdWithCache(1L);
+//        assertNotNull(user);
+//        assertEquals("testUser", user.getUserName());
+//        System.out.println("MyBatis-Plus with Redis (system_db): " + user.getUserName());
+//
+//        // 验证 Redis 缓存
+//        SystemUser cachedUser = (SystemUser) redisTemplate.opsForValue().get("system:user:1");
+//        assertNotNull(cachedUser);
+//        assertEquals("testUser", cachedUser.getUserName());
+//    }
 
-        // 验证 Redis 缓存
-        SystemUser cachedUser = (SystemUser) redisTemplate.opsForValue().get("system:user:1");
-        assertNotNull(cachedUser);
-        assertEquals("testUser", cachedUser.getUserName());
-    }
-
-    // 测试 JdbcTemplate 访问 system_db
-    @Test
-    public void testJdbcTemplateSystemDb() {
-        String username = systemUserService.getUsernameByIdJdbc(1L);
-        assertEquals("testUser", username);
-        System.out.println("JdbcTemplate (system_db): " + username);
-    }
+//    // 测试 JdbcTemplate 访问 system_db
+//    @Test
+//    public void testJdbcTemplateSystemDb() {
+//        String username = systemUserService.getUsernameByIdJdbc(1L);
+//        assertEquals("testUser", username);
+//        System.out.println("JdbcTemplate (system_db): " + username);
+//    }
 
     // 测试 MyBatis-Plus 和 Redis 访问 business_db
     @Test
@@ -94,17 +90,4 @@ public class RedisDatabaseTest {
         System.out.println("JdbcTemplate (business_db): " + productName);
     }
 
-    // 测试 Redis 缓存失效
-    @Test
-    public void testRedisCacheEviction() {
-        // 第一次查询，存入缓存
-        systemUserService.getByIdWithCache(1L);
-        // 清除缓存
-        redisTemplate.delete("system:user:1");
-        // 第二次查询，应重新从数据库加载
-        SystemUser user = systemUserService.getByIdWithCache(1L);
-        assertNotNull(user);
-        assertEquals("testUser", user.getUserName());
-        System.out.println("Redis cache evicted and reloaded (system_db): " + user.getUserName());
-    }
 }

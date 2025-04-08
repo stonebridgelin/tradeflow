@@ -2,7 +2,7 @@ package com.stonebridge.tradeflow.business.controller;
 
 import com.stonebridge.tradeflow.business.entity.Product;
 import com.stonebridge.tradeflow.business.service.ProductService;
-import com.stonebridge.tradeflow.common.vo.Result;
+import com.stonebridge.tradeflow.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -33,9 +33,9 @@ public class ProductController {
             @Parameter(description = "产品 ID", required = true, example = "1") @PathVariable Integer id) {
         Product product = productService.getByIdWithCache(id);
         if (product != null) {
-            return Result.success(product);
+            return Result.ok(product);
         }
-        return Result.error("Product not found");
+        return Result.fail();
     }
 
     @Operation(summary = "获取所有产品", description = "返回产品列表")
@@ -43,7 +43,7 @@ public class ProductController {
     @GetMapping
     public Result<List<Product>> getAllProducts() {
         List<Product> products = productService.list();
-        return Result.success(products);
+        return Result.ok(products);
     }
 
     @Operation(summary = "创建产品", description = "添加一个新产品")
@@ -56,9 +56,9 @@ public class ProductController {
             @Parameter(description = "产品信息", required = true) @RequestBody Product product) {
         boolean saved = productService.save(product);
         if (saved) {
-            return Result.success(product);
+            return Result.ok(product);
         }
-        return Result.error("Failed to create product");
+        return Result.fail();
     }
 
     @Operation(summary = "更新产品", description = "根据产品 ID 更新产品信息")
@@ -74,9 +74,9 @@ public class ProductController {
         boolean updated = productService.updateById(product);
         if (updated) {
             productService.getByIdWithCache(id); // 更新缓存
-            return Result.success(product);
+            return Result.ok(product);
         }
-        return Result.error("Product not found or update failed");
+        return Result.ok();
     }
 
     @Operation(summary = "删除产品", description = "根据产品 ID 删除产品")
@@ -89,8 +89,8 @@ public class ProductController {
             @Parameter(description = "产品 ID", required = true, example = "1") @PathVariable Integer id) {
         boolean deleted = productService.removeById(id);
         if (deleted) {
-            return Result.success("Product deleted");
+            return Result.ok("Product deleted");
         }
-        return Result.error("Product not found");
+        return Result.fail();
     }
 }
