@@ -2,7 +2,9 @@ package com.stonebridge.tradeflow.system.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.stonebridge.tradeflow.common.exception.CustomizeException;
 import com.stonebridge.tradeflow.common.result.Result;
+import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
 import com.stonebridge.tradeflow.system.entity.SysRole;
 import com.stonebridge.tradeflow.system.vo.SysRoleQueryVo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,18 +21,23 @@ import java.util.List;
 @RequestMapping("/admin/system/sysRole")
 public class SysRoleController {
 
-    private SysRoleService sysRoleService;
+    private final SysRoleService sysRoleService;
 
     @Autowired
     public SysRoleController(SysRoleService sysRoleService) {
         this.sysRoleService = sysRoleService;
     }
 
+    //http://localhost:8081/admin/system/sysRole/findAll
     @GetMapping("/findAll")
     @Operation(summary = "获取所有角色信息", description = "获取所有角色信息")
-    public List<SysRole> findAll() {
-        List<SysRole> roleList = sysRoleService.list();
-        return roleList;
+    public Result<List<SysRole>> findAll() {
+        try {
+            int a = 10 / 0;
+        } catch (Exception e) {
+            throw new CustomizeException(ResultCodeEnum.ACCOUNT_STOP);
+        }
+        return Result.ok(sysRoleService.list());
     }
 
     //http://localhost:8081/admin/system/sysRole/1/2
@@ -52,7 +59,7 @@ public class SysRoleController {
 
     @Operation(summary = "获取角色信息", description = "根据角色的id查询到角色的详细信息")
     @GetMapping("/get/{id}")
-    public Result get(@PathVariable Long id) {
+    public Result<SysRole> get(@PathVariable Long id) {
         SysRole role = sysRoleService.getById(id);
         return Result.ok(role);
     }

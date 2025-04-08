@@ -15,7 +15,10 @@ import javax.servlet.Filter;
 @Configuration
 public class DruidConfig {
 //
-    /** ✅ 配置 Druid 监控 Servlet */
+
+    /**
+     * ✅ 配置 Druid 监控 Servlet
+     */
     @Bean
     public ServletRegistrationBean<StatViewServlet> druidStatViewServlet() {
         ServletRegistrationBean<StatViewServlet> servletRegistrationBean =
@@ -29,7 +32,9 @@ public class DruidConfig {
         return servletRegistrationBean;
     }
 
-    /** ✅ 配置 Druid Web 监控 Filter */
+    /**
+     * ✅ 配置 Druid Web 监控 Filter
+     */
     @Bean
     public FilterRegistrationBean<Filter> druidStatFilter() {
         FilterRegistrationBean<Filter> filterRegistrationBean =

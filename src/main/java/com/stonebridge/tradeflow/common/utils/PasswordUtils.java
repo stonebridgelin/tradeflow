@@ -22,7 +22,7 @@ public class PasswordUtils {
     /**
      * 对比明文密码与加密密码
      *
-     * @param rawPassword  明文密码
+     * @param rawPassword     明文密码
      * @param encodedPassword 加密后的密码
      * @return 是否匹配
      */
