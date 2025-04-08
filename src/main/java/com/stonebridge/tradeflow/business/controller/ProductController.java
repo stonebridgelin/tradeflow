@@ -8,12 +8,14 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
+@Slf4j
 @Tag(name = "产品管理", description = "管理产品的增删改查操作")
 public class ProductController {
 
@@ -31,11 +33,19 @@ public class ProductController {
     @GetMapping("/{id}")
     public Result<Product> getProductById(
             @Parameter(description = "产品 ID", required = true, example = "1") @PathVariable Integer id) {
-        Product product = productService.getByIdWithCache(id);
-        if (product != null) {
-            return Result.ok(product);
+        log.info("开始查询产品信息，产品ID: {}", id);
+        try {
+            Product product = productService.getByIdWithCache(id);
+            if (product != null) {
+                log.info("成功获取产品信息: {}", product);
+                return Result.ok(product);
+            }
+            log.warn("未找到产品信息，产品ID: {}", id);
+            return Result.fail();
+        } catch (Exception e) {
+            log.error("查询产品信息失败，产品ID: {}", id, e);
+            return Result.fail();
         }
-        return Result.fail();
     }
 
     @Operation(summary = "获取所有产品", description = "返回产品列表")

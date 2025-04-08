@@ -18,7 +18,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 public class MybatisPlusConfig {
 
     /**
-     * @return
+     * 向Mybatis过滤器链中添加分页拦截器
+     *
      */
     @Bean
     public MybatisPlusInterceptor addPaginationInnerInterceptor() {
