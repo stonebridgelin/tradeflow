@@ -1,7 +1,6 @@
 package com.stonebridge.tradeflow.system.controller;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import cn.hutool.json.JSONObject;
 import com.stonebridge.tradeflow.common.exception.CustomizeException;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
@@ -43,18 +42,18 @@ public class SysRoleController {
     //http://localhost:8081/admin/system/sysRole/1/2
     @Operation(summary = "获取分页列表", description = "根据用户 ID 获取详细信息")
     @GetMapping("/{page}/{limit}")
-    public Result index(
+    public Result queryRolePage(
             @Parameter(name = "page", example = "1", required = true)
-            @PathVariable Long page,
+            @PathVariable Integer page,
 
             @Parameter(name = "limit", example = "5", required = true)
-            @PathVariable Long limit,
+            @PathVariable Integer limit,
 
-            @Parameter(name = "roleQueryVo", required = false)
+            @Parameter(name = "roleQueryVo")
             SysRoleQueryVo roleQueryVo) {
-        Page<SysRole> pageParam = new Page<>(page, limit);
-        IPage<SysRole> pageModel = sysRoleService.selectPage(pageParam, roleQueryVo);
-        return Result.ok(pageModel);
+
+        JSONObject jsonObject = sysRoleService.queryRolePage(page, limit, roleQueryVo);
+        return Result.ok(jsonObject);
     }
 
     @Operation(summary = "获取角色信息", description = "根据角色的id查询到角色的详细信息")

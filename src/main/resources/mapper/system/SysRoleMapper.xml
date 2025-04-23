@@ -12,16 +12,5 @@
         id,role_name,role_code,description,create_time,update_time,is_deleted
     </sql>
 
-    <select id="selectPage" resultMap="RoleMap">
-        select <include refid="columns" />
-        from sys_role
-        <where>
-            <if test="vo.roleName != null and vo.roleName != ''">
-                and role_name like CONCAT('%',#{vo.roleName},'%')
-            </if>
-            and is_deleted = 0
-        </where>
-        order by id desc
-    </select>
 
 </mapper>
