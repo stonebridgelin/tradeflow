@@ -1,6 +1,7 @@
 package com.stonebridge.tradeflow.system.config;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -25,9 +26,12 @@ public class SystemDataSourceConfig {
 
     @Bean(name = "systemSqlSessionFactory")
     @Primary
-    public MybatisSqlSessionFactoryBean systemSqlSessionFactory(@Qualifier("systemDataSource") DataSource dataSource) throws Exception {
+    public MybatisSqlSessionFactoryBean systemSqlSessionFactory(
+            @Qualifier("systemDataSource") DataSource dataSource,
+            @Qualifier("systemPaginationInterceptor") MybatisPlusInterceptor interceptor) throws Exception {
         MybatisSqlSessionFactoryBean factoryBean = new MybatisSqlSessionFactoryBean();
         factoryBean.setDataSource(dataSource);
+        factoryBean.setPlugins(interceptor); // 绑定分页拦截器
 
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
         Resource[] resources = resolver.getResources("classpath:mapper/system/*.xml");

@@ -17,16 +17,21 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @MapperScan(basePackages = "com.stonebridge.tradeflow.business.mapper", sqlSessionFactoryRef = "businessSqlSessionFactory")
 public class MybatisPlusConfig {
 
-    /**
-     * 向Mybatis过滤器链中添加分页拦截器
-     *
-     */
+    // 分页拦截器 - System 数据源
     @Bean
-    public MybatisPlusInterceptor addPaginationInnerInterceptor() {
+    public MybatisPlusInterceptor systemPaginationInterceptor() {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
-        //向Mybatis过滤器链中添加分页拦截器
+        // system 数据源为 MySQL，可替换为其他数据库类型
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
         return interceptor;
     }
 
+    // 分页拦截器 - Business 数据源
+    @Bean
+    public MybatisPlusInterceptor businessPaginationInterceptor() {
+        MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+        // business 数据源为 MySQL，可替换为其他数据库类型
+        interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
+        return interceptor;
+    }
 }
