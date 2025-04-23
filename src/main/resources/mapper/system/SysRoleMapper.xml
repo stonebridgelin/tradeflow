@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.stonebridge.tradeflow.system.mapper.SysRoleMapper">
 
     <!-- 自定义SQL语句可以写在这里 -->
@@ -9,8 +9,27 @@
 
     <!-- 用于select查询公用抽取的列 -->
     <sql id="columns">
-        id,role_name,role_code,description,create_time,update_time,is_deleted
+        id
+        ,role_name,role_code,description,create_time,update_time,is_deleted
     </sql>
 
+    <!-- 自定义分页查询 -->
+    <select id="selectRolePage" parameterType="com.stonebridge.tradeflow.system.vo.SysRoleQueryVo" resultMap="RoleMap">
+        SELECT id, role_name, role_code, description, create_time, update_time, is_deleted
+        FROM sys_role
+        WHERE is_deleted = 0
+        <if test="vo.roleName != null and vo.roleName != ''">
+            AND role_name LIKE CONCAT('%', #{vo.roleName}, '%')
+        </if>
+        ORDER BY id ASC
+        LIMIT #{vo.pageSize}
+        OFFSET #{vo.pageNum}
+    </select>
 
+    <!-- 根据id删除角色数据 -->
+    <update id="delete">
+        update sys_role
+        set is_deleted=1
+        where id = #{roleId}
+    </update>
 </mapper>

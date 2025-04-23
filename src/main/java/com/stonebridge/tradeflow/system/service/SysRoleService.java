@@ -11,4 +11,6 @@ import com.stonebridge.tradeflow.system.vo.SysRoleQueryVo;
 public interface SysRoleService extends IService<SysRole> {
 
     JSONObject queryRolePage(Integer pageNum, Integer pageSize, SysRoleQueryVo roleQueryVo);
+
+    void deleteById(Long roleId);
 }

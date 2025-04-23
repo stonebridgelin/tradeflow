@@ -19,7 +19,8 @@ public class SysRoleQueryVo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private String roleName;
-
+    private String roleName; // 角色名称
+    private Integer pageNum; // 当前页码
+    private Integer pageSize; // 每页记录数
 }
 

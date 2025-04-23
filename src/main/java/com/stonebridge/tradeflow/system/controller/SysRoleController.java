@@ -17,7 +17,7 @@ import java.util.List;
 
 @Tag(name = "System库sys_role表的Controller") // 定义 API 组名称
 @RestController
-@RequestMapping("/admin/system/sysRole")
+@RequestMapping("/system/role")
 public class SysRoleController {
 
     private final SysRoleService sysRoleService;
@@ -27,17 +27,32 @@ public class SysRoleController {
         this.sysRoleService = sysRoleService;
     }
 
-    //http://localhost:8081/admin/system/sysRole/findAll
-    @GetMapping("/findAll")
-    @Operation(summary = "获取所有角色信息", description = "获取所有角色信息")
-    public Result<List<SysRole>> findAll() {
-        try {
-            int a = 10 / 0;
-        } catch (Exception e) {
-            throw new CustomizeException(ResultCodeEnum.ACCOUNT_STOP);
-        }
-        return Result.ok(sysRoleService.list());
+
+    /**
+     * @param role
+     * @return
+     * @RequestBody 不能使用get提交方式，必须使用post提交方式；将传递来的json数据封装到对象里面；如果是列表数据，将封装为List数据
+     */
+
+    @Operation(summary = "新增角色", description = "创建新的角色信息，包括角色名称、权限码等基本信息",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "角色信息", required = true))
+    @PostMapping("/save")
+    public Result saveRole(@RequestBody SysRole role) {
+        sysRoleService.save(role);
+        return Result.ok();
     }
+
+
+    @Operation(summary = "更新角色信息", description = "根据角色ID更新角色的基本信息和权限配置",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "角色更新信息", required = true))
+    @PostMapping("/update")
+    public Result update(@RequestBody SysRole role) {
+        sysRoleService.updateById(role);
+        return Result.ok();
+    }
+
 
     //http://localhost:8081/admin/system/sysRole/1/2
     @Operation(summary = "获取分页列表", description = "根据用户 ID 获取详细信息")
@@ -56,42 +71,9 @@ public class SysRoleController {
         return Result.ok(jsonObject);
     }
 
-    @Operation(summary = "获取角色信息", description = "根据角色的id查询到角色的详细信息")
-    @GetMapping("/get/{id}")
-    public Result<SysRole> get(@PathVariable Long id) {
-        SysRole role = sysRoleService.getById(id);
-        return Result.ok(role);
-    }
-
-    /**
-     * @param role
-     * @return
-     * @RequestBody 不能使用get提交方式，必须使用post提交方式；将传递来的json数据封装到对象里面；如果是列表数据，将封装为List数据
-     */
-
-    @Operation(summary = "新增角色", description = "接收表单的数据将其存储在数据库中")
-    @PostMapping("/save")
-    public Result save(@RequestBody SysRole role) {
-        return sysRoleService.save(role) ? Result.ok() : Result.fail();
-    }
-
-    @Operation(summary = "根据id列表删除", description = "根据id列表批量删除角色信息")
-    @DeleteMapping("/batchRemove")
-    public Result batchRemove(@RequestBody List<Long> idList) {
-        sysRoleService.removeByIds(idList);
-        return Result.ok();
-    }
-
-    @Operation(summary = "修改角色", description = "根据接收的SysRole对象的id找到该数据库数据，然后将其他数据更新到数据库")
-    @PutMapping("/update")
-    public Result updateById(@RequestBody SysRole role) {
-        sysRoleService.updateById(role);
-        return Result.ok();
-    }
-
     @Operation(summary = "删除角色", description = "根据id删除对应的角色信息")
-    @DeleteMapping("/remove/{id}")
-    public Result remove(@PathVariable Long id) {
+    @DeleteMapping("/delete/{id}")
+    public Result deleteById(@PathVariable String id) {
         sysRoleService.removeById(id);
         return Result.ok();
     }

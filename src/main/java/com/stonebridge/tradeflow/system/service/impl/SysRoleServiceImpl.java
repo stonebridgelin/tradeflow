@@ -41,28 +41,30 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
                 throw new IllegalArgumentException("pageSize cannot exceed 100");
             }
 
-            // 创建分页对象
-            Page<SysRole> page = new Page<>(pageNum, pageSize);
-
-            // 构造查询条件
-            QueryWrapper<SysRole> wrapper = new QueryWrapper<>();
-            if (roleQueryVo != null && roleQueryVo.getRoleName() != null) {
-                wrapper.like("role_name", roleQueryVo.getRoleName());
-            }
+            // 设置分页参数
+            SysRoleQueryVo queryVo = new SysRoleQueryVo();
+            queryVo.setRoleName(roleQueryVo != null ? roleQueryVo.getRoleName() : null);
+            queryVo.setPageSize(pageSize);
+            // OFFSET 是从 0 开始，pageNum 转换为偏移量
+            queryVo.setPageNum((pageNum - 1) * pageSize);
 
             // 执行分页查询
-            IPage<SysRole> sysRoleIPage = sysRoleMapper.selectPage(page, wrapper);
-            List<SysRole> list = sysRoleIPage.getRecords();
+            List<SysRole> roleList = sysRoleMapper.selectRolePage(queryVo);
 
-            // 转换为 JSON 数组
+            // 查询总记录数
+            Long total = sysRoleMapper.selectCount(new QueryWrapper<SysRole>()
+                    .like(roleQueryVo != null && roleQueryVo.getRoleName() != null, "role_name", roleQueryVo.getRoleName())
+                    .eq("is_deleted", 0));
+
+            // 转换为 JSON
             JSONArray jsonArray = new JSONArray();
-            for (SysRole sysRole : list) {
-                // 使用 JSONUtil 序列化 SysRole
+            for (SysRole sysRole : roleList) {
                 JSONObject jsonObject = JSONUtil.parseObj(sysRole);
-                // 格式化 createTime
                 if (sysRole.getCreateTime() != null) {
-                    jsonObject.set("createTime",
-                            DateUtil.format(sysRole.getCreateTime(), DatePattern.NORM_DATETIME_PATTERN));
+                    jsonObject.set("createTime", DateUtil.format(sysRole.getCreateTime(), DatePattern.NORM_DATETIME_PATTERN));
+                }
+                if (sysRole.getUpdateTime() != null) {
+                    jsonObject.set("updateTime", DateUtil.format(sysRole.getUpdateTime(), DatePattern.NORM_DATETIME_PATTERN));
                 }
                 jsonArray.add(jsonObject);
             }
@@ -70,15 +72,22 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
             // 构造返回结果
             JSONObject result = new JSONObject();
             result.set("data", jsonArray);
-            result.set("total", sysRoleIPage.getTotal());
-            result.set("rows", jsonArray); // 修复：rows 表示记录列表
-            result.set("current", sysRoleIPage.getCurrent());
+            result.set("total", total);
+            result.set("rows", jsonArray);
+            result.set("current", pageNum);
             return result;
 
         } catch (Exception e) {
+            log.error("Page query failed", e);
             JSONObject error = new JSONObject();
             error.set("error", "Query failed: " + e.getMessage());
             return error;
         }
     }
+
+    @Override
+    public void deleteById(Long roleId) {
+        sysRoleMapper.deleteById(roleId) ;
+    }
+
 }

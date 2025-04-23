@@ -8,7 +8,13 @@ import com.stonebridge.tradeflow.system.vo.SysRoleQueryVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 @Mapper
 public interface SysRoleMapper extends BaseMapper<SysRole> {
     IPage<SysRole> selectPage(Page<SysRole> page, @Param("vo") SysRoleQueryVo roleQueryVo);
+
+    List<SysRole> selectRolePage(@Param("vo") SysRoleQueryVo vo);
+
+    Long selectCountByWrapper(SysRoleQueryVo roleQueryVo);
 }
