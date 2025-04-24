@@ -27,7 +27,7 @@ public class GlobalExceptionHandler {
 
     //1.处理全局异常
     @ExceptionHandler(Exception.class)
-    public Result error(Exception e) {
+    public Result<Object> error(Exception e) {
         // 正确的记录异常的方式
         log.error("记录【全局异常】: ", e);  // 注意这里逗号后面是异常对象
         // 错误的方式: log.error("发生异常: " + e.getMessage());  // 这样只会记录错误消息，不会记录堆栈
@@ -36,7 +36,7 @@ public class GlobalExceptionHandler {
 
     //2.处理特定异常
     @ExceptionHandler(ArithmeticException.class)
-    public Result error(ArithmeticException e) {
+    public Result<Object> error(ArithmeticException e) {
         // 正确的记录异常的方式
         log.error("记录【特定异常】: ", e);  // 注意这里逗号后面是异常对象
         return Result.fail();
@@ -44,7 +44,7 @@ public class GlobalExceptionHandler {
 
     //3.处理自定义异常
     @ExceptionHandler(CustomizeException.class)
-    public Result error(CustomizeException e) {
+    public Result<Object> error(CustomizeException e) {
         // 正确的记录异常的方式
         log.error("记录【自定义异常】: ", e);  // 注意这里逗号后面是异常对象
         return Result.fail().message(e.getMessage()).code(e.getCode());

@@ -48,7 +48,7 @@ public class AuthorizeController {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("token", token);
         jsonObject.put("id", "007");
-        jsonObject.put("name", "stonebridge");
+        jsonObject.put("username", "stonebridge");
 
         List<String> rights = new ArrayList<>();
 

@@ -2,12 +2,11 @@ package com.stonebridge.tradeflow.system.service.impl;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.stonebridge.tradeflow.system.mapper.SysRoleMapper;
 import com.stonebridge.tradeflow.system.entity.SysRole;
@@ -21,7 +20,7 @@ import java.util.List;
 @Service
 public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> implements SysRoleService {
 
-    private SysRoleMapper sysRoleMapper;
+    private final SysRoleMapper sysRoleMapper;
 
     @Autowired
     public SysRoleServiceImpl(SysRoleMapper sysRoleMapper) {
@@ -53,9 +52,8 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
 
             // 查询总记录数
             Long total = sysRoleMapper.selectCount(new QueryWrapper<SysRole>()
-                    .like(roleQueryVo != null && roleQueryVo.getRoleName() != null, "role_name", roleQueryVo.getRoleName())
+                    .like(roleQueryVo != null && roleQueryVo.getRoleName() != null, "role_name", StrUtil.trim(roleQueryVo.getRoleName()))
                     .eq("is_deleted", 0));
-
             // 转换为 JSON
             JSONArray jsonArray = new JSONArray();
             for (SysRole sysRole : roleList) {
