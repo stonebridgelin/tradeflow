@@ -3,8 +3,12 @@ package com.stonebridge.tradeflow.system.controller;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.stonebridge.tradeflow.common.result.Result;
+import com.stonebridge.tradeflow.common.utils.PasswordUtils;
+import com.stonebridge.tradeflow.system.entity.User;
 import com.stonebridge.tradeflow.system.entity.dto.LoginRequest;
+import com.stonebridge.tradeflow.system.entity.dto.RegisterRequest;
 import com.stonebridge.tradeflow.system.service.AuthorizeService;
+import com.stonebridge.tradeflow.system.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -13,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Tag(name = "权限管理", description = "用户登录、注册、授权处理类") // 定义 API 组名称
@@ -22,9 +27,11 @@ import java.util.List;
 public class AuthorizeController {
 
     private AuthorizeService authorizeService;
+    private UserService userService;
 
-    public AuthorizeController(AuthorizeService authorizeService) {
+    public AuthorizeController(AuthorizeService authorizeService, UserService userService) {
         this.authorizeService = authorizeService;
+        this.userService = userService;
     }
 
 
@@ -65,5 +72,22 @@ public class AuthorizeController {
         jsonObject.put("role", roleObject);
         log.info("{}用户登录登录成功", request.getUsername());
         return Result.ok(jsonObject);
+    }
+
+    @PostMapping("register")
+    public Result register(@RequestBody RegisterRequest registerRequest) {
+        User newUser = new User();
+        newUser.setUsername(registerRequest.getUsername().trim());
+        newUser.setPassword(PasswordUtils.encode(registerRequest.getPassword().trim()));
+        newUser.setFirstName(registerRequest.getFirstName().trim());
+        newUser.setLastName(registerRequest.getLastName().trim());
+        newUser.setEmail(registerRequest.getEmail().trim());
+        newUser.setPhone(registerRequest.getPhone().trim());
+        newUser.setCreateTime(new Date());
+        newUser.setUpdateTime(new Date());
+        newUser.setIsDeleted(0);
+        newUser.setStatus("0");
+        userService.save(newUser);
+        return Result.ok();
     }
 }
