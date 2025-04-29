@@ -76,18 +76,25 @@ public class AuthorizeController {
 
     @PostMapping("register")
     public Result register(@RequestBody RegisterRequest registerRequest) {
-        User newUser = new User();
-        newUser.setUsername(registerRequest.getUsername().trim());
-        newUser.setPassword(PasswordUtils.encode(registerRequest.getPassword().trim()));
-        newUser.setFirstName(registerRequest.getFirstName().trim());
-        newUser.setLastName(registerRequest.getLastName().trim());
-        newUser.setEmail(registerRequest.getEmail().trim());
-        newUser.setPhone(registerRequest.getPhone().trim());
-        newUser.setCreateTime(new Date());
-        newUser.setUpdateTime(new Date());
-        newUser.setIsDeleted(0);
-        newUser.setStatus("0");
-        userService.save(newUser);
-        return Result.ok();
+        log.info("开始处理用户注册请求: username={}", registerRequest.getUsername());
+        try {
+            User newUser = new User();
+            newUser.setUsername(registerRequest.getUsername().trim());
+            newUser.setPassword(PasswordUtils.encode(registerRequest.getPassword().trim()));
+            newUser.setFirstName(registerRequest.getFirstName().trim());
+            newUser.setLastName(registerRequest.getLastName().trim());
+            newUser.setEmail(registerRequest.getEmail().trim());
+            newUser.setPhone(registerRequest.getPhone().trim());
+            newUser.setCreateTime(new Date());
+            newUser.setUpdateTime(new Date());
+            newUser.setIsDeleted(0);
+            newUser.setStatus("0");
+            userService.save(newUser);
+            log.info("用户 {} 注册成功", registerRequest.getUsername());
+            return Result.ok();
+        } catch (Exception e) {
+            log.error("用户 {} 注册失败: {}", registerRequest.getUsername(), e);
+            throw e;
+        }
     }
 }
