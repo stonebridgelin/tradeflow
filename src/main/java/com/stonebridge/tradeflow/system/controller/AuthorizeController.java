@@ -53,9 +53,9 @@ public class AuthorizeController {
         log.info("用户登录：{}", request.getUsername());
         String token = authorizeService.loginCheck(request);
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("token", token);
-        jsonObject.put("id", "007");
-        jsonObject.put("username", "stonebridge");
+        jsonObject.set("token", token);
+        jsonObject.set("id", "007");
+        jsonObject.set("username", "stonebridge");
 
         List<String> rights = new ArrayList<>();
 
@@ -66,10 +66,10 @@ public class AuthorizeController {
         rights.add("menu-management");
         JSONArray jsonArray = new JSONArray(rights);
 
-        roleObject.put("roleName", "admin");
-        roleObject.put("roleType", "2");
-        roleObject.put("rights", jsonArray);
-        jsonObject.put("role", roleObject);
+        roleObject.set("roleName", "admin");
+        roleObject.set("roleType", "2");
+        roleObject.set("rights", jsonArray);
+        jsonObject.set("role", roleObject);
         log.info("{}用户登录登录成功", request.getUsername());
         return Result.ok(jsonObject);
     }
@@ -93,7 +93,7 @@ public class AuthorizeController {
             log.info("用户 {} 注册成功", registerDto.getUsername());
             return Result.ok();
         } catch (Exception e) {
-            log.error("用户 {} 注册失败: {}", registerDto.getUsername(), e);
+            log.error("用户 {}", registerDto.getUsername(), e);
             throw e;
         }
     }

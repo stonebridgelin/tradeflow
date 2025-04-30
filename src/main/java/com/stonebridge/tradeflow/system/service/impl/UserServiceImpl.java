@@ -34,7 +34,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 
     @Autowired
-    public UserServiceImpl(SysRoleMapper sysRoleMapper,SysUserRoleMapper sysUserRoleMapper) {
+    public UserServiceImpl(SysRoleMapper sysRoleMapper, SysUserRoleMapper sysUserRoleMapper) {
         this.sysRoleMapper = sysRoleMapper;
         this.sysUserRoleMapper = sysUserRoleMapper;
     }
@@ -110,12 +110,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public void doAssign(AssginRoleDto assginRoleDto) {
 
         // 删除之前的所有的用户所对应的角色数据
-        sysUserRoleMapper.deleteAllRoleByUserId(assginRoleDto.getUserId()) ;
+        sysUserRoleMapper.deleteAllRoleByUserId(assginRoleDto.getUserId());
 
         // 分配新的角色数据
         List<Long> roleIdList = assginRoleDto.getRoleIds();
-        roleIdList.forEach(roleId->{
-            sysUserRoleMapper.doAssign(assginRoleDto.getUserId(),roleId);
+        roleIdList.forEach(roleId -> {
+            sysUserRoleMapper.doAssign(assginRoleDto.getUserId(), roleId);
         });
     }
 }

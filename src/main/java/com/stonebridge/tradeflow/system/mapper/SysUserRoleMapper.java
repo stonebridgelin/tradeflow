@@ -15,6 +15,6 @@ public interface SysUserRoleMapper extends BaseMapper<SysUserRole> {
     void deleteAllRoleByUserId(Long userId);// 根据用户的id删除对应的所有roles数据
 
 
-    public abstract void doAssign(@Param("userId") Long userId,
+    void doAssign(@Param("userId") Long userId,
                                   @Param("roleId") Long roleId);        // 添加关联关系
 }

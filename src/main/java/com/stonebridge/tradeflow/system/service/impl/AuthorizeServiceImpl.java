@@ -4,7 +4,6 @@ import com.stonebridge.tradeflow.common.exception.CustomizeException;
 import com.stonebridge.tradeflow.common.utils.PasswordUtils;
 import com.stonebridge.tradeflow.system.entity.User;
 import com.stonebridge.tradeflow.system.entity.dto.LoginDto;
-import com.stonebridge.tradeflow.system.mapper.SysRoleMapper;
 import com.stonebridge.tradeflow.system.service.AuthorizeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,13 +16,11 @@ import static com.stonebridge.tradeflow.common.result.ResultCodeEnum.LOGIN_MOBLE
 
 @Service
 public class AuthorizeServiceImpl implements AuthorizeService {
-    private SysRoleMapper sysRoleMapper;
 
     private JdbcTemplate systemJdbcTemplate;
 
     @Autowired
-    public AuthorizeServiceImpl(SysRoleMapper sysRoleMapper, @Qualifier("systemJdbcTemplate") JdbcTemplate systemJdbcTemplate) {
-        this.sysRoleMapper = sysRoleMapper;
+    public AuthorizeServiceImpl(@Qualifier("systemJdbcTemplate") JdbcTemplate systemJdbcTemplate) {
         this.systemJdbcTemplate = systemJdbcTemplate;
     }
 

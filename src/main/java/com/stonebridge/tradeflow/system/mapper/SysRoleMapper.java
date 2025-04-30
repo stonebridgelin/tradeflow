@@ -12,7 +12,6 @@ import java.util.List;
 
 @Mapper
 public interface SysRoleMapper extends BaseMapper<SysRole> {
-    IPage<SysRole> selectPage(Page<SysRole> page, @Param("vo") SysRoleQueryVo roleQueryVo);
 
     List<SysRole> selectRolePage(@Param("vo") SysRoleQueryVo vo);
 
