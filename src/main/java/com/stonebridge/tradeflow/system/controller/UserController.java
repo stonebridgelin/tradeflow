@@ -4,6 +4,7 @@ import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.system.entity.User;
+import com.stonebridge.tradeflow.system.entity.dto.AssginRoleDto;
 import com.stonebridge.tradeflow.system.service.UserService;
 import com.stonebridge.tradeflow.system.vo.UserQueryVo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -71,4 +72,17 @@ public class UserController {
         return Result.ok(list);
     }
 
+    @GetMapping(value = "/getAllRoles/{userId}")
+    public Result<JSONObject> getAllRoles(@PathVariable(value = "userId") Long userId) {
+        log.info("获取所有角色信息和当前用户的被赋予的所有角色，用户的ID是：{}", userId);
+        JSONObject jsonObject = userService.getAllRoles(userId);
+        log.info("获取所有角色信息和当前用户的被赋予的所有角色成功,数据为：{}",jsonObject);
+        return Result.ok(jsonObject)  ;
+    }
+    @PostMapping("/doAssign")
+    public Result<JSONObject> doAssign(@RequestBody AssginRoleDto assginRoleDto) {
+        log.info("分配角色，数据为：{}", assginRoleDto);
+        userService.doAssign(assginRoleDto) ;
+        return Result.ok() ;
+    }
 }

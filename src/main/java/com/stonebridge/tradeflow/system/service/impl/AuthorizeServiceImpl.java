@@ -3,7 +3,7 @@ package com.stonebridge.tradeflow.system.service.impl;
 import com.stonebridge.tradeflow.common.exception.CustomizeException;
 import com.stonebridge.tradeflow.common.utils.PasswordUtils;
 import com.stonebridge.tradeflow.system.entity.User;
-import com.stonebridge.tradeflow.system.entity.dto.LoginRequest;
+import com.stonebridge.tradeflow.system.entity.dto.LoginDto;
 import com.stonebridge.tradeflow.system.mapper.SysRoleMapper;
 import com.stonebridge.tradeflow.system.service.AuthorizeService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +29,7 @@ public class AuthorizeServiceImpl implements AuthorizeService {
 
 
     @Override
-    public String loginCheck(LoginRequest request) {
+    public String loginCheck(LoginDto request) {
         String sql = "select * from user where username = ?";
         User user = systemJdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(User.class), request.getUsername().trim());
         if (user == null) {

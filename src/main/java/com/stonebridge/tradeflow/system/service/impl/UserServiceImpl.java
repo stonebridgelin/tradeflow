@@ -10,17 +10,34 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.stonebridge.tradeflow.common.utils.StatusConverter;
+import com.stonebridge.tradeflow.system.entity.SysRole;
+import com.stonebridge.tradeflow.system.entity.dto.AssginRoleDto;
+import com.stonebridge.tradeflow.system.mapper.SysRoleMapper;
+import com.stonebridge.tradeflow.system.mapper.SysUserRoleMapper;
 import com.stonebridge.tradeflow.system.mapper.UserMapper;
 import com.stonebridge.tradeflow.system.service.UserService;
 import com.stonebridge.tradeflow.system.vo.UserQueryVo;
 import com.stonebridge.tradeflow.system.entity.User;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+
+    private SysRoleMapper sysRoleMapper;
+
+    private SysUserRoleMapper sysUserRoleMapper;
+
+
+    @Autowired
+    public UserServiceImpl(SysRoleMapper sysRoleMapper,SysUserRoleMapper sysUserRoleMapper) {
+        this.sysRoleMapper = sysRoleMapper;
+        this.sysUserRoleMapper = sysUserRoleMapper;
+    }
 
     @Override
     public JSONObject findByPage(Page<User> page, UserQueryVo userQueryVo) {
@@ -71,5 +88,34 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         resultObjct.set("total", userIPage.getTotal());
 
         return resultObjct;
+    }
+
+    @Override
+    public JSONObject getAllRoles(Long userId) {
+
+        // 查询所有的角色数据（id, role_name）
+        List<SysRole> sysRoleList = sysRoleMapper.findAllRoles();
+
+        // 查询当前登录用户的角色数据
+        List<Long> sysRoles = sysUserRoleMapper.findSysUserRoleByUserId(userId);
+
+        // 构建响应结果数据
+        JSONObject object = new JSONObject();
+        object.set("allRolesList", sysRoleList);
+        object.set("UserRoleIds", sysRoles);
+        return object;
+    }
+
+    @Transactional
+    public void doAssign(AssginRoleDto assginRoleDto) {
+
+        // 删除之前的所有的用户所对应的角色数据
+        sysUserRoleMapper.deleteAllRoleByUserId(assginRoleDto.getUserId()) ;
+
+        // 分配新的角色数据
+        List<Long> roleIdList = assginRoleDto.getRoleIds();
+        roleIdList.forEach(roleId->{
+            sysUserRoleMapper.doAssign(assginRoleDto.getUserId(),roleId);
+        });
     }
 }

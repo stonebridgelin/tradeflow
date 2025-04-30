@@ -16,4 +16,5 @@ public interface SysRoleMapper extends BaseMapper<SysRole> {
 
     List<SysRole> selectRolePage(@Param("vo") SysRoleQueryVo vo);
 
+    List<SysRole> findAllRoles();
 }

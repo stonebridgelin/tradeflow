@@ -1,7 +1,7 @@
 // com.stonebridge.tradeflow.system.entity.dto.LoginRequest.java
 package com.stonebridge.tradeflow.system.entity.dto;
 
-public class LoginRequest {
+public class LoginDto {
     private String username;
     private String password;
 

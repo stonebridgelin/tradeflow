@@ -5,8 +5,8 @@ import cn.hutool.json.JSONObject;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.common.utils.PasswordUtils;
 import com.stonebridge.tradeflow.system.entity.User;
-import com.stonebridge.tradeflow.system.entity.dto.LoginRequest;
-import com.stonebridge.tradeflow.system.entity.dto.RegisterRequest;
+import com.stonebridge.tradeflow.system.entity.dto.LoginDto;
+import com.stonebridge.tradeflow.system.entity.dto.RegisterDto;
 import com.stonebridge.tradeflow.system.service.AuthorizeService;
 import com.stonebridge.tradeflow.system.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,7 +48,7 @@ public class AuthorizeController {
             @ApiResponse(responseCode = "400", description = "请求参数错误"),
             @ApiResponse(responseCode = "404", description = "客户不存在")
     })
-    public Result<JSONObject> login(@RequestBody LoginRequest request) {
+    public Result<JSONObject> login(@RequestBody LoginDto request) {
 
         log.info("用户登录：{}", request.getUsername());
         String token = authorizeService.loginCheck(request);
@@ -75,25 +75,25 @@ public class AuthorizeController {
     }
 
     @PostMapping("register")
-    public Result register(@RequestBody RegisterRequest registerRequest) {
-        log.info("开始处理用户注册请求: username={}", registerRequest.getUsername());
+    public Result register(@RequestBody RegisterDto registerDto) {
+        log.info("开始处理用户注册请求: username={}", registerDto.getUsername());
         try {
             User newUser = new User();
-            newUser.setUsername(registerRequest.getUsername().trim());
-            newUser.setPassword(PasswordUtils.encode(registerRequest.getPassword().trim()));
-            newUser.setFirstName(registerRequest.getFirstName().trim());
-            newUser.setLastName(registerRequest.getLastName().trim());
-            newUser.setEmail(registerRequest.getEmail().trim());
-            newUser.setPhone(registerRequest.getPhone().trim());
+            newUser.setUsername(registerDto.getUsername().trim());
+            newUser.setPassword(PasswordUtils.encode(registerDto.getPassword().trim()));
+            newUser.setFirstName(registerDto.getFirstName().trim());
+            newUser.setLastName(registerDto.getLastName().trim());
+            newUser.setEmail(registerDto.getEmail().trim());
+            newUser.setPhone(registerDto.getPhone().trim());
             newUser.setCreateTime(new Date());
             newUser.setUpdateTime(new Date());
             newUser.setIsDeleted(0);
             newUser.setStatus("0");
             userService.save(newUser);
-            log.info("用户 {} 注册成功", registerRequest.getUsername());
+            log.info("用户 {} 注册成功", registerDto.getUsername());
             return Result.ok();
         } catch (Exception e) {
-            log.error("用户 {} 注册失败: {}", registerRequest.getUsername(), e);
+            log.error("用户 {} 注册失败: {}", registerDto.getUsername(), e);
             throw e;
         }
     }

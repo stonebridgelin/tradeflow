@@ -3,7 +3,7 @@ package com.stonebridge.tradeflow.system.entity.dto;
 import lombok.Data;
 
 @Data
-public class RegisterRequest {
+public class RegisterDto {
     private String username;
     private String password;
     private String firstName;

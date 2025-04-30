@@ -25,6 +25,10 @@
         LIMIT #{vo.pageSize}
         OFFSET #{vo.pageNum}
     </select>
+    <select id="findAllRoles" resultMap="RoleMap">
+        SELECT id, role_name
+        FROM sys_role WHERE is_deleted = 0 ORDER BY id ASC
+    </select>
 
     <!-- 根据id删除角色数据 -->
     <update id="delete">
