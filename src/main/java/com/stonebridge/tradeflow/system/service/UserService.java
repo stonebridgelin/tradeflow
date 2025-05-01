@@ -7,10 +7,14 @@ import com.stonebridge.tradeflow.system.entity.User;
 import com.stonebridge.tradeflow.system.entity.dto.AssginRoleDto;
 import com.stonebridge.tradeflow.system.vo.UserQueryVo;
 
+import java.util.Map;
+
 public interface UserService extends IService<User> {
     JSONObject findByPage(Page<User> page, UserQueryVo userQueryVo);
 
     JSONObject getAllRoles(Long userId);
 
     void doAssign(AssginRoleDto assginRoleDto);
+
+    Map<String, Object> getUserById(Long userId);
 }

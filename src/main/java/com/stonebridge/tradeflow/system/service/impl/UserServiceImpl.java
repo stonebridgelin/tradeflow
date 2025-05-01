@@ -19,11 +19,14 @@ import com.stonebridge.tradeflow.system.service.UserService;
 import com.stonebridge.tradeflow.system.vo.UserQueryVo;
 import com.stonebridge.tradeflow.system.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
@@ -33,10 +36,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private SysUserRoleMapper sysUserRoleMapper;
 
 
+    private JdbcTemplate systemJdbcTemplate;
+
+
     @Autowired
-    public UserServiceImpl(SysRoleMapper sysRoleMapper, SysUserRoleMapper sysUserRoleMapper) {
+    public UserServiceImpl(SysRoleMapper sysRoleMapper, SysUserRoleMapper sysUserRoleMapper, @Qualifier("systemJdbcTemplate") JdbcTemplate systemJdbcTemplate) {
         this.sysRoleMapper = sysRoleMapper;
         this.sysUserRoleMapper = sysUserRoleMapper;
+        this.systemJdbcTemplate = systemJdbcTemplate;
     }
 
     @Override
@@ -79,7 +86,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 jsonObject.set("status", StatusConverter.getStatusDescription(user.getStatus()));
             }
             if (StrUtil.isNotBlank(user.getFirstName()) && StrUtil.isNotBlank(user.getLastName())) {
-                jsonObject.set("status", StatusConverter.getStatusDescription(user.getStatus()));
+                jsonObject.set("fullName", user.getFirstName() + " " + user.getLastName());
             }
             jsonArray.add(jsonObject);
         }
@@ -117,5 +124,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         roleIdList.forEach(roleId -> {
             sysUserRoleMapper.doAssign(assginRoleDto.getUserId(), roleId);
         });
+    }
+
+    @Override
+    public Map<String, Object> getUserById(Long userId) {
+        String sql = "SELECT id,username,first_name,last_name,phone,email,gender,avatar FROM user WHERE id = ?";
+        Map<String, Object> userMap = systemJdbcTemplate.queryForMap(sql, userId);
+        // 遍历并替换 null 为 ""
+        userMap.replaceAll((k, v) -> v == null ? "" : v);
+        return userMap;
     }
 }

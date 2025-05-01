@@ -16,7 +16,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @Tag(name = "System库user表的Controller") // 定义 API 组名称
 @RestController
@@ -76,13 +78,57 @@ public class UserController {
     public Result<JSONObject> getAllRoles(@PathVariable(value = "userId") Long userId) {
         log.info("获取所有角色信息和当前用户的被赋予的所有角色，用户的ID是：{}", userId);
         JSONObject jsonObject = userService.getAllRoles(userId);
-        log.info("获取所有角色信息和当前用户的被赋予的所有角色成功,数据为：{}",jsonObject);
-        return Result.ok(jsonObject)  ;
+        log.info("获取所有角色信息和当前用户的被赋予的所有角色成功,数据为：{}", jsonObject);
+        return Result.ok(jsonObject);
     }
+
+    /**
+     * 为用户分配角色信息，将角色信息保存在sys_user_role表中
+     *
+     * @param assginRoleDto 用户角色id和被授权的角色信息
+     * @return 分配结果
+     */
     @PostMapping("/doAssign")
     public Result<JSONObject> doAssign(@RequestBody AssginRoleDto assginRoleDto) {
         log.info("分配角色，数据为：{}", assginRoleDto);
-        userService.doAssign(assginRoleDto) ;
-        return Result.ok() ;
+        userService.doAssign(assginRoleDto);
+        return Result.ok();
+    }
+
+    /**
+     * 根据用户的id删除用户信息
+     *
+     * @param id 用户ID
+     * @return 删除结果
+     */
+    @DeleteMapping("delete/{id}")
+    public Result deleteUser(@PathVariable(value = "id") Long id) {
+        log.info("删除用户信息，用户的ID是：{}", id);
+        userService.removeById(id);
+        log.info("删除用户信息成功，用户的ID是：{}", id);
+        return Result.ok();
+    }
+
+    /**
+     * 根据ID查询用户信息
+     *
+     * @param userId 用户ID
+     * @return JSON格式的用户数据
+     */
+    @GetMapping("getUserById/{id}")
+    public Result<Map<String, Object>> getUserById(@PathVariable(value = "id") Long userId) {
+        log.info("根据ID查询用户信息，用户的ID是：{}", userId);
+        Map<String, Object> userMap = userService.getUserById(userId);
+        log.info("查询用户信息成功，用户的信息是：{}", userMap.toString());
+        return Result.ok(userMap);
+    }
+
+    @PostMapping("update")
+    public Result updateUser(@RequestBody User user) {
+        log.info("更新用户信息，用户的信息是：{}", user.toString());
+        user.setUpdateTime(new Date());
+        userService.updateById(user);
+        log.info("更新用户信息成功，用户的信息是：{}", user.toString());
+        return Result.ok();
     }
 }
