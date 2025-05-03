@@ -1,14 +1,21 @@
 package com.stonebridge.tradeflow.system.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.stonebridge.tradeflow.common.result.Result;
+import com.stonebridge.tradeflow.common.utils.MenuHelper;
 import com.stonebridge.tradeflow.system.mapper.SysMenuMapper;
 import com.stonebridge.tradeflow.system.entity.SysMenu;
 import com.stonebridge.tradeflow.system.service.SysMenuService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
@@ -18,10 +25,14 @@ import java.util.stream.Collectors;
 public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> implements SysMenuService {
     private SysMenuMapper sysMenuMapper;
 
+    public JdbcTemplate systemJdbcTemplate;
+
     @Autowired
-    public SysMenuServiceImpl(SysMenuMapper sysMenuMapper) {
+    public SysMenuServiceImpl(SysMenuMapper sysMenuMapper, @Qualifier("systemJdbcTemplate") JdbcTemplate jdbcTemplate) {
         this.sysMenuMapper = sysMenuMapper;
+        this.systemJdbcTemplate = jdbcTemplate;
     }
+
 
     /**
      * 获取菜单树结构
@@ -45,6 +56,26 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
 
         // 转换为JSON数组并添加子菜单
         return new JSONArray(firstLevelMenuList.stream().map(this::buildMenuTreeNode).collect(Collectors.toList()));
+    }
+
+    @Override
+    public List<SysMenu> findNodes() {
+        List<SysMenu> sysMenuList = sysMenuMapper.selectAll();
+        if (CollectionUtils.isEmpty(sysMenuList)) return null;
+        List<SysMenu> treeList = MenuHelper.buildTree(sysMenuList); //构建树形数据
+        return treeList;
+    }
+
+    @Transactional
+    @Override
+    public Result updateStatus(String id, String status) {
+        String sql = "UPDATE sys_menu set status=? WHERE id=?";
+        int row = systemJdbcTemplate.update(sql, StrUtil.trim(status), StrUtil.trim(id));
+        if (row == 1) {
+            return Result.ok();
+        } else {
+            return Result.fail();
+        }
     }
 
     /**
