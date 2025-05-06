@@ -15,10 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -77,6 +77,43 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
             return Result.fail();
         }
     }
+
+    @Override
+    public boolean existChildrenNode(String id) {
+        String sql = "SELECT COUNT(1) FROM sys_menu WHERE parent_id=?";
+        Integer count = systemJdbcTemplate.queryForObject(sql, Integer.class, StrUtil.trim(id));
+        return count > 0;
+    }
+
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public void saveMenu(SysMenu sysMenu) {
+        try {
+            // 验证 sortValue
+            Integer sortValue = sysMenu.getSortValue();
+            if (sortValue == null) {
+                throw new IllegalArgumentException("sort_value cannot be null");
+            }
+
+            // 查询 sort_value >= sysMenu.sortValue 的记录（加锁）
+            String sql = "SELECT id, sort_value FROM sys_menu WHERE sort_value >= ? FOR UPDATE";
+            List<Map<String, Object>> list = systemJdbcTemplate.queryForList(sql, sortValue);
+
+            if (list.isEmpty()) {
+                // 直接插入
+                sysMenuMapper.insert(sysMenu);
+            } else {
+                // 更新 sort_value >= sysMenu.sortValue 的记录
+                sql = "UPDATE sys_menu SET sort_value = sort_value + 1 WHERE sort_value >= ?";
+                systemJdbcTemplate.update(sql, sortValue);
+
+                // 插入新记录
+                sysMenuMapper.insert(sysMenu);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save menu: " + e.getMessage(), e);
+        }
+    }
+
 
     /**
      * 构建菜单树节点

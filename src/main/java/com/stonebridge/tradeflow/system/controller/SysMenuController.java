@@ -42,13 +42,32 @@ public class SysMenuController {
      * 更新某个menu的status
      *
      * @param id
-     * @param Status
+     * @param status
      * @return
      */
     @GetMapping("updateStatus")
     public Result updateStatus(String id, String status) {
         Result result = sysMenuService.updateStatus(id, status);
         return result;
+    }
+
+    @DeleteMapping("delete/{id}")
+    public Result deleteMenuNodeById(@PathVariable("id") String id) {
+        if (sysMenuService.existChildrenNode(id)) {
+            return Result.fail().message("该节点存在子节点，不能删除");
+        }
+        Boolean result = sysMenuService.removeById(id);
+        if (!result) {
+            return Result.fail().message("删除失败");
+        }
+        return Result.ok();
+    }
+
+    @PostMapping("save")
+    public Result save(@RequestBody SysMenu sysMenu) {
+        System.out.println(sysMenu.toString());
+        sysMenuService.saveMenu(sysMenu);
+        return Result.ok();
     }
 
 }

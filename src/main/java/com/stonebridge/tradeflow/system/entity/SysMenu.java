@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -31,9 +31,9 @@ public class SysMenu implements Serializable {
 
     private String status;     // 状态(0:禁止,1:正常)
 
-    private Timestamp createTime; // 创建时间
+    private Date createTime; // 创建时间
 
-    private Timestamp updateTime; // 更新时间
+    private Date updateTime; // 更新时间
 
     @TableField(exist = false)
     private List<SysMenu> children;

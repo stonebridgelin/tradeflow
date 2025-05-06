@@ -9,6 +9,7 @@ import com.aliyun.oss.model.PolicyConditions;
 import com.stonebridge.tradeflow.common.result.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -33,7 +34,7 @@ public class OssController {
     private String bucket;
 
 
-    @RequestMapping("policy")
+    @GetMapping(path = "policy")
     public Result<JSONObject> policy() {
         // 请填写您的 bucketname 。
         String bucket = "gulimall-ciel";
@@ -41,7 +42,7 @@ public class OssController {
         //https://gulimall-ciel.oss-cn-shanghai.aliyuncs.com/
         String host = "https://" + bucket + ".oss-cn-shanghai.aliyuncs.com"; // host的格式为 bucketname.endpoint
         // callbackUrl为上传回调服务器的URL，请将下面的IP和Port配置为您自己的真实信息。
-        String dir = new SimpleDateFormat("yyyy-MM-dd").format(new Date())+"/";
+        String dir = new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "/";
         JSONObject jsonObject = new JSONObject();
         try {
             long expireTime = 30;

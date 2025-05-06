@@ -14,4 +14,8 @@ public interface SysMenuService extends IService<SysMenu> {
     List<SysMenu> findNodes();
 
     Result updateStatus(String id, String status);
+
+    boolean existChildrenNode(String id);
+
+    void saveMenu(SysMenu sysMenu);
 }
