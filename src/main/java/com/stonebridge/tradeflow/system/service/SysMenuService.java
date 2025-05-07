@@ -18,4 +18,6 @@ public interface SysMenuService extends IService<SysMenu> {
     boolean existChildrenNode(String id);
 
     void saveMenu(SysMenu sysMenu);
+
+    void updateMenu(SysMenu sysMenu,Integer newSortValue);
 }
