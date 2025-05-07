@@ -167,6 +167,12 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
         }
     }
 
+    @Override
+    public Boolean deleteSysMenuById(String id) {
+        Integer row = systemJdbcTemplate.update("DELETE FROM sys_menu WHERE id = ?", id);
+        return row == 1 ? Boolean.TRUE : Boolean.FALSE;
+    }
+
     /**
      * 构建菜单树节点
      *

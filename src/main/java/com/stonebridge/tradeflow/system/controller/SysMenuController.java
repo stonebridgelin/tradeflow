@@ -60,7 +60,7 @@ public class SysMenuController {
         if (sysMenuService.existChildrenNode(id)) {
             return Result.fail().message("该节点存在子节点，不能删除");
         }
-        Boolean result = sysMenuService.removeById(id);
+        Boolean result = sysMenuService.deleteSysMenuById(id);
         if (!result) {
             return Result.fail().message("删除失败");
         }

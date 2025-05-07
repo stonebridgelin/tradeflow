@@ -20,4 +20,6 @@ public interface SysMenuService extends IService<SysMenu> {
     void saveMenu(SysMenu sysMenu);
 
     void updateMenu(SysMenu sysMenu,Integer newSortValue);
+
+    Boolean deleteSysMenuById(String id);
 }
