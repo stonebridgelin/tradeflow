@@ -11,14 +11,11 @@ public class SysRoleMenu implements Serializable {
     @TableId(type = IdType.AUTO)
     private Long id;            // 主键ID
 
-    private Long roleId;        // 角色id
+    private String roleId;        // 角色id
 
-    private Long menuId;        // 菜单id
+    private String menuId;        // 菜单id
 
     private Timestamp createTime; // 创建时间
 
     private Timestamp updateTime; // 更新时间
-
-    @TableLogic
-    private Integer isDeleted;  // 删除标记（0:可用 1:已删除）
 }

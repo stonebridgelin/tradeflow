@@ -8,8 +8,11 @@ import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.common.utils.MenuHelper;
+import com.stonebridge.tradeflow.system.entity.SysRoleMenu;
+import com.stonebridge.tradeflow.system.entity.dto.AssginMenuDto;
 import com.stonebridge.tradeflow.system.mapper.SysMenuMapper;
 import com.stonebridge.tradeflow.system.entity.SysMenu;
+import com.stonebridge.tradeflow.system.mapper.SysRoleMenuMapper;
 import com.stonebridge.tradeflow.system.service.SysMenuService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -25,12 +28,15 @@ import java.util.stream.Collectors;
 
 @Service
 public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> implements SysMenuService {
+    private SysRoleMenuMapper sysRoleMenuMapper;
+
     private SysMenuMapper sysMenuMapper;
 
     public JdbcTemplate systemJdbcTemplate;
 
     @Autowired
-    public SysMenuServiceImpl(SysMenuMapper sysMenuMapper, @Qualifier("systemJdbcTemplate") JdbcTemplate jdbcTemplate) {
+    public SysMenuServiceImpl(SysRoleMenuMapper sysRoleMenuMapper, SysMenuMapper sysMenuMapper, @Qualifier("systemJdbcTemplate") JdbcTemplate jdbcTemplate) {
+        this.sysRoleMenuMapper = sysRoleMenuMapper;
         this.sysMenuMapper = sysMenuMapper;
         this.systemJdbcTemplate = jdbcTemplate;
     }
@@ -64,8 +70,8 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
     public List<SysMenu> findNodes() {
         List<SysMenu> sysMenuList = sysMenuMapper.selectAll();
         if (CollectionUtils.isEmpty(sysMenuList)) return null;
-        List<SysMenu> treeList = MenuHelper.buildTree(sysMenuList); //构建树形数据
-        return treeList;
+        //构建树形数据
+        return MenuHelper.buildTree(sysMenuList);
     }
 
     @Transactional
@@ -191,5 +197,44 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
             menuObject.put("children", new JSONArray(subMenus));
         }
         return menuObject;
+    }
+
+
+    /**
+     * 构建树型Menu，根据角色ID获取所有的菜单和已经为该角色分配了菜单的组合（如果已经被分配isSelect为true）
+     * <en
+     *
+     * @param roleId ：角色的id
+     * @return ：菜单树
+     */
+    @Override
+    public List<SysMenu> getMenusByRoleId(String roleId) {
+        //获取所有的菜单 statu=1
+        List<SysMenu> menuList = sysMenuMapper.selectList(new QueryWrapper<SysMenu>().eq("status", "1"));
+        //根据角色的id查询，角色分配过的菜单列表(sys_role_menu)
+        List<SysRoleMenu> roleMenuList = sysRoleMenuMapper.selectList(new QueryWrapper<SysRoleMenu>().eq("role_id", roleId));
+        //从第二步查询列表中，获取该角色被分配的所有菜单的id(sys_role_menu.menu_id)
+        List<String> roleMenuIds = roleMenuList.stream().map(SysRoleMenu::getMenuId).toList();
+
+        //获取所有菜单，该角色被分配的所有菜单的id进行比对，如果已经被分配isSelect为true，否则为false
+        for (SysMenu sysMenu : menuList) {
+            sysMenu.setSelect(roleMenuIds.contains(String.valueOf(sysMenu.getId())));
+        }
+        //转化为树性结构，方便显示
+        return MenuHelper.buildTree(menuList);
+    }
+
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Override
+    public void doAssign(AssginMenuDto assginMenuDto) {
+        //删除角色原有的菜单
+        sysRoleMenuMapper.delete(new QueryWrapper<SysRoleMenu>().eq("role_id", assginMenuDto.getRoleId()));
+        //重新分配菜单
+        for (String menuId : assginMenuDto.getMenuIds()) {
+            SysRoleMenu sysRoleMenu = new SysRoleMenu();
+            sysRoleMenu.setMenuId(menuId);
+            sysRoleMenu.setRoleId(assginMenuDto.getRoleId());
+            sysRoleMenuMapper.insert(sysRoleMenu);
+        }
     }
 }

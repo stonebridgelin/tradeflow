@@ -25,7 +25,6 @@ public class SysRoleController {
     }
 
     /**
-     *
      * @param role 要保存的角色信息的封装
      * @return ：保存的结果
      */
