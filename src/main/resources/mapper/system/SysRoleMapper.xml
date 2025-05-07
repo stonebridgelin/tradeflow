@@ -10,16 +10,15 @@
     <!-- 用于select查询公用抽取的列 -->
     <sql id="columns">
         id
-        ,role_name,role_code,description,create_time,update_time,is_deleted
+        ,role_name,role_code,description,create_time,update_time
     </sql>
 
     <!-- 自定义分页查询 -->
     <select id="selectRolePage" parameterType="com.stonebridge.tradeflow.system.vo.SysRoleQueryVo" resultMap="RoleMap">
-        SELECT id, role_name, role_code, description, create_time, update_time, is_deleted
+        SELECT id, role_name, role_code, description, create_time, update_time
         FROM sys_role
-        WHERE is_deleted = 0
         <if test="vo.roleName != null and vo.roleName != ''">
-            AND role_name LIKE CONCAT('%', #{vo.roleName}, '%')
+            WHERE  role_name LIKE CONCAT('%', #{vo.roleName}, '%')
         </if>
         ORDER BY id ASC
         LIMIT #{vo.pageSize}
@@ -27,13 +26,7 @@
     </select>
     <select id="findAllRoles" resultMap="RoleMap">
         SELECT id, role_name
-        FROM sys_role WHERE is_deleted = 0 ORDER BY id ASC
+        FROM sys_role ORDER BY id ASC
     </select>
 
-    <!-- 根据id删除角色数据 -->
-    <update id="delete">
-        update sys_role
-        set is_deleted=1
-        where id = #{roleId}
-    </update>
 </mapper>

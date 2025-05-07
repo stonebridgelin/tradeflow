@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.stonebridge.tradeflow.system.service.SysRoleService;
 
 
-@Tag(name = "System库sys_role表的Controller") // 定义 API 组名称
+@Tag(name = "角色管理的接口类", description = "完成角色的增删改查操作，对应Sys_Role表")
 @RestController
 @RequestMapping("/system/role")
 public class SysRoleController {
@@ -47,7 +47,7 @@ public class SysRoleController {
 
 
     //http://localhost:8081/admin/system/sysRole/1/2
-    @Operation(summary = "获取分页列表", description = "根据用户 ID 获取详细信息")
+    @Operation(summary = "获取角色的分页列表", description = "分页查询角色的信息")
     @GetMapping("/{page}/{limit}")
     public Result<Object> queryRolePage(
             @Parameter(name = "page", example = "1", required = true)
@@ -63,7 +63,7 @@ public class SysRoleController {
         return Result.ok(jsonObject);
     }
 
-    @Operation(summary = "删除角色", description = "根据id删除对应的角色信息")
+    @Operation(summary = "删除角色", description = "根据id删除Sys_Role里对应的角色信息")
     @DeleteMapping("/delete/{id}")
     public Result<Object> deleteById(@PathVariable String id) {
         sysRoleService.removeById(id);

@@ -52,8 +52,7 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
 
             // 查询总记录数
             Long total = sysRoleMapper.selectCount(new QueryWrapper<SysRole>()
-                    .like(roleQueryVo != null && roleQueryVo.getRoleName() != null, "role_name", StrUtil.trim(roleQueryVo.getRoleName()))
-                    .eq("is_deleted", 0));
+                    .like(roleQueryVo != null && roleQueryVo.getRoleName() != null, "role_name", StrUtil.trim(roleQueryVo.getRoleName())));
             // 转换为 JSON
             JSONArray jsonArray = new JSONArray();
             for (SysRole sysRole : roleList) {
@@ -78,7 +77,7 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
         } catch (Exception e) {
             log.error("Page query failed", e);
             JSONObject error = new JSONObject();
-            error.set("error", "Query failed: " + e.getMessage());
+            error.set("error", "Query failed: " + e);
             return error;
         }
     }

@@ -20,7 +20,4 @@ public class SysRole implements Serializable {
     private Timestamp createTime; // 创建时间
 
     private Timestamp updateTime; // 更新时间
-
-    @TableLogic
-    private Integer isDeleted;  // 删除标记（0:可用 1:已删除）
 }
