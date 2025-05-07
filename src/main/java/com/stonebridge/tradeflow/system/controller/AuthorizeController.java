@@ -74,6 +74,7 @@ public class AuthorizeController {
         return Result.ok(jsonObject);
     }
 
+    @Operation(summary = "用户注册", description = "处理用户注册请求")
     @PostMapping("register")
     public Result register(@RequestBody RegisterDto registerDto) {
         log.info("开始处理用户注册请求: username={}", registerDto.getUsername());

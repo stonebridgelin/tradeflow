@@ -20,7 +20,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-@Tag(name = "System库user表的Controller") // 定义 API 组名称
+@Tag(name = "用户管理的的接口类", description = "完成用户的增删改查操作，以及为用户授权角色信息，对应Sys_User表")
+// 定义 API 组名称
 @RestController
 @Slf4j
 @RequestMapping("/system/user")
@@ -36,6 +37,7 @@ public class UserController {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    @Operation(summary = "分页查询用户的信息，列表形式返回")
     @GetMapping(value = "/findByPage/{pageNum}/{pageSize}")
     public Result<Object> findByPage(UserQueryVo userQueryVo, @PathVariable(value = "pageNum") Integer pageNum, @PathVariable(value = "pageSize") Integer pageSize) {
         // 参数校验
@@ -50,8 +52,8 @@ public class UserController {
     }
 
 
+    @Operation(summary = "根据ID根据获取用户详细信息")
     @GetMapping("/{id}")
-    @Operation(summary = "根据获取用户信息", description = "根据用户 ID 获取详细信息")
     public Result<User> getSysUserById(@Parameter(description = "用户ID", required = true, example = "1") @PathVariable Integer id) {
         log.info("根据用户ID开始获取用户信息，用户的ID是：{}", id);
         String sql = "SELECT * FROM user WHERE id = ?";
@@ -65,8 +67,8 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "获取所有用户信息")
     @GetMapping("/list")
-    @Operation(summary = "获取所有用户信息", description = "根据用户 ID 获取详细信息")
     public Result<List<User>> getSysUserList() {
         log.info("获取所有用户信息");
         List<User> list = userService.list();
@@ -74,6 +76,7 @@ public class UserController {
         return Result.ok(list);
     }
 
+    @Operation(summary = "为用户分配权限时，获取所有角色信息和当前用户的被赋予的所有角色")
     @GetMapping(value = "/getAllRoles/{userId}")
     public Result<JSONObject> getAllRoles(@PathVariable(value = "userId") Long userId) {
         log.info("获取所有角色信息和当前用户的被赋予的所有角色，用户的ID是：{}", userId);
@@ -88,6 +91,7 @@ public class UserController {
      * @param assginRoleDto 用户角色id和被授权的角色信息
      * @return 分配结果
      */
+    @Operation(summary = "为用户分配角色信息，将角色信息保存在sys_user_role表中")
     @PostMapping("/doAssign")
     public Result<JSONObject> doAssign(@RequestBody AssginRoleDto assginRoleDto) {
         log.info("分配角色，数据为：{}", assginRoleDto);
@@ -101,6 +105,7 @@ public class UserController {
      * @param id 用户ID
      * @return 删除结果
      */
+    @Operation(summary = "根据用户的id删除用户信息")
     @DeleteMapping("delete/{id}")
     public Result deleteUser(@PathVariable(value = "id") Long id) {
         log.info("删除用户信息，用户的ID是：{}", id);
@@ -115,6 +120,7 @@ public class UserController {
      * @param userId 用户ID
      * @return JSON格式的用户数据
      */
+    @Operation(summary = "根据ID查询用户详细信息，并以Map形式返回")
     @GetMapping("getUserById/{id}")
     public Result<Map<String, Object>> getUserById(@PathVariable(value = "id") Long userId) {
         log.info("根据ID查询用户信息，用户的ID是：{}", userId);
@@ -123,6 +129,13 @@ public class UserController {
         return Result.ok(userMap);
     }
 
+    /**
+     * 更新用户信息
+     *
+     * @param user 用户信息
+     * @return 更新结果
+     */
+    @Operation(summary = "更新用户信息")
     @PostMapping("update")
     public Result updateUser(@RequestBody User user) {
         log.info("更新用户信息，用户的信息是：{}", user.toString());

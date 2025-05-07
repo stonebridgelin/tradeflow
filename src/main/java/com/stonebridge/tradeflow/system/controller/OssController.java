@@ -7,15 +7,17 @@ import com.aliyun.oss.common.utils.BinaryUtil;
 import com.aliyun.oss.model.MatchMode;
 import com.aliyun.oss.model.PolicyConditions;
 import com.stonebridge.tradeflow.common.result.Result;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+@Tag(name = "获取aliyunOss签名", description = "处理图片上传时获取aliyunOss签名，将对象保存到oss存储")
 @RestController
 @Slf4j
 @RequestMapping("system/aliyun")
@@ -34,10 +36,9 @@ public class OssController {
     private String bucket;
 
 
-    @GetMapping(path = "policy")
+    @RequestMapping(path = "policy", method = RequestMethod.GET)
     public Result<JSONObject> policy() {
         // 请填写您的 bucketname 。
-        String bucket = "gulimall-ciel";
         OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
         //https://gulimall-ciel.oss-cn-shanghai.aliyuncs.com/
         String host = "https://" + bucket + ".oss-cn-shanghai.aliyuncs.com"; // host的格式为 bucketname.endpoint
@@ -67,13 +68,11 @@ public class OssController {
             jsonObject.set("expire", String.valueOf(expireEndTime / 1000));
             // respMap.put("expire", formatISO8601Date(expiration));
         } catch (Exception e) {
-            // Assert.fail(e.getMessage());
-            System.out.println(e.getMessage());
+            log.error("获取签名失败", e);
         } finally {
             ossClient.shutdown();
         }
         log.info(jsonObject.toString());
         return Result.ok(jsonObject);
     }
-
 }
