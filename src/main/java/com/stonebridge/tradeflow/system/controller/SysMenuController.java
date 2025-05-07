@@ -152,7 +152,7 @@ public class SysMenuController {
 
 
     @Operation(summary = "给角色分配菜单权限", description = "根据前端提交的角色和菜单的对应关系保存到sys_role_menu，完成给角色分配权限")
-    @GetMapping("/doAssign")
+    @PostMapping("/doAssign")
     public Result doAssign(@RequestBody AssginMenuDto assginMenuDto) {
         sysMenuService.doAssign(assginMenuDto);
         return Result.ok();
