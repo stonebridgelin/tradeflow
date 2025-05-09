@@ -64,6 +64,7 @@ public class AuthorizeController {
         rights.add("role-management");
         rights.add("main");
         rights.add("menu-management");
+        rights.add("assignMenu");
         JSONArray jsonArray = new JSONArray(rights);
 
         roleObject.set("roleName", "admin");
