@@ -3,6 +3,7 @@ package com.stonebridge.tradeflow.system.controller;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.stonebridge.tradeflow.common.result.Result;
+import com.stonebridge.tradeflow.common.utils.JwtUtil;
 import com.stonebridge.tradeflow.common.utils.PasswordUtils;
 import com.stonebridge.tradeflow.system.entity.User;
 import com.stonebridge.tradeflow.system.entity.dto.LoginDto;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -75,6 +77,20 @@ public class AuthorizeController {
         return Result.ok(jsonObject);
     }
 
+
+    @Operation(summary = "用户信息", description = "获取当前用户信息")
+    @GetMapping("info")
+    public Result<JSONObject> info(HttpServletRequest request) {
+        //获取请求头里面获取token
+        String token = request.getHeader("token");
+        //解析token获取用户id
+        String userId = JwtUtil.getUserId(token);
+        //根据用户id获取用户信息（基本信息 菜单权限 按钮权限信息）
+        JSONObject userInfo = authorizeService.getUserInfo(userId);
+        //返回用户信息
+        return Result.ok(userInfo);
+    }
+
     @Operation(summary = "用户注册", description = "处理用户注册请求")
     @PostMapping("register")
     public Result register(@RequestBody RegisterDto registerDto) {
@@ -87,6 +103,7 @@ public class AuthorizeController {
             newUser.setLastName(registerDto.getLastName().trim());
             newUser.setEmail(registerDto.getEmail().trim());
             newUser.setPhone(registerDto.getPhone().trim());
+            newUser.setAvatar(registerDto.getAvatarUrl().trim());
             newUser.setCreateTime(new Date());
             newUser.setUpdateTime(new Date());
             newUser.setIsDeleted(0);

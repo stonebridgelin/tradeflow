@@ -3,15 +3,24 @@ package com.stonebridge.tradeflow.common.utils;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
 
+@Component
 public class JwtUtil {
 
     // 推荐使用 256-bit 的 Base64 编码密钥（可放配置文件中）
-    private static final String SECRET_KEY = "QWlVc2VBLU1pbmltdW1vZmFzZWNyZXRLZXktMTIzNDU2Nzg5MA=="; // 示例用 key，请替换
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 1 天
+    private static String SECRET_KEY = ""; // 示例用 key，请替换
+    private static long EXPIRATION_TIME = 0L; // 1 天
+
+    @Autowired
+    public JwtUtil(JwtProperties jwtProperties) {
+        SECRET_KEY = jwtProperties.getSecretKey();
+        EXPIRATION_TIME = jwtProperties.getExpirationTime();
+    }
 
     // 获取签名密钥
     private static Key getSigningKey() {
@@ -22,7 +31,7 @@ public class JwtUtil {
     /**
      * ✅ 生成 JWT Token
      */
-    public static String generateToken(String username, Long userId) {
+    public static String generateToken(String username, String userId) {
         String token = Jwts.builder()
                 .setSubject("AUTH-USER")
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
@@ -68,9 +77,9 @@ public class JwtUtil {
     /**
      * ✅ 获取用户 ID（userId 字段）
      */
-    public static Long getUserId(String token) {
+    public static String getUserId(String token) {
         Object val = getClaims(token).get("userId");
-        return val != null ? Long.parseLong(val.toString()) : null;
+        return val != null ? val.toString() : null;
     }
 
     /**

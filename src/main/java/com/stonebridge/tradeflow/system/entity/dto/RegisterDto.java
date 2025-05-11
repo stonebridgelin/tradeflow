@@ -11,5 +11,6 @@ public class RegisterDto {
     private String email;
     private String gender;
     private String phone;
+    //avatarUrl
     private String avatarUrl;
 }
