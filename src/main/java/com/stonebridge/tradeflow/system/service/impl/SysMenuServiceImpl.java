@@ -6,10 +6,13 @@ import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.stonebridge.tradeflow.common.constant.Constant;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.common.utils.MenuHelper;
+import com.stonebridge.tradeflow.common.utils.RouterHelper;
 import com.stonebridge.tradeflow.system.entity.SysRoleMenu;
 import com.stonebridge.tradeflow.system.entity.dto.AssginMenuDto;
+import com.stonebridge.tradeflow.system.entity.vo.RouterVo;
 import com.stonebridge.tradeflow.system.mapper.SysMenuMapper;
 import com.stonebridge.tradeflow.system.entity.SysMenu;
 import com.stonebridge.tradeflow.system.mapper.SysRoleMenuMapper;
@@ -24,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,6 +37,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
     private SysMenuMapper sysMenuMapper;
 
     public JdbcTemplate systemJdbcTemplate;
+
 
     @Autowired
     public SysMenuServiceImpl(SysRoleMenuMapper sysRoleMenuMapper, SysMenuMapper sysMenuMapper, @Qualifier("systemJdbcTemplate") JdbcTemplate jdbcTemplate) {
@@ -237,4 +242,93 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
             sysRoleMenuMapper.insert(sysRoleMenu);
         }
     }
+
+    //根据userId查询菜单权限值
+    @Override
+    public List<RouterVo> getUserMenuListByUserId(String userId) {
+        //超级管理员admin账号id为：1
+        List<SysMenu> sysMenuList;
+        if (StrUtil.equals(Constant.SUPER_ADMIN_ID, userId)) {
+            sysMenuList = sysMenuMapper.selectList(new QueryWrapper<SysMenu>().eq("status", 1).in("type", "0", "1").orderByAsc("sort_value"));
+        } else {
+            sysMenuList = this.findMenuListByUserId(userId, Constant.TYPE_MENU);
+        }
+        //构建树形数据
+        List<SysMenu> sysMenuTreeList = MenuHelper.buildTree(sysMenuList);
+        //构建路由
+        return RouterHelper.buildRouters(sysMenuTreeList);
+    }
+
+    /**
+     * 根据userId查询按钮权限值
+     *
+     * @param userId
+     * @return
+     */
+    @Override
+    public List<String> getUserPermsListByUserId(String userId) {
+        //超级管理员admin账号id为：1
+        List<SysMenu> sysMenuList;
+        if (StrUtil.equals("1", userId)) {
+            sysMenuList = sysMenuMapper.selectList(new QueryWrapper<SysMenu>().eq("status", 1));
+        } else {
+            sysMenuList = this.findMenuListByUserId(userId, Constant.TYPE_BUTTON);
+        }
+        //创建返回的集合
+        List<String> permissionList = new ArrayList<>();
+        for (SysMenu sysMenu : sysMenuList) {
+            if (sysMenu.getType() == 2) {
+                permissionList.add(sysMenu.getPerms());
+            }
+        }
+        return permissionList;
+    }
+
+    /**
+     * 根据 userId 查询用户授权的菜单列表。
+     * 1. 从 sys_user_role 表查询用户的所有角色 ID。
+     * 2. 从 sys_role_menu 表查询角色对应的所有菜单 ID（去重）。
+     * 3. 从 sys_menu 表查询符合条件的菜单列表（状态为启用，类型为菜单或目录，按排序值升序）。
+     *
+     * @param userId 用户 ID
+     * @return 菜单列表（不会返回 null）
+     */
+    private List<SysMenu> findMenuListByUserId(String userId, String type) {
+        // 输入校验
+        if (userId == null || userId.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 1. 查询用户的所有角色 ID
+        List<String> roleIds = systemJdbcTemplate.queryForList("SELECT role_id FROM sys_user_role WHERE user_id = ?", String.class, userId);
+
+        if (roleIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 2. 查询所有角色对应的菜单 ID（去重）
+        String roleIdsPlaceholder = String.join(",", Collections.nCopies(roleIds.size(), "?"));
+        String menuIdQuery = String.format("SELECT DISTINCT menu_id FROM sys_role_menu WHERE role_id IN (%s)", roleIdsPlaceholder);
+        List<String> menuIds = systemJdbcTemplate.queryForList(menuIdQuery, String.class, roleIds.toArray());
+
+        if (menuIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 3. 查询菜单列表
+        QueryWrapper<SysMenu> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("status", 1) // 状态：1 表示启用
+                .in("id", menuIds) // 菜单 ID 列表
+                .orderByAsc("sort_value"); // 按排序值升序
+
+        if (StrUtil.equals(Constant.TYPE_BUTTON, type)) {
+            queryWrapper.eq("type", "2"); // 类型：2按钮
+        } else if (StrUtil.equals(Constant.TYPE_MENU, type)) {
+            queryWrapper.in("type", "0", "1"); // 类型：0 表示目录，1 表示菜单
+        } else {
+            return Collections.emptyList(); // 无效类型返回空列表
+        }
+        return sysMenuMapper.selectList(queryWrapper);
+    }
+
 }

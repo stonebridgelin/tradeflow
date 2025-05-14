@@ -6,7 +6,9 @@ import com.stonebridge.tradeflow.common.utils.JwtUtil;
 import com.stonebridge.tradeflow.common.utils.PasswordUtils;
 import com.stonebridge.tradeflow.system.entity.User;
 import com.stonebridge.tradeflow.system.entity.dto.LoginDto;
+import com.stonebridge.tradeflow.system.entity.vo.RouterVo;
 import com.stonebridge.tradeflow.system.service.AuthorizeService;
+import com.stonebridge.tradeflow.system.service.SysMenuService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -14,25 +16,29 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 import static com.stonebridge.tradeflow.common.result.ResultCodeEnum.*;
 
 @Slf4j
 @Service
 public class AuthorizeServiceImpl implements AuthorizeService {
 
+    private final SysMenuService sysMenuService;
     private JdbcTemplate systemJdbcTemplate;
 
     @Autowired
-    public AuthorizeServiceImpl(@Qualifier("systemJdbcTemplate") JdbcTemplate systemJdbcTemplate) {
+    public AuthorizeServiceImpl(@Qualifier("systemJdbcTemplate") JdbcTemplate systemJdbcTemplate, SysMenuService sysMenuService) {
         this.systemJdbcTemplate = systemJdbcTemplate;
+        this.sysMenuService = sysMenuService;
     }
 
 
     /**
      * 用户登录检查
      *
-     * @param loginDto
-     * @return
+     * @param loginDto 登录信息
+     * @return token
      */
     @Override
     public String loginCheck(LoginDto loginDto) {
@@ -79,10 +85,18 @@ public class AuthorizeServiceImpl implements AuthorizeService {
             jsonObject.set("id", user.getId());
             jsonObject.set("avatar", user.getAvatar());
             jsonObject.set("username", user.getUsername());
-            jsonObject.set("firstName", user.getFirstName());
-            jsonObject.set("lastName", user.getLastName());
-            jsonObject.set("email", user.getEmail());
-            jsonObject.set("phone", user.getPhone());
+//            jsonObject.set("firstName", user.getFirstName());
+//            jsonObject.set("lastName", user.getLastName());
+//            jsonObject.set("email", user.getEmail());
+//            jsonObject.set("phone", user.getPhone());
+            //菜单权限数据
+            //根据userId查询菜单权限值,菜单的权限是通过sys_menu.path和src/router/config.js里的path进行匹配的
+            List<RouterVo> routerPaths = sysMenuService.getUserMenuListByUserId(userId);
+            jsonObject.set("routers", routerPaths);
+            //按钮权限数据
+            //根据userId查询按钮权限值,按钮权限
+            List<String> permsList = sysMenuService.getUserPermsListByUserId(userId);
+            jsonObject.set("buttons", permsList);
             return jsonObject;
         }
         return null;

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.system.entity.SysMenu;
 import com.stonebridge.tradeflow.system.entity.dto.AssginMenuDto;
+import com.stonebridge.tradeflow.system.entity.vo.RouterVo;
 
 import java.util.List;
 
@@ -27,4 +28,8 @@ public interface SysMenuService extends IService<SysMenu> {
     List<SysMenu> getMenusByRoleId(String roleId);
 
     void doAssign(AssginMenuDto assginMenuDto);
+
+    List<RouterVo> getUserMenuListByUserId(String id);
+
+    List<String> getUserPermsListByUserId(String id);
 }

@@ -14,7 +14,7 @@ public enum ResultCodeEnum {
     ARGUMENT_VALID_ERROR(210, "参数校验异常"),
 
     LOGIN_AUTH(208, "未登陆"),
-    PERMISSION(209, "没有权限"),
+    PERMISSION(209, "未授权：Token 无效或已过期"),
     ACCOUNT_ERROR(214, "账号不存在"),
     PASSWORD_ERROR(215, "密码不正确"),
     LOGIN_MOBLE_ERROR(216, "账号不正确"),
