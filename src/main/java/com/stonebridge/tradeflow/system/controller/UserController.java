@@ -6,7 +6,7 @@ import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.system.entity.User;
 import com.stonebridge.tradeflow.system.entity.dto.AssginRoleDto;
 import com.stonebridge.tradeflow.system.service.UserService;
-import com.stonebridge.tradeflow.system.vo.UserQueryVo;
+import com.stonebridge.tradeflow.system.entity.vo.UserQueryVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

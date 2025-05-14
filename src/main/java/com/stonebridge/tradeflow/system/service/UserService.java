@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.stonebridge.tradeflow.system.entity.User;
 import com.stonebridge.tradeflow.system.entity.dto.AssginRoleDto;
-import com.stonebridge.tradeflow.system.vo.UserQueryVo;
+import com.stonebridge.tradeflow.system.entity.vo.UserQueryVo;
 
 import java.util.Map;
 

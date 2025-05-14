@@ -1,4 +1,4 @@
-package com.stonebridge.tradeflow.system.vo;
+package com.stonebridge.tradeflow.system.entity.vo;
 
 import lombok.Data;
 

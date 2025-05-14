@@ -16,7 +16,7 @@ import com.stonebridge.tradeflow.system.mapper.SysRoleMapper;
 import com.stonebridge.tradeflow.system.mapper.SysUserRoleMapper;
 import com.stonebridge.tradeflow.system.mapper.UserMapper;
 import com.stonebridge.tradeflow.system.service.UserService;
-import com.stonebridge.tradeflow.system.vo.UserQueryVo;
+import com.stonebridge.tradeflow.system.entity.vo.UserQueryVo;
 import com.stonebridge.tradeflow.system.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

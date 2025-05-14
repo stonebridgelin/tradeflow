@@ -11,7 +11,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.stonebridge.tradeflow.system.mapper.SysRoleMapper;
 import com.stonebridge.tradeflow.system.entity.SysRole;
 import com.stonebridge.tradeflow.system.service.SysRoleService;
-import com.stonebridge.tradeflow.system.vo.SysRoleQueryVo;
+import com.stonebridge.tradeflow.system.entity.vo.SysRoleQueryVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

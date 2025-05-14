@@ -14,7 +14,7 @@
     </sql>
 
     <!-- 自定义分页查询 -->
-    <select id="selectRolePage" parameterType="com.stonebridge.tradeflow.system.vo.SysRoleQueryVo" resultMap="RoleMap">
+    <select id="selectRolePage" parameterType="com.stonebridge.tradeflow.system.entity.vo.SysRoleQueryVo" resultMap="RoleMap">
         SELECT id, role_name, role_code, description, create_time, update_time
         FROM sys_role
         <if test="vo.roleName != null and vo.roleName != ''">

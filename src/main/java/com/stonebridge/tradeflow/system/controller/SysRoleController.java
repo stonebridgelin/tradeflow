@@ -3,7 +3,7 @@ package com.stonebridge.tradeflow.system.controller;
 import cn.hutool.json.JSONObject;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.system.entity.SysRole;
-import com.stonebridge.tradeflow.system.vo.SysRoleQueryVo;
+import com.stonebridge.tradeflow.system.entity.vo.SysRoleQueryVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
