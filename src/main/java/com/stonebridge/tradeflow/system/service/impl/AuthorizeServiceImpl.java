@@ -6,7 +6,6 @@ import com.stonebridge.tradeflow.common.utils.JwtUtil;
 import com.stonebridge.tradeflow.common.utils.PasswordUtils;
 import com.stonebridge.tradeflow.system.entity.User;
 import com.stonebridge.tradeflow.system.entity.dto.LoginDto;
-import com.stonebridge.tradeflow.system.entity.vo.RouterVo;
 import com.stonebridge.tradeflow.system.service.AuthorizeService;
 import com.stonebridge.tradeflow.system.service.SysMenuService;
 import lombok.extern.slf4j.Slf4j;
