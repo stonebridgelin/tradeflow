@@ -8,7 +8,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@EnableWebSecurity
+@EnableWebSecurity//@EnableWebSecurity是开启SpringSecurity的默认行为
 public class SecurityConfig {
 
     @Bean
