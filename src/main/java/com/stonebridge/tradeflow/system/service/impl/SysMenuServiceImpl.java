@@ -254,9 +254,9 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
             sysMenuList = this.findMenuListByUserId(userId, Constant.TYPE_MENU);
         }
         //构建树形数据
-        List<SysMenu> sysMenuTreeList = MenuHelper.buildTree(sysMenuList);
+//        List<SysMenu> sysMenuTreeList = MenuHelper.buildTree(sysMenuList);
         //构建路由
-        return RouterHelper.buildRouters(sysMenuTreeList);
+        return RouterHelper.buildRouters(sysMenuList);
     }
 
     /**
