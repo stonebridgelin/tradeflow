@@ -1,0 +1,205 @@
+# 应用服务 WEB 访问端口
+server:
+    port: 8080
+    tomcat:
+        max-threads: 200
+        min-spare-threads: 10
+        max-connections: 10000
+        connection-timeout: 5000ms
+spring:
+    application:
+        name: TradeFlow
+    autoconfigure:
+        exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+    mvc:
+        pathmatch:
+            matching-strategy: ant_path_matcher
+
+    # 配置system_db库和buiness_db库
+    datasource:
+        system:
+            driver-class-name: com.mysql.cj.jdbc.Driver
+            url: jdbc:mysql://192.168.234.101:3306/system_db?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+            username: root
+            password: 123456
+            type: com.alibaba.druid.pool.DruidDataSource
+            druid:
+                # 初始连接数
+                initial-size: 5
+                # 最小连接池数量
+                min-idle: 5
+                # 最大连接池数量
+                max-active: 20
+                # 获取连接等待超时时间
+                max-wait: 60000
+                # 检测间隔时间
+                time-between-eviction-runs-millis: 60000
+                # 连接在池中最小生存的时间
+                min-evictable-idle-time-millis: 300000
+                # 检测连接是否有效
+                validation-query: SELECT 1
+                test-while-idle: true
+                test-on-borrow: false
+                test-on-return: false
+                # 开启PSCache
+                pool-prepared-statements: true
+                # 指定每个连接上PSCache的大小
+                max-pool-prepared-statement-per-connection-size: 20
+                # 监控统计拦截的filters
+                filters: stat,wall
+                # 通过connectProperties属性来打开mergeSql功能；慢SQL记录
+                connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+                # 配置DruidStatFilter
+                web-stat-filter:
+                    enabled: true
+                    url-pattern: /*
+                    exclusions: "*.js,*.gif,*.jpg,*.bmp,*.png,*.css,*.ico,/druid/*"
+                # 配置DruidStatViewServlet
+                stat-view-servlet:
+                    enabled: true
+                    url-pattern: /druid/*
+                    reset-enable: false
+                    login-username: admin
+                    login-password: 123456
+                    allow: 127.0.0.1
+                aop-patterns: com.stonebridge.tradeflow.system.*  # 监控 service 包下的方法
+        business:
+            driver-class-name: com.mysql.cj.jdbc.Driver
+            url: jdbc:mysql://192.168.234.101:3306/business_db?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+            username: root
+            password: 123456
+            type: com.alibaba.druid.pool.DruidDataSource
+            druid:
+                # 初始连接数
+                initial-size: 5
+                # 最小连接池数量
+                min-idle: 5
+                # 最大连接池数量
+                max-active: 20
+                # 获取连接等待超时时间
+                max-wait: 60000
+                # 检测间隔时间
+                time-between-eviction-runs-millis: 60000
+                # 连接在池中最小生存的时间
+                min-evictable-idle-time-millis: 300000
+                # 检测连接是否有效
+                validation-query: SELECT 1
+                test-while-idle: true
+                test-on-borrow: false
+                test-on-return: false
+                # 开启PSCache
+                pool-prepared-statements: true
+                # 指定每个连接上PSCache的大小
+                max-pool-prepared-statement-per-connection-size: 20
+                # 监控统计拦截的filters
+                filters: stat,wall
+                # 通过connectProperties属性来打开mergeSql功能；慢SQL记录
+                connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+                # 配置DruidStatFilter
+                web-stat-filter:
+                    enabled: true
+                    url-pattern: /*
+                    exclusions: "*.js,*.gif,*.jpg,*.bmp,*.png,*.css,*.ico,/druid/*"
+                # 配置DruidStatViewServlet
+                stat-view-servlet:
+                    enabled: true
+                    url-pattern: /druid/*
+                    reset-enable: false
+                    login-username: admin
+                    login-password: 123456
+                    allow: 127.0.0.1
+                aop-patterns: com.stonebridge.tradeflow.business.*  # 监控 service 包下的方法
+    # 配置Redis服务器
+    redis:
+        host: 192.168.234.101   # Redis 服务器地址
+        port: 6379              # Redis 端口
+        password:               # 密码（若无则留空）
+        database: 0             # 默认数据库（0-15）
+        timeout: 5000ms         # 连接超时时间
+        lettuce:
+            pool:
+                # 连接池最大连接数
+                max-active: 8
+                # 连接池最大阻塞等待时间（使用负值表示没有限制）
+                max-wait: 5000ms
+                # 连接池中的最大空闲连接
+                max-idle: 8
+                # 连接池中的最小空闲连接
+                min-idle: 0
+
+jwt:
+    secretKey: QWlVc2VBLU1pbmltdW1vZmFzZWNyZXRLZXktMTIzNDU2Nzg5MA==  # Base64 编码的密钥，建议 32 字节
+    expirationTime: 86400000  # 单位：毫秒（1 天）
+
+
+aliyun:
+    oss:
+        access-key-id: 111111
+        bucket: gulimall-ciel
+        access-key-secret: 222222
+        endpoint: https://oss-cn-shanghai.aliyuncs.com
+
+# MyBatis-Plus配置
+mybatis-plus:
+    mapper-locations: classpath*:/mapper/**/*.xml
+    type-aliases-package: com.stonebridge.tradeflow.**.entity
+    configuration:
+        map-underscore-to-camel-case: true
+        cache-enabled: false
+        log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    global-config:
+        db-config:
+            id-type: auto
+            logic-delete-field: deleted
+            logic-delete-value: 1
+            logic-not-delete-value: 0
+
+
+#  默认访问：
+#  Swagger UI：http://localhost:8080/swagger-ui.html
+#  API 文档 JSON：http://localhost:8080/v3/api-docs
+# SpringDoc配置
+springdoc:
+    api-docs:
+        enabled: true
+        path: /v3/api-docs
+    swagger-ui:
+        path: /swagger-ui.html
+        tags-sorter: alpha
+        operations-sorter: alpha
+    packages-to-scan: com.stonebridge.tradeflow.system.controller,com.stonebridge.tradeflow.business.controller
+    paths-to-match: /**
+# 自定义配置
+tradeflow:
+    security:
+        # JWT配置
+        jwt:
+            secret: your-secret-key
+            expiration: 86400000  # 24小时
+            header: Authorization
+            token-prefix: "Bearer "
+    # 文件上传配置
+    upload:
+        base-path: /data/tradeflow/uploads
+        allowed-types: jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx
+        max-size: 10MB
+    # 线程池配置
+    thread-pool:
+        core-size: 10
+        max-size: 20
+        queue-capacity: 200
+        keep-alive: 60
+    # 缓存配置
+    cache:
+        default-expiration: 3600  # 默认缓存过期时间（秒）
+    # 业务配置
+    business:
+        order-prefix: TF
+        max-retry-times: 3
+
+logging:
+    file:
+        name: logs/error.log
+    level:
+        root: INFO
+        com.stonebridge.tradeflow: DEBUG  # 确保你的包路径日志级别合适
