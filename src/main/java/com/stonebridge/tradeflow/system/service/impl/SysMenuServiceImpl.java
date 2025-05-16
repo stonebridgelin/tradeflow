@@ -245,7 +245,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
 
     //根据userId查询菜单权限值
     @Override
-    public List<RouterVo> getUserMenuListByUserId(String userId) {
+    public  List<String> getUserMenuListByUserId(String userId) {
         //超级管理员admin账号id为：1
         List<SysMenu> sysMenuList;
         if (StrUtil.equals(Constant.SUPER_ADMIN_ID, userId)) {
@@ -256,7 +256,11 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
         //构建树形数据
 //        List<SysMenu> sysMenuTreeList = MenuHelper.buildTree(sysMenuList);
         //构建路由
-        return RouterHelper.buildRouters(sysMenuList);
+        List<String> rights = new ArrayList<>();
+        for (SysMenu sysMenu : sysMenuList) {
+            rights.add(sysMenu.getPath());
+        }
+        return rights;
     }
 
     /**

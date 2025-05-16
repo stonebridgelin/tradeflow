@@ -29,7 +29,7 @@ public interface SysMenuService extends IService<SysMenu> {
 
     void doAssign(AssginMenuDto assginMenuDto);
 
-    List<RouterVo> getUserMenuListByUserId(String id);
+    List<String> getUserMenuListByUserId(String id);
 
     List<String> getUserPermsListByUserId(String id);
 }

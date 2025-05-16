@@ -91,8 +91,8 @@ public class AuthorizeServiceImpl implements AuthorizeService {
 //            jsonObject.set("phone", user.getPhone());
             //菜单权限数据
             //根据userId查询菜单权限值,菜单的权限是通过sys_menu.path和src/router/config.js里的path进行匹配的
-            List<RouterVo> routerPaths = sysMenuService.getUserMenuListByUserId(userId);
-            jsonObject.set("routers", routerPaths);
+            List<String> routerPaths = sysMenuService.getUserMenuListByUserId(userId);
+            jsonObject.set("rights", routerPaths);
             //按钮权限数据
             //根据userId查询按钮权限值,按钮权限
             List<String> permsList = sysMenuService.getUserPermsListByUserId(userId);
