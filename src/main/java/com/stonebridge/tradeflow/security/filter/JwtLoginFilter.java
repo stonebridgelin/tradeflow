@@ -5,11 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
 import com.stonebridge.tradeflow.security.entity.SecurityUser;
+import com.stonebridge.tradeflow.security.service.UserDetailsServiceImpl;
 import com.stonebridge.tradeflow.security.utils.JwtUtil;
 import com.stonebridge.tradeflow.security.utils.SecurityUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -30,6 +35,8 @@ import java.util.concurrent.TimeUnit;
  * 并将用户权限信息存储到 Redis，返回 JSON 格式的登录结果
  */
 public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
+    private static final Logger logger = LoggerFactory.getLogger(JwtLoginFilter.class);
+
 
     /**
      * 认证管理器，用于执行用户认证逻辑
@@ -139,6 +146,7 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);
+        result.put("code", "200");
         ObjectMapper mapper = new ObjectMapper();
         // 使用 SecurityUtil 的 out 方法将 Result 对象序列化为 JSON 并写入响应
         SecurityUtil.out(response, Result.ok(mapper.writeValueAsString(result)));
@@ -153,12 +161,42 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
      * @throws IOException      如果写入响应失败
      * @throws ServletException 如果过滤器链处理失败
      */
+//    @Override
+//    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
+//        // 构建失败响应，包含错误消息
+//        Map<String, Object> result = new HashMap<>();
+//        result.put("message", ResultCodeEnum.LOGIN_AUTH.getMessage());
+//        result.put("code", ResultCodeEnum.LOGIN_AUTH.getCode());
+//        ObjectMapper mapper = new ObjectMapper();
+//        // 使用 SecurityUtil 的 out 方法返回错误响应
+//        // ResultCodeEnum.LOGIN_AUTH 提供认证失败的错误码和消息（如 401 和“登录失败”）
+//        SecurityUtil.out(response, Result.ok(mapper.writeValueAsString(result)));
+//    }
+
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
+        logger.warn("登录失败: {}", failed.getMessage());
+
         // 构建失败响应，包含错误消息
         Map<String, Object> result = new HashMap<>();
-        result.put("message", ResultCodeEnum.LOGIN_AUTH.getMessage());
-        result.put("code", ResultCodeEnum.LOGIN_AUTH.getCode());
+        String message;
+        Integer code;
+
+        if (failed instanceof UserDetailsServiceImpl.AuthenticationFailureException) {
+            UserDetailsServiceImpl.AuthenticationFailureException ex = (UserDetailsServiceImpl.AuthenticationFailureException) failed;
+            message = ex.getMessage();
+            code = ex.getCode();
+        } else if (failed instanceof BadCredentialsException) {
+            message = ResultCodeEnum.PASSWORD_ERROR.getMessage();
+            code = ResultCodeEnum.PASSWORD_ERROR.getCode();
+        } else {
+            message = ResultCodeEnum.LOGIN_AUTH.getMessage();
+            code = ResultCodeEnum.LOGIN_AUTH.getCode();
+        }
+
+
+        result.put("message", message);
+        result.put("code", code);
         ObjectMapper mapper = new ObjectMapper();
         // 使用 SecurityUtil 的 out 方法返回错误响应
         // ResultCodeEnum.LOGIN_AUTH 提供认证失败的错误码和消息（如 401 和“登录失败”）

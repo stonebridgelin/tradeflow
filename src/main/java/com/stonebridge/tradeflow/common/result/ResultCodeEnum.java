@@ -26,11 +26,15 @@ public enum ResultCodeEnum {
     METHOD_NOT_ALLOWED(405, "只允许 POST 请求", "请求的 HTTP 方法不支持（如非 POST 访问登录接口）"), // 新增
 
     // 账户相关（2100-2199）
+
+    // 账户相关
     ACCOUNT_ERROR(2100, "账号不存在", "登录时提供的用户名不存在"),
     PASSWORD_ERROR(2101, "密码不正确", "登录时提供的密码错误"),
-    LOGIN_MOBLE_ERROR(2102, "账号不正确", "手机号码或账号格式错误"),
+    LOGIN_MOBILE_ERROR(2102, "账号不正确", "手机号码或账号格式错误"),
     ACCOUNT_STOP(2103, "账号已停用", "账号被禁用，无法登录"),
     ACCOUNT_DELETE(2104, "账号已删除", "账号已被删除，无法登录"),
+    ACCOUNT_EXPIRED(2105, "账号已过期", "账号有效期已过，无法登录"), // 新增
+
 
     // 业务相关（2200-2299）
     SERVICE_ERROR(2200, "服务异常", "后端服务内部错误（如数据库连接失败）"),

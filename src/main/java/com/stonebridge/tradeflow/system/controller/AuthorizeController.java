@@ -43,45 +43,45 @@ public class AuthorizeController {
     }
 
 
-    /**
-     * Processes user login requests.
-     *
-     * @param request the login request containing the user's credentials
-     * @return a result object containing a JSON object with the generated authentication token if successful
-     */
-    @Operation(summary = "用户登录", description = "处理用户登录请求")
-    @RequestMapping(value = "login", method = RequestMethod.POST)
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "成功返回订单列表"),
-            @ApiResponse(responseCode = "400", description = "请求参数错误"),
-            @ApiResponse(responseCode = "404", description = "客户不存在")
-    })
-    public Result<JSONObject> login(@RequestBody LoginDto request) {
-
-        log.info("用户登录：{}", request.getUsername());
-        String token = authorizeService.loginCheck(request);
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.set("token", token);
-//        jsonObject.set("id", "007");
-//        jsonObject.set("username", "stonebridge");
+//    /**
+//     * Processes user login requests.
+//     *
+//     * @param request the login request containing the user's credentials
+//     * @return a result object containing a JSON object with the generated authentication token if successful
+//     */
+//    @Operation(summary = "用户登录", description = "处理用户登录请求")
+//    @RequestMapping(value = "login", method = RequestMethod.POST)
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "200", description = "成功返回订单列表"),
+//            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+//            @ApiResponse(responseCode = "404", description = "客户不存在")
+//    })
+//    public Result<JSONObject> login(@RequestBody LoginDto request) {
 //
-//        List<String> rights = new ArrayList<>();
-//
-//        JSONObject roleObject = new JSONObject();
-//        rights.add("user-management");
-//        rights.add("role-management");
-//        rights.add("main");
-//        rights.add("menu-management");
-//        rights.add("assignMenu");
-//        JSONArray jsonArray = new JSONArray(rights);
-//
-//        roleObject.set("roleName", "admin");
-//        roleObject.set("roleType", "2");
-//        roleObject.set("rights", jsonArray);
-//        jsonObject.set("role", roleObject);
-        log.info("{}用户登录登录成功", request.getUsername());
-        return Result.ok(jsonObject);
-    }
+//        log.info("用户登录：{}", request.getUsername());
+//        String token = authorizeService.loginCheck(request);
+//        JSONObject jsonObject = new JSONObject();
+//        jsonObject.set("token", token);
+////        jsonObject.set("id", "007");
+////        jsonObject.set("username", "stonebridge");
+////
+////        List<String> rights = new ArrayList<>();
+////
+////        JSONObject roleObject = new JSONObject();
+////        rights.add("user-management");
+////        rights.add("role-management");
+////        rights.add("main");
+////        rights.add("menu-management");
+////        rights.add("assignMenu");
+////        JSONArray jsonArray = new JSONArray(rights);
+////
+////        roleObject.set("roleName", "admin");
+////        roleObject.set("roleType", "2");
+////        roleObject.set("rights", jsonArray);
+////        jsonObject.set("role", roleObject);
+//        log.info("{}用户登录登录成功", request.getUsername());
+//        return Result.ok(jsonObject);
+//    }
 
 
     /**

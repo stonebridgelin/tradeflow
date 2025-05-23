@@ -28,25 +28,17 @@ import java.util.List;
  * 并将认证信息存储到 Spring Security 上下文中，以便后续权限校验
  */
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-
-    /**
-     * JWT 工具类，用于解析和验证 JWT token
-     */
     private final JwtUtil jwtUtil;
-
-    /**
-     * Redis 模板，用于从 Redis 获取用户权限信息
-     */
     private final RedisTemplate<String, Object> redisTemplate;
 
-
     /**
-     * 构造函数，通过依赖注入初始化所需组件
+     * 构造函数，初始化过滤器所需的依赖
      *
-     * @param jwtUtil       JWT 工具类
-     * @param redisTemplate Redis 模板
+     * @param jwtUtil            JWT 工具类
+     * @param redisTemplate      Redis 模板
      */
     public JwtAuthenticationFilter(JwtUtil jwtUtil, RedisTemplate<String, Object> redisTemplate) {
         this.jwtUtil = jwtUtil;
@@ -56,48 +48,61 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     /**
      * 过滤器核心逻辑，验证 JWT token，获取用户权限并设置到 Spring Security 上下文中
      *
-     * @param request     HTTP 请求对象，包含客户端请求信息（如 Authorization 头）
-     * @param response    HTTP 响应对象，用于后续响应
-     * @param filterChain 过滤器链，用于继续处理请求
+     * @param request     HTTP 请求对象
+     * @param response    HTTP 响应对象
+     * @param filterChain 过滤器链
      * @throws ServletException 如果过滤器链处理失败
      * @throws IOException      如果请求或响应处理失败
      */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        // 从请求的 Authorization 头中提取 JWT token（格式为 "Bearer <token>"）
+        // 检查请求路径，跳过 /auth/login 的 token 验证
+        String requestURI = request.getRequestURI();
+        if ("/auth/login".equals(requestURI)) {
+            logger.debug("跳过 /auth/login 的 token 验证，请求: {} {}", request.getMethod(), requestURI);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 从 Authorization 头提取 token
         String token = SecurityUtil.getToken(request);
 
-        // 检查 token 是否存在且不为空
+        // 检查 token 是否有效
         if (!StringUtils.isNullOrEmpty(token)) {
-            // 解析 token 获取用户名
+            // 验证 token
+            if (!jwtUtil.validateToken(token)) {
+                logger.warn("无效的 token，请求: {} {}", request.getMethod(), requestURI);
+                filterChain.doFilter(request, response); // 触发未认证处理
+                return;
+            }
+
+            // 获取用户名
             String username = jwtUtil.getUsername(token);
 
-            // 从 Redis 获取该用户对应的权限列表（键为用户名，值为权限字符串列表）
+            // 从 Redis 获取权限
             List<String> permissionValueList = (List<String>) redisTemplate.opsForValue().get(username);
 
-            // 初始化权限集合，用于存储用户的权限信息
+            // 构建权限集合
             Collection<GrantedAuthority> authorities = new ArrayList<>();
-
-            // 如果权限列表不为空，将每个权限转换为 GrantedAuthority 对象
             if (!CollectionUtils.isEmpty(permissionValueList)) {
                 for (String perms : permissionValueList) {
-                    SimpleGrantedAuthority authority = new SimpleGrantedAuthority(perms);
-                    authorities.add(authority);
+                    authorities.add(new SimpleGrantedAuthority(perms));
                 }
             }
 
-            // 创建认证对象，包含用户名、token 和权限信息
-            // 注意：第二个参数（credentials）传递 token，仅用于上下文存储，非密码
+            // 创建认证对象
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, token, authorities);
 
-            // 将认证对象存入 Spring Security 上下文，供后续权限校验使用（如 @PreAuthorize）
+            // 设置认证信息
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            logger.debug("为用户 {} 设置认证，请求: {} {}", username, request.getMethod(), requestURI);
+            filterChain.doFilter(request, response); // 触发未认证处理
         } else {
-            logger.debug("请求未携带 token: {} {}", request.getMethod(), request.getRequestURI());
-
+            logger.debug("请求未携带 token: {} {}", request.getMethod(), requestURI);
         }
-        // 继续执行过滤器链，处理后续请求
+
+        // 继续过滤器链
         filterChain.doFilter(request, response);
     }
 }

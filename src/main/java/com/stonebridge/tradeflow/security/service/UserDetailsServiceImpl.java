@@ -2,12 +2,14 @@ package com.stonebridge.tradeflow.security.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.mysql.cj.util.StringUtils;
+import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
 import com.stonebridge.tradeflow.security.entity.SecurityUser;
 import com.stonebridge.tradeflow.security.entity.User;
 import com.stonebridge.tradeflow.system.entity.SysUser;
 import com.stonebridge.tradeflow.system.mapper.SysUserMapper;
 import com.stonebridge.tradeflow.system.service.SysMenuService;
 import com.stonebridge.tradeflow.system.service.SysRoleService;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,24 @@ import java.util.List;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     /**
+     * 用户账号状态 ：0正常
+     */
+//    public static final String USER_STATUS_NORMAL = "0";
+    /**
+     * 用户账号状态：1停用
+     */
+    public static final String USER_STATUS_STOP = "1";
+    /**
+     * 用户账号状态： 2离职
+     */
+    public static final String USER_STATUS_RESIGN = "2";
+
+    /**
+     * 用户账号已经逻辑删除
+     */
+    public static final String USER_DELETED = "1";
+
+    /**
      * 用户数据访问接口，用于查询数据库中的用户信息
      */
     private SysUserMapper sysUserMapper;
@@ -46,9 +66,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     /**
      * 构造函数，通过依赖注入初始化所需的 Mapper 和服务
      *
-     * @param sysUserMapper     用户数据访问接口
+     * @param sysUserMapper  用户数据访问接口
      * @param sysMenuService 权限服务
-     * @param sysRoleService       角色服务
+     * @param sysRoleService 角色服务
      */
     @Autowired
     public UserDetailsServiceImpl(SysUserMapper sysUserMapper, SysMenuService sysMenuService, SysRoleService sysRoleService) {
@@ -68,34 +88,48 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // 记录调试日志，显示正在加载的用户名
-        log.debug("loadUserByUsername called with username: {}", username);
+        log.debug("加载用户详情: {}", username);
 
         // 验证用户名是否为空
         if (StringUtils.isNullOrEmpty(username)) {
-            log.warn("Username is empty or null");
-            throw new UsernameNotFoundException("用户名不能为空");
+            log.warn("用户名为空");
+            throw new AuthenticationFailureException(ResultCodeEnum.ILLEGAL_REQUEST.getCode(), "用户名不能为空");
         }
 
         // 使用 MyBatis Plus 的 QueryWrapper 构造查询条件，根据用户名查询用户
         QueryWrapper<SysUser> queryWrapper = new QueryWrapper<SysUser>().eq("username", username);
         List<SysUser> users = sysUserMapper.selectList(queryWrapper);
         // 记录查询结果的日志，显示找到的用户数量
-        log.debug("Queried users for username {}: {} records found", username, users.size());
-
+        log.debug("查询用户 {}: 找到 {} 条记录", username, users.size());
         // 处理查询结果
         if (users.isEmpty()) {
             // 用户不存在，记录警告日志并抛出异常
-            log.warn("No user found for username: {}", username);
-            throw new UsernameNotFoundException("用户不存在: " + username);
+            log.warn("用户不存在: {}", username);
+            throw new AuthenticationFailureException(ResultCodeEnum.ACCOUNT_ERROR.getCode(), ResultCodeEnum.ACCOUNT_ERROR.getMessage());
         } else if (users.size() > 1) {
             // 发现重复用户名，记录错误日志并抛出异常
-            log.error("Multiple users found for username: {}. Found {} records: {}", username, users.size(), users);
-            throw new UsernameNotFoundException("发现多个用户名为: " + username);
+            log.error("发现多个用户名为 {}: {} 条记录", username, users.size());
+            throw new AuthenticationFailureException(ResultCodeEnum.SERVICE_ERROR.getCode(), "发现多个用户名");
         }
 
         // 获取唯一的用户信息
         SysUser sysUser = users.get(0);
-        log.debug("Selected user: {}", sysUser);
+        log.debug("选择用户: {}", sysUser);
+
+        // 检查账号状态
+        String status = sysUser.getStatus();
+        if (USER_STATUS_STOP.equals(status)) {
+            log.warn("用户账号已停用: {}", username);
+            throw new AuthenticationFailureException(ResultCodeEnum.ACCOUNT_STOP.getCode(), ResultCodeEnum.ACCOUNT_STOP.getMessage());
+        }
+        if (USER_STATUS_RESIGN.equals(status)) {
+            log.warn("用户离职: {}", username);
+            throw new AuthenticationFailureException(ResultCodeEnum.ACCOUNT_EXPIRED.getCode(), ResultCodeEnum.ACCOUNT_EXPIRED.getMessage());
+        }
+        if (USER_DELETED.equals(status)) {
+            log.warn("用户离职: {}", username);
+            throw new AuthenticationFailureException(ResultCodeEnum.ACCOUNT_DELETE.getCode(), ResultCodeEnum.ACCOUNT_DELETE.getMessage());
+        }
 
         // 查询用户的角色列表（角色编码）
         List<String> roleCodes = sysRoleService.getRoleCodesByUserId(Long.valueOf(sysUser.getId()));
@@ -121,5 +155,23 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         // 返回 SecurityUser 作为 UserDetails，供 Spring Security 使用
         return securityUser;
+    }
+
+    /**
+     * 自定义认证失败异常，携带错误码
+     */
+    @Getter
+    public static class AuthenticationFailureException extends UsernameNotFoundException {
+        private final Integer code;
+
+        public AuthenticationFailureException(Integer code, String msg) {
+            super(msg);
+            this.code = code;
+        }
+
+        public AuthenticationFailureException(Integer code, String msg, Throwable cause) {
+            super(msg, cause);
+            this.code = code;
+        }
     }
 }

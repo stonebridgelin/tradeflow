@@ -49,7 +49,7 @@ public class AuthorizeServiceImpl implements AuthorizeService {
         if (sysUser == null) {
             log.info("用户不存在：{}", loginDto.getUsername());
             //用户不存在
-            throw new CustomizeException(LOGIN_MOBLE_ERROR.getCode(), LOGIN_MOBLE_ERROR.getMessage());
+            throw new CustomizeException(ACCOUNT_ERROR.getCode(), ACCOUNT_ERROR.getMessage());
         } else if (passwordUtils.matches(loginDto.getPassword(), sysUser.getPassword())) {
             if (sysUser.getStatus().equals("1")) {
                 log.info("用户已被禁用：{}", loginDto.getUsername());
