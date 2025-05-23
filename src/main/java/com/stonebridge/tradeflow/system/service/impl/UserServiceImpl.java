@@ -17,7 +17,7 @@ import com.stonebridge.tradeflow.system.mapper.SysUserRoleMapper;
 import com.stonebridge.tradeflow.system.mapper.UserMapper;
 import com.stonebridge.tradeflow.system.service.UserService;
 import com.stonebridge.tradeflow.system.entity.vo.UserQueryVo;
-import com.stonebridge.tradeflow.system.entity.User;
+import com.stonebridge.tradeflow.system.entity.SysUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+public class UserServiceImpl extends ServiceImpl<UserMapper, SysUser> implements UserService {
 
     private SysRoleMapper sysRoleMapper;
 
@@ -47,46 +47,46 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public JSONObject findByPage(Page<User> page, UserQueryVo userQueryVo) {
+    public JSONObject findByPage(Page<SysUser> page, UserQueryVo userQueryVo) {
         // 创建 LambdaQueryWrapper 用于动态构建查询条件
-        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
 
         // 关键字模糊查询（name、description、phone）
         if (StringUtils.hasText(userQueryVo.getKeyword())) {
-            wrapper.and(w -> w.like(User::getUsername, userQueryVo.getKeyword())
-                    .or().like(User::getFirstName, userQueryVo.getKeyword())
-                    .or().like(User::getLastName, userQueryVo.getKeyword())
-                    .or().like(User::getPhone, userQueryVo.getKeyword()));
+            wrapper.and(w -> w.like(SysUser::getUsername, userQueryVo.getKeyword())
+                    .or().like(SysUser::getFirstName, userQueryVo.getKeyword())
+                    .or().like(SysUser::getLastName, userQueryVo.getKeyword())
+                    .or().like(SysUser::getPhone, userQueryVo.getKeyword()));
         }
 
         // 时间范围查询
         if (StringUtils.hasText(userQueryVo.getCreateTimeBegin())) {
 
-            wrapper.ge(User::getCreateTime, DateUtil.format(DateUtil.beginOfDay(DateUtil.parse(userQueryVo.getCreateTimeBegin())), DatePattern.NORM_DATETIME_FORMAT));
+            wrapper.ge(SysUser::getCreateTime, DateUtil.format(DateUtil.beginOfDay(DateUtil.parse(userQueryVo.getCreateTimeBegin())), DatePattern.NORM_DATETIME_FORMAT));
         }
         if (StringUtils.hasText(userQueryVo.getCreateTimeEnd())) {
-            wrapper.le(User::getCreateTime, DateUtil.format(DateUtil.endOfDay(DateUtil.parse(userQueryVo.getCreateTimeEnd())), DatePattern.NORM_DATETIME_FORMAT));
+            wrapper.le(SysUser::getCreateTime, DateUtil.format(DateUtil.endOfDay(DateUtil.parse(userQueryVo.getCreateTimeEnd())), DatePattern.NORM_DATETIME_FORMAT));
         }
 
         // 逻辑删除条件
-        wrapper.eq(User::getIsDeleted, 0);
+        wrapper.eq(SysUser::getIsDeleted, 0);
         // 执行分页查询
-        IPage<User> userIPage = page(page, wrapper);
-        List<User> userList = userIPage.getRecords();
+        IPage<SysUser> userIPage = page(page, wrapper);
+        List<SysUser> sysUserList = userIPage.getRecords();
         JSONArray jsonArray = new JSONArray();
-        for (User user : userList) {
-            JSONObject jsonObject = new JSONObject(user);
-            if (user.getCreateTime() != null) {
-                jsonObject.set("createTime", DateUtil.format(user.getCreateTime(), DatePattern.NORM_DATETIME_FORMAT));
+        for (SysUser sysUser : sysUserList) {
+            JSONObject jsonObject = new JSONObject(sysUser);
+            if (sysUser.getCreateTime() != null) {
+                jsonObject.set("createTime", DateUtil.format(sysUser.getCreateTime(), DatePattern.NORM_DATETIME_FORMAT));
             }
-            if (user.getUpdateTime() != null) {
-                jsonObject.set("updateTime", DateUtil.format(user.getUpdateTime(), DatePattern.NORM_DATETIME_FORMAT));
+            if (sysUser.getUpdateTime() != null) {
+                jsonObject.set("updateTime", DateUtil.format(sysUser.getUpdateTime(), DatePattern.NORM_DATETIME_FORMAT));
             }
-            if (StrUtil.isNotBlank(user.getStatus())) {
-                jsonObject.set("status", StatusConverter.getStatusDescription(user.getStatus()));
+            if (StrUtil.isNotBlank(sysUser.getStatus())) {
+                jsonObject.set("status", StatusConverter.getStatusDescription(sysUser.getStatus()));
             }
-            if (StrUtil.isNotBlank(user.getFirstName()) && StrUtil.isNotBlank(user.getLastName())) {
-                jsonObject.set("fullName", user.getFirstName() + " " + user.getLastName());
+            if (StrUtil.isNotBlank(sysUser.getFirstName()) && StrUtil.isNotBlank(sysUser.getLastName())) {
+                jsonObject.set("fullName", sysUser.getFirstName() + " " + sysUser.getLastName());
             }
             jsonArray.add(jsonObject);
         }

@@ -3,8 +3,8 @@ package com.stonebridge.tradeflow.system.service.impl;
 import cn.hutool.json.JSONObject;
 import com.stonebridge.tradeflow.common.exception.CustomizeException;
 import com.stonebridge.tradeflow.common.utils.JwtUtil;
-import com.stonebridge.tradeflow.common.utils.PasswordUtils;
-import com.stonebridge.tradeflow.system.entity.User;
+import com.stonebridge.tradeflow.security.PasswordUtils;
+import com.stonebridge.tradeflow.system.entity.SysUser;
 import com.stonebridge.tradeflow.system.entity.dto.LoginDto;
 import com.stonebridge.tradeflow.system.service.AuthorizeService;
 import com.stonebridge.tradeflow.system.service.SysMenuService;
@@ -25,11 +25,13 @@ public class AuthorizeServiceImpl implements AuthorizeService {
 
     private final SysMenuService sysMenuService;
     private JdbcTemplate systemJdbcTemplate;
+    private PasswordUtils  passwordUtils;
 
     @Autowired
-    public AuthorizeServiceImpl(@Qualifier("systemJdbcTemplate") JdbcTemplate systemJdbcTemplate, SysMenuService sysMenuService) {
+    public AuthorizeServiceImpl(@Qualifier("systemJdbcTemplate") JdbcTemplate systemJdbcTemplate, SysMenuService sysMenuService,PasswordUtils passwordUtils) {
         this.systemJdbcTemplate = systemJdbcTemplate;
         this.sysMenuService = sysMenuService;
+        this.passwordUtils = passwordUtils;
     }
 
 
@@ -43,22 +45,22 @@ public class AuthorizeServiceImpl implements AuthorizeService {
     public String loginCheck(LoginDto loginDto) {
         String sql = "select * from user where username = ?";
         log.info("用户登录：{}", loginDto.getUsername());
-        User user = systemJdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(User.class), loginDto.getUsername().trim());
-        if (user == null) {
+        SysUser sysUser = systemJdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(SysUser.class), loginDto.getUsername().trim());
+        if (sysUser == null) {
             log.info("用户不存在：{}", loginDto.getUsername());
             //用户不存在
             throw new CustomizeException(LOGIN_MOBLE_ERROR.getCode(), LOGIN_MOBLE_ERROR.getMessage());
-        } else if (PasswordUtils.matches(loginDto.getPassword(), user.getPassword())) {
-            if (user.getStatus().equals("1")) {
+        } else if (passwordUtils.matches(loginDto.getPassword(), sysUser.getPassword())) {
+            if (sysUser.getStatus().equals("1")) {
                 log.info("用户已被禁用：{}", loginDto.getUsername());
                 throw new CustomizeException(ACCOUNT_STOP.getCode(), ACCOUNT_STOP.getMessage());
-            } else if (String.valueOf(user.getIsDeleted()).equals("1")) {
+            } else if (String.valueOf(sysUser.getIsDeleted()).equals("1")) {
                 log.info("用户已被删除：{}", loginDto.getUsername());
                 throw new CustomizeException(ACCOUNT_DELETE.getCode(), ACCOUNT_DELETE.getMessage());
             } else {
                 log.info("用户登录成功：{}", loginDto.getUsername());
                 //密码正确，生成token
-                return JwtUtil.generateToken(user.getUsername(), String.valueOf(user.getId()));
+                return JwtUtil.generateToken(sysUser.getUsername(), String.valueOf(sysUser.getId()));
             }
 
         } else {
@@ -78,12 +80,12 @@ public class AuthorizeServiceImpl implements AuthorizeService {
     public JSONObject getUserInfo(String userId) {
         log.info("用户信息：{}", userId);
         String sql = "select * from user where id = ?";
-        User user = systemJdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(User.class), userId);
-        if (user != null) {
+        SysUser sysUser = systemJdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(SysUser.class), userId);
+        if (sysUser != null) {
             JSONObject jsonObject = new JSONObject();
-            jsonObject.set("id", user.getId());
-            jsonObject.set("avatar", user.getAvatar());
-            jsonObject.set("username", user.getUsername());
+            jsonObject.set("id", sysUser.getId());
+            jsonObject.set("avatar", sysUser.getAvatar());
+            jsonObject.set("username", sysUser.getUsername());
 //            jsonObject.set("firstName", user.getFirstName());
 //            jsonObject.set("lastName", user.getLastName());
 //            jsonObject.set("email", user.getEmail());

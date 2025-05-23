@@ -4,8 +4,8 @@ import cn.hutool.json.JSONObject;
 import com.stonebridge.tradeflow.common.exception.CustomizeException;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.common.utils.JwtUtil;
-import com.stonebridge.tradeflow.common.utils.PasswordUtils;
-import com.stonebridge.tradeflow.system.entity.User;
+import com.stonebridge.tradeflow.security.PasswordUtils;
+import com.stonebridge.tradeflow.system.entity.SysUser;
 import com.stonebridge.tradeflow.system.entity.dto.LoginDto;
 import com.stonebridge.tradeflow.system.entity.dto.RegisterDto;
 import com.stonebridge.tradeflow.system.service.AuthorizeService;
@@ -34,10 +34,12 @@ public class AuthorizeController {
 
     private AuthorizeService authorizeService;
     private UserService userService;
+    private PasswordUtils passwordUtils;
 
-    public AuthorizeController(AuthorizeService authorizeService, UserService userService) {
+    public AuthorizeController(AuthorizeService authorizeService, UserService userService, PasswordUtils passwordUtils) {
         this.authorizeService = authorizeService;
         this.userService = userService;
+        this.passwordUtils = passwordUtils;
     }
 
 
@@ -135,19 +137,19 @@ public class AuthorizeController {
     public Result register(@RequestBody RegisterDto registerDto) {
         log.info("开始处理用户注册请求: username={}", registerDto.getUsername());
         try {
-            User newUser = new User();
-            newUser.setUsername(registerDto.getUsername().trim());
-            newUser.setPassword(PasswordUtils.encode(registerDto.getPassword().trim()));
-            newUser.setFirstName(registerDto.getFirstName().trim());
-            newUser.setLastName(registerDto.getLastName().trim());
-            newUser.setEmail(registerDto.getEmail().trim());
-            newUser.setPhone(registerDto.getPhone().trim());
-            newUser.setAvatar(registerDto.getAvatarUrl().trim());
-            newUser.setCreateTime(new Date());
-            newUser.setUpdateTime(new Date());
-            newUser.setIsDeleted(0);
-            newUser.setStatus("0");
-            userService.save(newUser);
+            SysUser newSysUser = new SysUser();
+            newSysUser.setUsername(registerDto.getUsername().trim());
+            newSysUser.setPassword(passwordUtils.encode(registerDto.getPassword().trim()));
+            newSysUser.setFirstName(registerDto.getFirstName().trim());
+            newSysUser.setLastName(registerDto.getLastName().trim());
+            newSysUser.setEmail(registerDto.getEmail().trim());
+            newSysUser.setPhone(registerDto.getPhone().trim());
+            newSysUser.setAvatar(registerDto.getAvatarUrl().trim());
+            newSysUser.setCreateTime(new Date());
+            newSysUser.setUpdateTime(new Date());
+            newSysUser.setIsDeleted(0);
+            newSysUser.setStatus("0");
+            userService.save(newSysUser);
             log.info("用户 {} 注册成功", registerDto.getUsername());
             return Result.ok();
         } catch (Exception e) {

@@ -7,7 +7,7 @@ import java.util.Date;
 
 @Data
 @TableName("user")
-public class User {
+public class SysUser {
 
     @TableId(type = IdType.AUTO)
     private String id;

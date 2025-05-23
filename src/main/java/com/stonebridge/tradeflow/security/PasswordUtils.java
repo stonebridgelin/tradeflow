@@ -1,8 +1,11 @@
-package com.stonebridge.tradeflow.common.utils;
+package com.stonebridge.tradeflow.security;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
-public class PasswordUtils {
+@Component
+public class PasswordUtils implements PasswordEncoder {
 
     private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -12,7 +15,8 @@ public class PasswordUtils {
      * @param rawPassword 明文密码
      * @return 加密后的密码（含盐值）
      */
-    public static String encode(String rawPassword) {
+    @Override
+    public String encode(CharSequence rawPassword) {
         if (rawPassword == null) {
             throw new IllegalArgumentException("Password cannot be null");
         }
@@ -26,7 +30,8 @@ public class PasswordUtils {
      * @param encodedPassword 加密后的密码
      * @return 是否匹配
      */
-    public static boolean matches(String rawPassword, String encodedPassword) {
+    @Override
+    public boolean matches(CharSequence rawPassword, String encodedPassword) {
         if (rawPassword == null || encodedPassword == null) {
             return false;
         }

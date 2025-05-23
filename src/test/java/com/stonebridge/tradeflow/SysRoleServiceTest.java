@@ -1,7 +1,6 @@
 package com.stonebridge.tradeflow;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.stonebridge.tradeflow.common.utils.PasswordUtils;
 import com.stonebridge.tradeflow.system.entity.SysRole;
 import com.stonebridge.tradeflow.system.service.SysRoleService;
 import org.junit.jupiter.api.Test;

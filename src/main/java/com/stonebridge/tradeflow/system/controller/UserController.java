@@ -3,7 +3,7 @@ package com.stonebridge.tradeflow.system.controller;
 import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.stonebridge.tradeflow.common.result.Result;
-import com.stonebridge.tradeflow.system.entity.User;
+import com.stonebridge.tradeflow.system.entity.SysUser;
 import com.stonebridge.tradeflow.system.entity.dto.AssginRoleDto;
 import com.stonebridge.tradeflow.system.service.UserService;
 import com.stonebridge.tradeflow.system.entity.vo.UserQueryVo;
@@ -45,7 +45,7 @@ public class UserController {
             return Result.fail("分页参数错误");
         }
         // 创建分页对象
-        Page<User> page = new Page<>(pageNum, pageSize);
+        Page<SysUser> page = new Page<>(pageNum, pageSize);
         // 执行分页查询
         JSONObject resultObjct = userService.findByPage(page, userQueryVo);
         return Result.ok(resultObjct);
@@ -54,13 +54,13 @@ public class UserController {
 
     @Operation(summary = "根据ID根据获取用户详细信息")
     @GetMapping("/{id}")
-    public Result<User> getSysUserById(@Parameter(description = "用户ID", required = true, example = "1") @PathVariable Integer id) {
+    public Result<SysUser> getSysUserById(@Parameter(description = "用户ID", required = true, example = "1") @PathVariable Integer id) {
         log.info("根据用户ID开始获取用户信息，用户的ID是：{}", id);
         String sql = "SELECT * FROM user WHERE id = ?";
-        User user = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(User.class), id);
-        if (user != null) {
-            log.info("获取用户信息成功，用户的信息是：{}", user);
-            return Result.ok(user);
+        SysUser sysUser = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(SysUser.class), id);
+        if (sysUser != null) {
+            log.info("获取用户信息成功，用户的信息是：{}", sysUser);
+            return Result.ok(sysUser);
         } else {
             log.warn("获取用户信息失败，，用户的ID是：{}", id);
             return Result.ok();
@@ -69,9 +69,9 @@ public class UserController {
 
     @Operation(summary = "获取所有用户信息")
     @GetMapping("/list")
-    public Result<List<User>> getSysUserList() {
+    public Result<List<SysUser>> getSysUserList() {
         log.info("获取所有用户信息");
-        List<User> list = userService.list();
+        List<SysUser> list = userService.list();
         log.info("获取所有用户信息成功，用户的个数是：{}", list.size());
         return Result.ok(list);
     }
@@ -132,16 +132,16 @@ public class UserController {
     /**
      * 更新用户信息
      *
-     * @param user 用户信息
+     * @param sysUser 用户信息
      * @return 更新结果
      */
     @Operation(summary = "更新用户信息")
     @PostMapping("update")
-    public Result updateUser(@RequestBody User user) {
-        log.info("更新用户信息，用户的信息是：{}", user.toString());
-        user.setUpdateTime(new Date());
-        userService.updateById(user);
-        log.info("更新用户信息成功，用户的信息是：{}", user.toString());
+    public Result updateUser(@RequestBody SysUser sysUser) {
+        log.info("更新用户信息，用户的信息是：{}", sysUser.toString());
+        sysUser.setUpdateTime(new Date());
+        userService.updateById(sysUser);
+        log.info("更新用户信息成功，用户的信息是：{}", sysUser.toString());
         return Result.ok();
     }
 }
