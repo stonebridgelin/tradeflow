@@ -1,7 +1,10 @@
 package com.stonebridge.tradeflow.system.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+
 import java.io.Serializable;
 import java.sql.Timestamp;
 
@@ -19,6 +22,4 @@ public class SysUserRole implements Serializable {
 
     private Timestamp updateTime; // 更新时间
 
-    @TableLogic
-    private Integer isDeleted;  // 删除标记（0:可用 1:已删除）
 }

@@ -1,8 +1,10 @@
-package com.stonebridge.tradeflow.common.utils;
+package com.stonebridge.tradeflow.security.utils;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -12,9 +14,9 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    // 推荐使用 256-bit 的 Base64 编码密钥（可放配置文件中）
-    private static String SECRET_KEY = ""; // 示例用 key，请替换
-    private static long EXPIRATION_TIME = 0L; // 1 天
+    private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
+    private static String SECRET_KEY = "";
+    private static long EXPIRATION_TIME = 0L;
 
     @Autowired
     public JwtUtil(JwtProperties jwtProperties) {
@@ -22,20 +24,15 @@ public class JwtUtil {
         EXPIRATION_TIME = jwtProperties.getExpirationTime();
     }
 
-    // 获取签名密钥
     private static Key getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    /**
-     * ✅ 生成 JWT Token
-     */
-    public static String generateToken(String username, String userId) {
+    public static String generateToken(String username) {
         String token = Jwts.builder()
                 .setSubject("AUTH-USER")
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .claim("userId", userId)
                 .claim("username", username)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compressWith(CompressionCodecs.GZIP)
@@ -43,9 +40,6 @@ public class JwtUtil {
         return token;
     }
 
-    /**
-     * ✅ 解析并返回 Claims，含自动过期校验和异常处理
-     */
     private static Claims getClaims(String token) {
         try {
             return Jwts.parser()
@@ -66,27 +60,39 @@ public class JwtUtil {
         }
     }
 
-    /**
-     * ✅ 获取用户名（subject）
-     */
     public static String getUsername(String token) {
         Object val = getClaims(token).get("username");
         return val != null ? val.toString() : null;
     }
 
-    /**
-     * ✅ 获取用户 ID（userId 字段）
-     */
-    public static String getUserId(String token) {
-        Object val = getClaims(token).get("userId");
-        return val != null ? val.toString() : null;
-    }
-
-    /**
-     * ✅ 判断 token 是否过期（可选扩展）
-     */
     public static boolean isTokenExpired(String token) {
         Date expiration = getClaims(token).getExpiration();
         return expiration.before(new Date());
+    }
+
+    /**
+     * 验证 JWT token 的有效性
+     *
+     * @param token 要验证的 token
+     * @return true 如果 token 有效（未过期、签名正确、格式合法），否则 false
+     */
+    public static boolean validateToken(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            logger.warn("Token is null or empty");
+            return false;
+        }
+        try {
+            Claims claims = getClaims(token);
+            // 额外检查过期时间（虽然 getClaims 已包含）
+            if (claims.getExpiration().before(new Date())) {
+                logger.warn("Token is expired for subject: {}", claims.getSubject());
+                return false;
+            }
+            logger.debug("Token validated successfully for subject: {}", claims.getSubject());
+            return true;
+        } catch (RuntimeException e) {
+            logger.warn("Token validation failed: {}", e.getMessage());
+            return false;
+        }
     }
 }

@@ -14,7 +14,7 @@ import com.stonebridge.tradeflow.system.entity.SysRole;
 import com.stonebridge.tradeflow.system.entity.dto.AssginRoleDto;
 import com.stonebridge.tradeflow.system.mapper.SysRoleMapper;
 import com.stonebridge.tradeflow.system.mapper.SysUserRoleMapper;
-import com.stonebridge.tradeflow.system.mapper.UserMapper;
+import com.stonebridge.tradeflow.system.mapper.SysUserMapper;
 import com.stonebridge.tradeflow.system.service.UserService;
 import com.stonebridge.tradeflow.system.entity.vo.UserQueryVo;
 import com.stonebridge.tradeflow.system.entity.SysUser;
@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class UserServiceImpl extends ServiceImpl<UserMapper, SysUser> implements UserService {
+public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements UserService {
 
     private SysRoleMapper sysRoleMapper;
 
@@ -69,7 +69,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, SysUser> implements
         }
 
         // 逻辑删除条件
-        wrapper.eq(SysUser::getIsDeleted, 0);
         // 执行分页查询
         IPage<SysUser> userIPage = page(page, wrapper);
         List<SysUser> sysUserList = userIPage.getRecords();
@@ -128,7 +127,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, SysUser> implements
 
     @Override
     public Map<String, Object> getUserById(Long userId) {
-        String sql = "SELECT id,username,first_name,last_name,phone,email,gender,avatar FROM user WHERE id = ?";
+        String sql = "SELECT id,username,first_name,last_name,phone,email,gender,avatar FROM sys_user WHERE id = ?";
         Map<String, Object> userMap = systemJdbcTemplate.queryForMap(sql, userId);
         // 遍历并替换 null 为 ""
         userMap.replaceAll((k, v) -> v == null ? "" : v);

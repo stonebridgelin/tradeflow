@@ -6,5 +6,5 @@ import com.stonebridge.tradeflow.system.entity.dto.LoginDto;
 public interface AuthorizeService {
     String loginCheck(LoginDto request);
 
-    JSONObject getUserInfo(String userId);
+    JSONObject getUserInfo(String username);
 }

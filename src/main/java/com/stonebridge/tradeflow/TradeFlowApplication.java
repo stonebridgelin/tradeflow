@@ -1,6 +1,6 @@
 package com.stonebridge.tradeflow;
 
-import com.stonebridge.tradeflow.common.utils.JwtProperties;
+import com.stonebridge.tradeflow.security.utils.JwtProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

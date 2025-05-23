@@ -10,10 +10,12 @@ import com.stonebridge.tradeflow.common.constant.Constant;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.common.utils.MenuHelper;
 import com.stonebridge.tradeflow.system.entity.SysRoleMenu;
+import com.stonebridge.tradeflow.system.entity.SysUserRole;
 import com.stonebridge.tradeflow.system.entity.dto.AssginMenuDto;
 import com.stonebridge.tradeflow.system.mapper.SysMenuMapper;
 import com.stonebridge.tradeflow.system.entity.SysMenu;
 import com.stonebridge.tradeflow.system.mapper.SysRoleMenuMapper;
+import com.stonebridge.tradeflow.system.mapper.SysUserRoleMapper;
 import com.stonebridge.tradeflow.system.service.SysMenuService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -34,13 +36,16 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
 
     private SysMenuMapper sysMenuMapper;
 
+    private SysUserRoleMapper sysUserRoleMapper;
+
     public JdbcTemplate systemJdbcTemplate;
 
 
     @Autowired
-    public SysMenuServiceImpl(SysRoleMenuMapper sysRoleMenuMapper, SysMenuMapper sysMenuMapper, @Qualifier("systemJdbcTemplate") JdbcTemplate jdbcTemplate) {
+    public SysMenuServiceImpl(SysRoleMenuMapper sysRoleMenuMapper, SysMenuMapper sysMenuMapper,SysUserRoleMapper sysUserRoleMapper, @Qualifier("systemJdbcTemplate") JdbcTemplate jdbcTemplate) {
         this.sysRoleMenuMapper = sysRoleMenuMapper;
         this.sysMenuMapper = sysMenuMapper;
+        this.sysUserRoleMapper = sysUserRoleMapper;
         this.systemJdbcTemplate = jdbcTemplate;
     }
 
@@ -331,6 +336,61 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
             return Collections.emptyList(); // 无效类型返回空列表
         }
         return sysMenuMapper.selectList(queryWrapper);
+    }
+
+    /**
+     * 根据用户id，从数据库查询用户所具有的权限，将查询结果返回给用户
+     * userId --> Sys_UserRole.RoleId -->Sys_RoleMenu.MenuId -->Sys_Menu.perms
+     *
+     * @param userId :用户id
+     * @return
+     */
+    @Override
+    public List<String> getPermissionsByUserId(Long userId) {
+        // 1. 查询用户的所有角色 ID
+        QueryWrapper<SysUserRole> userRoleQuery = new QueryWrapper<>();
+        userRoleQuery.eq("user_id", userId).select("role_id");
+        List<SysUserRole> userRoles = sysUserRoleMapper.selectList(userRoleQuery);
+        if (userRoles.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 去重角色 ID
+        Set<Long> roleIds = new HashSet<>();
+        for (SysUserRole userRole : userRoles) {
+            roleIds.add(userRole.getRoleId());
+        }
+
+        // 2. 查询所有角色关联的菜单 ID
+        QueryWrapper<SysRoleMenu> roleMenuQuery = new QueryWrapper<>();
+        roleMenuQuery.in("role_id", roleIds).select("menu_id");
+        List<SysRoleMenu> roleMenus = sysRoleMenuMapper.selectList(roleMenuQuery);
+        if (roleMenus.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 去重菜单 ID
+        Set<Long> menuIds = new HashSet<>();
+        for (SysRoleMenu roleMenu : roleMenus) {
+            menuIds.add(Long.valueOf(roleMenu.getMenuId()));
+        }
+
+        // 3. 查询所有菜单的权限标识
+        QueryWrapper<SysMenu> menuQuery = new QueryWrapper<>();
+        menuQuery.in("id", menuIds).isNotNull("perms").select("perms");
+        List<SysMenu> menus = sysMenuMapper.selectList(menuQuery);
+        List<String> permissions = new ArrayList<>();
+        Set<String> permissionSet = new HashSet<>(); // 去重权限
+        for (SysMenu menu : menus) {
+            String perms = menu.getPerms();
+            if (perms != null && !perms.isEmpty() && !permissionSet.contains(perms)) {
+                permissions.add(perms);
+                permissionSet.add(perms);
+            }
+        }
+
+//        log.debug("Found permissions: {}", permissions);
+        return permissions;
     }
 
 }

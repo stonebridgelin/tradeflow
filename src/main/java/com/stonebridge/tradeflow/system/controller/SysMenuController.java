@@ -118,7 +118,7 @@ public class SysMenuController {
         }
 
         SysMenu sysMenu = sysMenuService.getById(menuDto.getId());
-        if (sysMenu == null || sysMenu.getIsDeleted() == 1) {
+        if (sysMenu == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "菜单不存在或已删除");
         }
 

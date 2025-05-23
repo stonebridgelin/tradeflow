@@ -2,6 +2,8 @@ package com.stonebridge.tradeflow.common.exception;
 
 import com.stonebridge.tradeflow.common.result.Result;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -28,11 +30,19 @@ public class GlobalExceptionHandler {
     //1.处理全局异常
     @ExceptionHandler(Exception.class)
     public Result<Object> error(Exception e) {
+        if (e instanceof AccessDeniedException) {
+            // 不处理 AccessDeniedException，让 Spring Security 处理
+            throw (AccessDeniedException) e;
+        }
+        if (e instanceof AuthenticationException) {
+            throw (AuthenticationException) e;
+        }
         // 正确的记录异常的方式
         log.error("记录【全局异常】: ", e);  // 注意这里逗号后面是异常对象
         // 错误的方式: log.error("发生异常: " + e.getMessage());  // 这样只会记录错误消息，不会记录堆栈
         return Result.fail();
     }
+
 
     //2.处理特定异常
     @ExceptionHandler(ArithmeticException.class)

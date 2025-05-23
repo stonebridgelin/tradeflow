@@ -3,8 +3,8 @@ package com.stonebridge.tradeflow.system.controller;
 import cn.hutool.json.JSONObject;
 import com.stonebridge.tradeflow.common.exception.CustomizeException;
 import com.stonebridge.tradeflow.common.result.Result;
-import com.stonebridge.tradeflow.common.utils.JwtUtil;
-import com.stonebridge.tradeflow.security.PasswordUtils;
+import com.stonebridge.tradeflow.security.utils.JwtUtil;
+import com.stonebridge.tradeflow.security.utils.PasswordUtils;
 import com.stonebridge.tradeflow.system.entity.SysUser;
 import com.stonebridge.tradeflow.system.entity.dto.LoginDto;
 import com.stonebridge.tradeflow.system.entity.dto.RegisterDto;
@@ -107,25 +107,18 @@ public class AuthorizeController {
         }
 
         // 2. 解析 Token 获取 userId
-        String userId;
-        try {
-            userId = JwtUtil.getUserId(token);
-            if (userId == null) {
-                log.warn("UserId not found in token");
-                throw new CustomizeException(ACCOUNT_ERROR.getCode(), ACCOUNT_ERROR.getMessage());
+        String username = JwtUtil.getUsername(token);
+        if (username == null) {
+            log.warn("UserId not found in token");
+            throw new CustomizeException(ACCOUNT_ERROR.getCode(), ACCOUNT_ERROR.getMessage());
 
-            }
-            log.info("Successfully parsed userId from token: {}", userId);
-        } catch (Exception e) {
-            log.error("Failed to parse token: {}", e.getMessage());
-            throw new CustomizeException(PERMISSION.getCode(), PERMISSION.getMessage());
         }
 
         // 3. 查询用户信息
         //根据用户id获取用户信息（基本信息 菜单权限 按钮权限信息）
-        JSONObject userInfo = authorizeService.getUserInfo(userId);
+        JSONObject userInfo = authorizeService.getUserInfo(username);
         if (userInfo == null) {
-            log.warn("User info not found for userId: {}", userId);
+            log.warn("User info not found for userId: {}", username);
             throw new CustomizeException(ACCOUNT_ERROR.getCode(), ACCOUNT_ERROR.getMessage());
         }
         // 4. 返回用户信息
@@ -139,7 +132,7 @@ public class AuthorizeController {
         try {
             SysUser newSysUser = new SysUser();
             newSysUser.setUsername(registerDto.getUsername().trim());
-            newSysUser.setPassword(passwordUtils.encode(registerDto.getPassword().trim()));
+            newSysUser.setPassword(passwordUtils.encodePassword(registerDto.getPassword().trim()));
             newSysUser.setFirstName(registerDto.getFirstName().trim());
             newSysUser.setLastName(registerDto.getLastName().trim());
             newSysUser.setEmail(registerDto.getEmail().trim());
@@ -147,7 +140,6 @@ public class AuthorizeController {
             newSysUser.setAvatar(registerDto.getAvatarUrl().trim());
             newSysUser.setCreateTime(new Date());
             newSysUser.setUpdateTime(new Date());
-            newSysUser.setIsDeleted(0);
             newSysUser.setStatus("0");
             userService.save(newSysUser);
             log.info("用户 {} 注册成功", registerDto.getUsername());

@@ -1,4 +1,4 @@
-package com.stonebridge.tradeflow.common.utils;
+package com.stonebridge.tradeflow.security.utils;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;

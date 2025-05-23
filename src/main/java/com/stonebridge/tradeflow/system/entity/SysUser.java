@@ -1,12 +1,15 @@
 package com.stonebridge.tradeflow.system.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.util.Date;
 
 @Data
-@TableName("user")
+@TableName("sys_user")
 public class SysUser {
 
     @TableId(type = IdType.AUTO)
@@ -55,5 +58,5 @@ public class SysUser {
     private Date updateTime;
 
     @TableLogic
-    private Integer isDeleted;
+    private Integer is_deleted;
 }

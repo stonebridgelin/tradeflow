@@ -56,7 +56,7 @@ public class UserController {
     @GetMapping("/{id}")
     public Result<SysUser> getSysUserById(@Parameter(description = "用户ID", required = true, example = "1") @PathVariable Integer id) {
         log.info("根据用户ID开始获取用户信息，用户的ID是：{}", id);
-        String sql = "SELECT * FROM user WHERE id = ?";
+        String sql = "SELECT * FROM sys_user WHERE id = ?";
         SysUser sysUser = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(SysUser.class), id);
         if (sysUser != null) {
             log.info("获取用户信息成功，用户的信息是：{}", sysUser);

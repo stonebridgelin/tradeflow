@@ -2,8 +2,8 @@ package com.stonebridge.tradeflow.system.service.impl;
 
 import cn.hutool.json.JSONObject;
 import com.stonebridge.tradeflow.common.exception.CustomizeException;
-import com.stonebridge.tradeflow.common.utils.JwtUtil;
-import com.stonebridge.tradeflow.security.PasswordUtils;
+import com.stonebridge.tradeflow.security.utils.JwtUtil;
+import com.stonebridge.tradeflow.security.utils.PasswordUtils;
 import com.stonebridge.tradeflow.system.entity.SysUser;
 import com.stonebridge.tradeflow.system.entity.dto.LoginDto;
 import com.stonebridge.tradeflow.system.service.AuthorizeService;
@@ -25,10 +25,10 @@ public class AuthorizeServiceImpl implements AuthorizeService {
 
     private final SysMenuService sysMenuService;
     private JdbcTemplate systemJdbcTemplate;
-    private PasswordUtils  passwordUtils;
+    private PasswordUtils passwordUtils;
 
     @Autowired
-    public AuthorizeServiceImpl(@Qualifier("systemJdbcTemplate") JdbcTemplate systemJdbcTemplate, SysMenuService sysMenuService,PasswordUtils passwordUtils) {
+    public AuthorizeServiceImpl(@Qualifier("systemJdbcTemplate") JdbcTemplate systemJdbcTemplate, SysMenuService sysMenuService, PasswordUtils passwordUtils) {
         this.systemJdbcTemplate = systemJdbcTemplate;
         this.sysMenuService = sysMenuService;
         this.passwordUtils = passwordUtils;
@@ -43,7 +43,7 @@ public class AuthorizeServiceImpl implements AuthorizeService {
      */
     @Override
     public String loginCheck(LoginDto loginDto) {
-        String sql = "select * from user where username = ?";
+        String sql = "select * from sys_user where username = ?";
         log.info("用户登录：{}", loginDto.getUsername());
         SysUser sysUser = systemJdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(SysUser.class), loginDto.getUsername().trim());
         if (sysUser == null) {
@@ -54,13 +54,10 @@ public class AuthorizeServiceImpl implements AuthorizeService {
             if (sysUser.getStatus().equals("1")) {
                 log.info("用户已被禁用：{}", loginDto.getUsername());
                 throw new CustomizeException(ACCOUNT_STOP.getCode(), ACCOUNT_STOP.getMessage());
-            } else if (String.valueOf(sysUser.getIsDeleted()).equals("1")) {
-                log.info("用户已被删除：{}", loginDto.getUsername());
-                throw new CustomizeException(ACCOUNT_DELETE.getCode(), ACCOUNT_DELETE.getMessage());
             } else {
                 log.info("用户登录成功：{}", loginDto.getUsername());
                 //密码正确，生成token
-                return JwtUtil.generateToken(sysUser.getUsername(), String.valueOf(sysUser.getId()));
+                return JwtUtil.generateToken(sysUser.getUsername());
             }
 
         } else {
@@ -73,14 +70,14 @@ public class AuthorizeServiceImpl implements AuthorizeService {
     /**
      * 根据用户id获取用户信息（基本信息 菜单权限 按钮权限信息）
      *
-     * @param userId : 用户id
+     * @param username : 用户名
      * @return : 用户信息（基本信息 菜单权限 按钮权限信息）
      */
     @Override
-    public JSONObject getUserInfo(String userId) {
-        log.info("用户信息：{}", userId);
-        String sql = "select * from user where id = ?";
-        SysUser sysUser = systemJdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(SysUser.class), userId);
+    public JSONObject getUserInfo(String username) {
+        log.info("用户信息：{}", username);
+        String sql = "select * from sys_user where username = ?";
+        SysUser sysUser = systemJdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(SysUser.class), username);
         if (sysUser != null) {
             JSONObject jsonObject = new JSONObject();
             jsonObject.set("id", sysUser.getId());
@@ -92,11 +89,11 @@ public class AuthorizeServiceImpl implements AuthorizeService {
 //            jsonObject.set("phone", user.getPhone());
             //菜单权限数据
             //根据userId查询菜单权限值,菜单的权限是通过sys_menu.path和src/router/config.js里的path进行匹配的
-            List<String> routerPaths = sysMenuService.getUserMenuListByUserId(userId);
+            List<String> routerPaths = sysMenuService.getUserMenuListByUserId(sysUser.getId());
             jsonObject.set("rights", routerPaths);
             //按钮权限数据
             //根据userId查询按钮权限值,按钮权限
-            List<String> permsList = sysMenuService.getUserPermsListByUserId(userId);
+            List<String> permsList = sysMenuService.getUserPermsListByUserId(sysUser.getId());
             jsonObject.set("buttons", permsList);
             return jsonObject;
         }

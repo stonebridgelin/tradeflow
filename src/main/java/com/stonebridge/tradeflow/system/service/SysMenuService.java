@@ -31,4 +31,6 @@ public interface SysMenuService extends IService<SysMenu> {
     List<String> getUserMenuListByUserId(String id);
 
     List<String> getUserPermsListByUserId(String id);
+
+    List<String> getPermissionsByUserId(Long userId);
 }
