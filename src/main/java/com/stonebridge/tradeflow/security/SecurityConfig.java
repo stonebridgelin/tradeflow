@@ -88,8 +88,8 @@ public class SecurityConfig {
         // 1. 配置异常处理
         // 设置未认证和无权限的处理方式
         http.exceptionHandling()
-                .authenticationEntryPoint(authenticationEntryPointImpl) // 未认证处理器，返回 401 响应（如 JSON 格式）
-                .accessDeniedHandler(accessDeniedHandlerImpl); // 无权限处理器，返回 403 响应（如 JSON 格式）
+                .authenticationEntryPoint(authenticationEntryPointImpl) // 未提供有效身份凭据（例如未登录或 token 无效）时试图访问受保护资源的情况，返回 401 响应（如 JSON 格式）
+                .accessDeniedHandler(accessDeniedHandlerImpl); // 试访问受保护资源（如通过 @PreAuthorize 限制的接口）但缺乏所需权限时，返回 403 响应（如 JSON 格式）
 
         // 2. 关闭 CSRF 保护
         // 由于使用 JWT 认证，无需 CSRF 保护，适合 RESTful API
