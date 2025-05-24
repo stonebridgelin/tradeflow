@@ -90,12 +90,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         // 记录调试日志，显示正在加载的用户名
         log.debug("加载用户详情: {}", username);
 
-        // 验证用户名是否为空
-        if (StringUtils.isNullOrEmpty(username)) {
-            log.warn("用户名为空");
-            throw new AuthenticationFailureException(ResultCodeEnum.ILLEGAL_REQUEST.getCode(), "用户名不能为空");
-        }
-
         // 使用 MyBatis Plus 的 QueryWrapper 构造查询条件，根据用户名查询用户
         QueryWrapper<SysUser> queryWrapper = new QueryWrapper<SysUser>().eq("username", username);
         List<SysUser> users = sysUserMapper.selectList(queryWrapper);

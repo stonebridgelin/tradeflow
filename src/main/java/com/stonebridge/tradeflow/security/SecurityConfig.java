@@ -10,11 +10,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
@@ -76,6 +79,21 @@ public class SecurityConfig {
     }
 
     /**
+     * 配置 DaoAuthenticationProvider，设置不隐藏 UsernameNotFoundException
+     * @param userDetailsService 用户详情服务
+     * @param passwordEncoder 密码加密器
+     * @return 自定义的 DaoAuthenticationProvider
+     */
+    @Bean
+    public AuthenticationProvider daoAuthenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
+        provider.setHideUserNotFoundExceptions(false); // 不隐藏用户不存在异常
+        return provider;
+    }
+
+    /**
      * 配置 Spring Security 的安全过滤器链，定义请求拦截、异常处理、会话管理和过滤器等
      *
      * @param http                  HttpSecurity 配置对象
@@ -84,7 +102,8 @@ public class SecurityConfig {
      * @throws Exception 如果配置失败
      */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager, AuthenticationProvider daoAuthenticationProvider) throws Exception {
+       http.authenticationProvider(daoAuthenticationProvider); // 注入自定义 DaoAuthenticationProvider
         // 1. 配置异常处理
         // 设置未认证和无权限的处理方式
         http.exceptionHandling()

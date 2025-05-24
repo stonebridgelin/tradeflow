@@ -101,11 +101,14 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
             Map<String, String> loginData = mapper.readValue(request.getInputStream(), Map.class);
             String username = loginData.get("username");
             String password = loginData.get("password");
-
+            // 存入 request attribute，供 unsuccessfulAuthentication 使用
+            request.setAttribute("attemptedUsername", username);
             // 检查用户名和密码是否为空
-            if (username == null || password == null) {
-                throw new AuthenticationException("用户名或密码不能为空") {
-                };
+            if (username == null || username.trim().isEmpty() || password == null || password.trim().isEmpty()) {
+                throw new UserDetailsServiceImpl.AuthenticationFailureException(
+                        ResultCodeEnum.ARGUMENT_VALID_ERROR.getCode(),
+                        ResultCodeEnum.ARGUMENT_VALID_ERROR.getMessage()
+                );
             }
 
             // 创建认证对象，包含用户名和密码
@@ -161,39 +164,26 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
      * @throws IOException      如果写入响应失败
      * @throws ServletException 如果过滤器链处理失败
      */
-//    @Override
-//    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
-//        // 构建失败响应，包含错误消息
-//        Map<String, Object> result = new HashMap<>();
-//        result.put("message", ResultCodeEnum.LOGIN_AUTH.getMessage());
-//        result.put("code", ResultCodeEnum.LOGIN_AUTH.getCode());
-//        ObjectMapper mapper = new ObjectMapper();
-//        // 使用 SecurityUtil 的 out 方法返回错误响应
-//        // ResultCodeEnum.LOGIN_AUTH 提供认证失败的错误码和消息（如 401 和“登录失败”）
-//        SecurityUtil.out(response, Result.ok(mapper.writeValueAsString(result)));
-//    }
-
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
-        logger.warn("登录失败: {}", failed.getMessage());
-
+        String username = (String) request.getAttribute("attemptedUsername");
+        logger.warn("登录失败，用户: {}，原因: {}，请求: {} {}，IP: {}", username, failed.getMessage(), request.getMethod(), request.getRequestURI(), request.getRemoteAddr(), failed);
         // 构建失败响应，包含错误消息
         Map<String, Object> result = new HashMap<>();
-        String message;
         Integer code;
+        String message;
 
         if (failed instanceof UserDetailsServiceImpl.AuthenticationFailureException) {
             UserDetailsServiceImpl.AuthenticationFailureException ex = (UserDetailsServiceImpl.AuthenticationFailureException) failed;
-            message = ex.getMessage();
             code = ex.getCode();
+            message = ex.getMessage();
         } else if (failed instanceof BadCredentialsException) {
-            message = ResultCodeEnum.PASSWORD_ERROR.getMessage();
             code = ResultCodeEnum.PASSWORD_ERROR.getCode();
+            message = ResultCodeEnum.PASSWORD_ERROR.getMessage();
         } else {
-            message = ResultCodeEnum.LOGIN_AUTH.getMessage();
             code = ResultCodeEnum.LOGIN_AUTH.getCode();
+            message = ResultCodeEnum.LOGIN_AUTH.getMessage();
         }
-
 
         result.put("message", message);
         result.put("code", code);
