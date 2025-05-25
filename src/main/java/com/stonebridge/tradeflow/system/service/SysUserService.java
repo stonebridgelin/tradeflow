@@ -9,7 +9,7 @@ import com.stonebridge.tradeflow.system.entity.vo.UserQueryVo;
 
 import java.util.Map;
 
-public interface UserService extends IService<SysUser> {
+public interface SysUserService extends IService<SysUser> {
     JSONObject findByPage(Page<SysUser> page, UserQueryVo userQueryVo);
 
     JSONObject getAllRoles(Long userId);
@@ -17,4 +17,6 @@ public interface UserService extends IService<SysUser> {
     void doAssign(AssginRoleDto assginRoleDto);
 
     Map<String, Object> getUserById(Long userId);
+
+    JSONObject getUserInfo(String username);
 }

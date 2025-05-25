@@ -2,10 +2,14 @@ package com.stonebridge.tradeflow.system.controller;
 
 import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.stonebridge.tradeflow.common.exception.CustomizeException;
 import com.stonebridge.tradeflow.common.result.Result;
+import com.stonebridge.tradeflow.security.utils.JwtUtil;
+import com.stonebridge.tradeflow.security.utils.PasswordUtils;
 import com.stonebridge.tradeflow.system.entity.SysUser;
 import com.stonebridge.tradeflow.system.entity.dto.AssginRoleDto;
-import com.stonebridge.tradeflow.system.service.UserService;
+import com.stonebridge.tradeflow.system.entity.dto.RegisterDto;
+import com.stonebridge.tradeflow.system.service.SysUserService;
 import com.stonebridge.tradeflow.system.entity.vo.UserQueryVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,25 +20,35 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import static com.stonebridge.tradeflow.common.result.ResultCodeEnum.ACCOUNT_ERROR;
+import static com.stonebridge.tradeflow.common.result.ResultCodeEnum.LOGIN_AUTH;
 
 @Tag(name = "用户管理的的接口类", description = "完成用户的增删改查操作，以及为用户授权角色信息，对应Sys_User表")
 // 定义 API 组名称
 @RestController
 @Slf4j
 @RequestMapping("/system/user")
-public class UserController {
+public class SysUserController {
+    private static final String AUTH_HEADER = "Authorization";
 
-    private final UserService userService;
+    private static final String BEARER_PREFIX = "Bearer ";
+
+    private final SysUserService sysUserService;
 
     private final JdbcTemplate jdbcTemplate;
 
+    private final PasswordUtils passwordUtils;
+
     @Autowired
-    public UserController(UserService userService, JdbcTemplate jdbcTemplate) {
-        this.userService = userService;
+    public SysUserController(SysUserService sysUserService, JdbcTemplate jdbcTemplate, PasswordUtils passwordUtils) {
+        this.sysUserService = sysUserService;
         this.jdbcTemplate = jdbcTemplate;
+        this.passwordUtils = passwordUtils;
     }
 
     @Operation(summary = "分页查询用户的信息，列表形式返回")
@@ -47,7 +61,7 @@ public class UserController {
         // 创建分页对象
         Page<SysUser> page = new Page<>(pageNum, pageSize);
         // 执行分页查询
-        JSONObject resultObjct = userService.findByPage(page, userQueryVo);
+        JSONObject resultObjct = sysUserService.findByPage(page, userQueryVo);
         return Result.ok(resultObjct);
     }
 
@@ -71,7 +85,7 @@ public class UserController {
     @GetMapping("/list")
     public Result<List<SysUser>> getSysUserList() {
         log.info("获取所有用户信息");
-        List<SysUser> list = userService.list();
+        List<SysUser> list = sysUserService.list();
         log.info("获取所有用户信息成功，用户的个数是：{}", list.size());
         return Result.ok(list);
     }
@@ -80,7 +94,7 @@ public class UserController {
     @GetMapping(value = "/getAllRoles/{userId}")
     public Result<JSONObject> getAllRoles(@PathVariable(value = "userId") Long userId) {
         log.info("获取所有角色信息和当前用户的被赋予的所有角色，用户的ID是：{}", userId);
-        JSONObject jsonObject = userService.getAllRoles(userId);
+        JSONObject jsonObject = sysUserService.getAllRoles(userId);
         log.info("获取所有角色信息和当前用户的被赋予的所有角色成功,数据为：{}", jsonObject);
         return Result.ok(jsonObject);
     }
@@ -95,7 +109,7 @@ public class UserController {
     @PostMapping("/doAssign")
     public Result<JSONObject> doAssign(@RequestBody AssginRoleDto assginRoleDto) {
         log.info("分配角色，数据为：{}", assginRoleDto);
-        userService.doAssign(assginRoleDto);
+        sysUserService.doAssign(assginRoleDto);
         return Result.ok();
     }
 
@@ -109,7 +123,7 @@ public class UserController {
     @DeleteMapping("delete/{id}")
     public Result deleteUser(@PathVariable(value = "id") Long id) {
         log.info("删除用户信息，用户的ID是：{}", id);
-        userService.removeById(id);
+        sysUserService.removeById(id);
         log.info("删除用户信息成功，用户的ID是：{}", id);
         return Result.ok();
     }
@@ -124,7 +138,7 @@ public class UserController {
     @GetMapping("getUserById/{id}")
     public Result<Map<String, Object>> getUserById(@PathVariable(value = "id") Long userId) {
         log.info("根据ID查询用户信息，用户的ID是：{}", userId);
-        Map<String, Object> userMap = userService.getUserById(userId);
+        Map<String, Object> userMap = sysUserService.getUserById(userId);
         log.info("查询用户信息成功，用户的信息是：{}", userMap.toString());
         return Result.ok(userMap);
     }
@@ -140,8 +154,74 @@ public class UserController {
     public Result updateUser(@RequestBody SysUser sysUser) {
         log.info("更新用户信息，用户的信息是：{}", sysUser.toString());
         sysUser.setUpdateTime(new Date());
-        userService.updateById(sysUser);
+        sysUserService.updateById(sysUser);
         log.info("更新用户信息成功，用户的信息是：{}", sysUser.toString());
         return Result.ok();
+    }
+
+    /**
+     * 获取用户信息接口
+     * 从请求头的 Authorization 中提取 Bearer Token，解析 userId，查询用户信息并返回。
+     *
+     * @param request HTTP 请求，包含 Authorization 头
+     * @return Result 封装的用户信息（UserInfoVO）
+     */
+    @Operation(summary = "用户信息", description = "获取当前用户信息")
+    @GetMapping("info")
+    public Result<JSONObject> info(HttpServletRequest request) {
+        // 1. 从请求头获取 Token
+        String authHeader = request.getHeader(AUTH_HEADER);
+        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
+            log.warn("Invalid or missing Authorization header: {}", authHeader);
+            throw new CustomizeException(LOGIN_AUTH.getCode(), LOGIN_AUTH.getMessage());
+        }
+        String token = authHeader.substring(BEARER_PREFIX.length());
+        if (token.isEmpty()) {
+            log.warn("Token is empty");
+            throw new CustomizeException(LOGIN_AUTH.getCode(), LOGIN_AUTH.getMessage());
+        }
+
+        // 2. 解析 Token 获取 userId
+        String username = JwtUtil.getUsername(token);
+        if (username == null) {
+            log.warn("UserId not found in token");
+            throw new CustomizeException(ACCOUNT_ERROR.getCode(), ACCOUNT_ERROR.getMessage());
+
+        }
+
+        // 3. 查询用户信息
+        //根据用户id获取用户信息（基本信息 菜单权限 按钮权限信息）
+        JSONObject userInfo = sysUserService.getUserInfo(username);
+        if (userInfo == null) {
+            log.warn("User info not found for userId: {}", username);
+            throw new CustomizeException(ACCOUNT_ERROR.getCode(), ACCOUNT_ERROR.getMessage());
+        }
+        // 4. 返回用户信息
+        return Result.ok(userInfo);
+    }
+
+    @Operation(summary = "用户注册", description = "处理用户注册请求")
+    @PostMapping("register")
+    public Result register(@RequestBody RegisterDto registerDto) {
+        log.info("开始处理用户注册请求: username={}", registerDto.getUsername());
+        try {
+            SysUser newSysUser = new SysUser();
+            newSysUser.setUsername(registerDto.getUsername().trim());
+            newSysUser.setPassword(passwordUtils.encodePassword(registerDto.getPassword().trim()));
+            newSysUser.setFirstName(registerDto.getFirstName().trim());
+            newSysUser.setLastName(registerDto.getLastName().trim());
+            newSysUser.setEmail(registerDto.getEmail().trim());
+            newSysUser.setPhone(registerDto.getPhone().trim());
+            newSysUser.setAvatar(registerDto.getAvatarUrl().trim());
+            newSysUser.setCreateTime(new Date());
+            newSysUser.setUpdateTime(new Date());
+            newSysUser.setStatus("0");
+            sysUserService.save(newSysUser);
+            log.info("用户 {} 注册成功", registerDto.getUsername());
+            return Result.ok();
+        } catch (Exception exception) {
+            log.error("用户 {}", registerDto.getUsername(), exception);
+            throw exception;
+        }
     }
 }

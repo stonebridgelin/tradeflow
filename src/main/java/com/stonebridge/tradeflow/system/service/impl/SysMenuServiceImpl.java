@@ -32,17 +32,17 @@ import java.util.stream.Collectors;
 
 @Service
 public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> implements SysMenuService {
-    private SysRoleMenuMapper sysRoleMenuMapper;
+    private final SysRoleMenuMapper sysRoleMenuMapper;
 
-    private SysMenuMapper sysMenuMapper;
+    private final SysMenuMapper sysMenuMapper;
 
-    private SysUserRoleMapper sysUserRoleMapper;
+    private final SysUserRoleMapper sysUserRoleMapper;
 
-    public JdbcTemplate systemJdbcTemplate;
+    public final JdbcTemplate systemJdbcTemplate;
 
 
     @Autowired
-    public SysMenuServiceImpl(SysRoleMenuMapper sysRoleMenuMapper, SysMenuMapper sysMenuMapper,SysUserRoleMapper sysUserRoleMapper, @Qualifier("systemJdbcTemplate") JdbcTemplate jdbcTemplate) {
+    public SysMenuServiceImpl(SysRoleMenuMapper sysRoleMenuMapper, SysMenuMapper sysMenuMapper, SysUserRoleMapper sysUserRoleMapper, @Qualifier("systemJdbcTemplate") JdbcTemplate jdbcTemplate) {
         this.sysRoleMenuMapper = sysRoleMenuMapper;
         this.sysMenuMapper = sysMenuMapper;
         this.sysUserRoleMapper = sysUserRoleMapper;
@@ -248,7 +248,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
 
     //根据userId查询菜单权限值
     @Override
-    public  List<String> getUserMenuListByUserId(String userId) {
+    public List<String> getUserMenuListByUserId(String userId) {
         //超级管理员admin账号id为：1
         List<SysMenu> sysMenuList;
         if (StrUtil.equals(Constant.SUPER_ADMIN_ID, userId)) {

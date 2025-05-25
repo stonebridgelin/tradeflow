@@ -15,11 +15,14 @@ import com.stonebridge.tradeflow.system.entity.dto.AssginRoleDto;
 import com.stonebridge.tradeflow.system.mapper.SysRoleMapper;
 import com.stonebridge.tradeflow.system.mapper.SysUserRoleMapper;
 import com.stonebridge.tradeflow.system.mapper.SysUserMapper;
-import com.stonebridge.tradeflow.system.service.UserService;
+import com.stonebridge.tradeflow.system.service.SysMenuService;
+import com.stonebridge.tradeflow.system.service.SysUserService;
 import com.stonebridge.tradeflow.system.entity.vo.UserQueryVo;
 import com.stonebridge.tradeflow.system.entity.SysUser;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,21 +32,24 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements UserService {
+@Slf4j
+public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements SysUserService {
 
-    private SysRoleMapper sysRoleMapper;
+    private final SysRoleMapper sysRoleMapper;
 
-    private SysUserRoleMapper sysUserRoleMapper;
+    private final SysUserRoleMapper sysUserRoleMapper;
 
+    private final SysMenuService sysMenuService;
 
-    private JdbcTemplate systemJdbcTemplate;
+    private final JdbcTemplate systemJdbcTemplate;
 
 
     @Autowired
-    public UserServiceImpl(SysRoleMapper sysRoleMapper, SysUserRoleMapper sysUserRoleMapper, @Qualifier("systemJdbcTemplate") JdbcTemplate systemJdbcTemplate) {
+    public SysUserServiceImpl(SysRoleMapper sysRoleMapper, SysUserRoleMapper sysUserRoleMapper, SysMenuService sysMenuService, @Qualifier("systemJdbcTemplate") JdbcTemplate systemJdbcTemplate) {
         this.sysRoleMapper = sysRoleMapper;
         this.sysUserRoleMapper = sysUserRoleMapper;
         this.systemJdbcTemplate = systemJdbcTemplate;
+        this.sysMenuService = sysMenuService;
     }
 
     @Override
@@ -132,5 +138,38 @@ public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impleme
         // 遍历并替换 null 为 ""
         userMap.replaceAll((k, v) -> v == null ? "" : v);
         return userMap;
+    }
+
+    /**
+     * 根据用户id获取用户信息（基本信息 菜单权限 按钮权限信息）
+     *
+     * @param username : 用户名
+     * @return : 用户信息（基本信息 菜单权限 按钮权限信息）
+     */
+    @Override
+    public JSONObject getUserInfo(String username) {
+        log.info("用户信息：{}", username);
+        String sql = "select * from sys_user where username = ?";
+        SysUser sysUser = systemJdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(SysUser.class), username);
+        if (sysUser != null) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.set("id", sysUser.getId());
+            jsonObject.set("avatar", sysUser.getAvatar());
+            jsonObject.set("username", sysUser.getUsername());
+//            jsonObject.set("firstName", user.getFirstName());
+//            jsonObject.set("lastName", user.getLastName());
+//            jsonObject.set("email", user.getEmail());
+//            jsonObject.set("phone", user.getPhone());
+            //菜单权限数据
+            //根据userId查询菜单权限值,菜单的权限是通过sys_menu.path和src/router/config.js里的path进行匹配的
+            List<String> routerPaths = sysMenuService.getUserMenuListByUserId(sysUser.getId());
+            jsonObject.set("rights", routerPaths);
+            //按钮权限数据
+            //根据userId查询按钮权限值,按钮权限
+            List<String> permsList = sysMenuService.getUserPermsListByUserId(sysUser.getId());
+            jsonObject.set("buttons", permsList);
+            return jsonObject;
+        }
+        return null;
     }
 }
