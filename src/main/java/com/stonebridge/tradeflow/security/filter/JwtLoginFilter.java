@@ -1,6 +1,5 @@
 package com.stonebridge.tradeflow.security.filter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
@@ -11,7 +10,6 @@ import com.stonebridge.tradeflow.security.utils.SecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -81,17 +79,12 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
         // 检查请求方法，仅允许 POST
         if (!"POST".equalsIgnoreCase(request.getMethod())) {
             // 非 POST 请求，返回 405 错误
-            Map<String, Object> result = new HashMap<>();
-            ObjectMapper mapper = new ObjectMapper();
-            result.put("message", ResultCodeEnum.METHOD_NOT_ALLOWED.getMessage());
-            result.put("code", ResultCodeEnum.METHOD_NOT_ALLOWED.getCode());
+            Map<String, Object> errorData = new HashMap<>();
+            errorData.put("message", ResultCodeEnum.METHOD_NOT_ALLOWED.getMessage());
+            errorData.put("code", ResultCodeEnum.METHOD_NOT_ALLOWED.getCode());
 
             // 使用 SecurityUtil 的 out 方法将 Result 对象序列化为 JSON 并写入响应
-            try {
-                SecurityUtil.out(response, Result.ok(mapper.writeValueAsString(result)));
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+            SecurityUtil.out(response, Result.ok(errorData));
             return null; // 终止认证流程
         }
 
@@ -147,12 +140,11 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
 
         // 构建成功响应，包含生成的 token
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        Map<String, Object> result = new HashMap<>();
-        result.put("token", token);
-        result.put("code", "200");
-        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> data = new HashMap<>();
+        data.put("token", token);
+        data.put("code", "200");
         // 使用 SecurityUtil 的 out 方法将 Result 对象序列化为 JSON 并写入响应
-        SecurityUtil.out(response, Result.ok(mapper.writeValueAsString(result)));
+        SecurityUtil.out(response, Result.ok(data));
     }
 
     /**
@@ -169,7 +161,7 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
         String username = (String) request.getAttribute("attemptedUsername");
         logger.warn("登录失败，用户: {}，原因: {}，请求: {} {}，IP: {}", username, failed.getMessage(), request.getMethod(), request.getRequestURI(), request.getRemoteAddr(), failed);
         // 构建失败响应，包含错误消息
-        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> errorData = new HashMap<>();
         Integer code;
         String message;
 
@@ -185,11 +177,10 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
             message = ResultCodeEnum.LOGIN_AUTH.getMessage();
         }
 
-        result.put("message", message);
-        result.put("code", code);
-        ObjectMapper mapper = new ObjectMapper();
+        errorData.put("message", message);
+        errorData.put("code", code);
         // 使用 SecurityUtil 的 out 方法返回错误响应
         // ResultCodeEnum.LOGIN_AUTH 提供认证失败的错误码和消息（如 401 和“登录失败”）
-        SecurityUtil.out(response, Result.ok(mapper.writeValueAsString(result)));
+        SecurityUtil.out(response, Result.ok(errorData));
     }
 }

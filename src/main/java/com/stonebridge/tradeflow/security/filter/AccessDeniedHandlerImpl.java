@@ -1,7 +1,5 @@
 package com.stonebridge.tradeflow.security.filter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
 import com.stonebridge.tradeflow.security.utils.SecurityUtil;
@@ -44,17 +42,11 @@ public class AccessDeniedHandlerImpl implements AccessDeniedHandler {
         logger.info("Handling AccessDeniedException: {} {}, reason: {}",
                 request.getMethod(), request.getRequestURI(), accessDeniedException.getMessage());
 
-        Map<String, Object> result = new HashMap<>();
-        ObjectMapper mapper = new ObjectMapper();
-        result.put("message", ResultCodeEnum.PERMISSION.getMessage());
-        result.put("code", ResultCodeEnum.PERMISSION.getCode());
-
+        Map<String, Object> errorData = new HashMap<>();
+        errorData.put("message", ResultCodeEnum.PERMISSION.getMessage());
+        errorData.put("code", ResultCodeEnum.PERMISSION.getCode());
         // 使用 SecurityUtil 的 out 方法将 Result 对象序列化为 JSON 并写入响应输出流
         // 该方法内部使用 Jackson 进行序列化，确保响应格式统一
-        try {
-            SecurityUtil.out(response, Result.ok(mapper.writeValueAsString(result)));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        SecurityUtil.out(response, Result.ok(errorData));
     }
 }

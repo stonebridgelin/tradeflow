@@ -196,8 +196,10 @@ public class SysUserController {
             log.warn("User info not found for userId: {}", username);
             throw new CustomizeException(ACCOUNT_ERROR.getCode(), ACCOUNT_ERROR.getMessage());
         }
+        Result<JSONObject> objectResult = Result.ok(userInfo);
+        System.out.println(objectResult.toString());
         // 4. 返回用户信息
-        return Result.ok(userInfo);
+        return objectResult;
     }
 
     @Operation(summary = "用户注册", description = "处理用户注册请求")

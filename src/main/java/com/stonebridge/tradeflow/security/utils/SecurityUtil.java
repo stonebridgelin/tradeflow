@@ -1,30 +1,41 @@
 package com.stonebridge.tradeflow.security.utils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import cn.hutool.json.JSONObject;
 import com.stonebridge.tradeflow.common.result.Result;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 
 public class SecurityUtil {
+
+    private static final Logger logger = LoggerFactory.getLogger(SecurityUtil.class);
+
     private static final String BEARER_PREFIX = "Bearer ";
 
 
+    /**
+     * 输出响应到 HttpServletResponse
+     *
+     * @param response HTTP 响应对象
+     * @param result   响应数据
+     */
     public static void out(HttpServletResponse response, Result result) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        //封装response的状态码和内容格式
         response.setStatus(HttpStatus.OK.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        //内容：result json
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         try {
-            //使用jackson，把json格式的result写入到response的输出流中
-            objectMapper.writeValue(response.getOutputStream(), result);
+            JSONObject json = new JSONObject(result);
+            response.getWriter().write(json.toString());
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("序列化响应失败: {}，结果: {}", e.getMessage(), result, e);
+            throw new RuntimeException("响应写入失败", e);
         }
     }
 

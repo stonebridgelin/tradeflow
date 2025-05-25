@@ -1,7 +1,5 @@
 package com.stonebridge.tradeflow.security.filter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
 import com.stonebridge.tradeflow.security.utils.SecurityUtil;
@@ -34,19 +32,14 @@ public class AuthenticationEntryPointImpl implements AuthenticationEntryPoint {
         // 设置响应状态码
         // 使用 HTTP 200（OK）而非 401（Unauthorized），可能是为了与前端约定一致
         // 注意：通常建议使用 401 表示未认证，需根据项目规范调整
-        Map<String, Object> result = new HashMap<>();
-        ObjectMapper mapper = new ObjectMapper();
-        result.put("message", ResultCodeEnum.LOGIN_AUTH.getMessage());
-        result.put("code", ResultCodeEnum.LOGIN_AUTH.getCode());
+        Map<String, Object> errorData = new HashMap<>();
+        errorData.put("message", ResultCodeEnum.LOGIN_AUTH.getMessage());
+        errorData.put("code", ResultCodeEnum.LOGIN_AUTH.getCode());
         // 构建错误响应对象
         // 使用 Result 类封装响应数据，包含错误码和错误消息
         // ResultCodeEnum.LOGIN_AUTH 提供未认证的错误码和消息（如 401 和“未登录”）
-        try {
-            SecurityUtil.out(response, Result.ok(mapper.writeValueAsString(result)));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-
+        Result result = Result.ok(errorData);
+        // 输出响应，设置状态码为 401
+        SecurityUtil.out(response, result);
     }
 }
