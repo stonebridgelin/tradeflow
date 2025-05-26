@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stonebridge.tradeflow.business.mapper.CategoryMapper">
+
+    <!-- 结果映射，映射数据库列到实体类属性 -->
+    <resultMap id="BaseResultMap" type="com.stonebridge.tradeflow.business.entity.Category">
+        <id property="id" column="id" jdbcType="BIGINT" javaType="java.lang.String"
+            typeHandler="com.stonebridge.tradeflow.business.typehandler.LongToStringTypeHandler"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="imageUrl" column="image_url" jdbcType="VARCHAR"/>
+        <result property="parentId" column="parent_id" jdbcType="BIGINT"/>
+        <result property="status" column="status" jdbcType="TINYINT"/>
+        <result property="orderNum" column="order_num" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 按 parent_id 查询分类 -->
+    <select id="selectByParentId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT id,
+               name,
+               image_url,
+               parent_id,
+               status,
+               order_num,
+               create_time,
+               update_time
+        FROM category
+        WHERE parent_id = #{parentId}
+          AND status = 1
+        ORDER BY order_num ASC
+    </select>
+
+</mapper>
