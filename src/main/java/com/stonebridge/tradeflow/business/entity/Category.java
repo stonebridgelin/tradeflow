@@ -8,6 +8,7 @@ import lombok.Data;
 import com.stonebridge.tradeflow.business.typehandler.LongToStringTypeHandler;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 商品分类实体类
@@ -56,4 +57,10 @@ public class Category {
      * 更新时间
      */
     private LocalDateTime updateTime;
+
+    @TableField(exist = false)
+    private List<Category> children;
+
+    @TableField(exist = false)
+    private boolean hasChildren;
 }
