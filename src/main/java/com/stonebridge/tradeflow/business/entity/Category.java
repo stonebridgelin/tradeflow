@@ -8,6 +8,7 @@ import lombok.Data;
 import com.stonebridge.tradeflow.business.typehandler.LongToStringTypeHandler;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 商品分类实体类
@@ -35,12 +36,19 @@ public class Category {
     /**
      * 父分类id
      */
-    private Long parentId;
+    @TableField(typeHandler = LongToStringTypeHandler.class)
+    private String parentId;
 
     /**
      * 是否显示[0-不显示，1-显示]
      */
     private Integer status;
+
+
+    /**
+     * 等级，分别有1，2，3。等级越小越接近根目录
+     */
+    private Integer level;
 
     /**
      * 排序
@@ -56,4 +64,10 @@ public class Category {
      * 更新时间
      */
     private LocalDateTime updateTime;
+
+    @TableField(exist = false)
+    private List<Category> children;
+
+    @TableField(exist = false)
+    private boolean hasChildren;
 }
