@@ -1,5 +1,6 @@
 package com.stonebridge.tradeflow.business.controller;
 
+import cn.hutool.json.JSONObject;
 import com.stonebridge.tradeflow.business.entity.Category;
 import com.stonebridge.tradeflow.business.service.CategoryService;
 import com.stonebridge.tradeflow.common.result.Result;
@@ -54,6 +55,29 @@ public class CategoryController {
         category.setCreateTime(new Date());
         category.setUpdateTime(new Date());
         categoryService.save(category);
+        return Result.ok(category);
+    }
+
+    @GetMapping("query/{id}")
+    public Result<JSONObject> getCategoryById(@PathVariable String id) {
+        Category category = categoryService.getById(id);
+        JSONObject obj = new JSONObject();
+        obj.put("id", category.getId());
+        obj.put("name", category.getName());
+        String parentId = category.getParentId();
+        obj.put("parentId", parentId);
+        String parentName = "当前节点为1级节点";
+        if (category.getLevel() != 1) {
+            Category parentCategory = categoryService.getById(parentId);
+            parentName = parentCategory.getName();
+        }
+        obj.put("parentName", parentName);
+        return Result.ok(obj);
+    }
+
+    @PutMapping("update")
+    public Result<Category> updateCategory(@RequestBody Category category) {
+        categoryService.updateById(category);
         return Result.ok(category);
     }
 }
