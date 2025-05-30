@@ -7,12 +7,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 
 @Tag(name = "Business库category表的Controller") // 定义 API 组名称
 @RestController
 @RequestMapping("/api/category")
 public class CategoryController {
+
+    public static final Integer CATEGORY_STATUS_ACTIVE = 1;
 
     private final CategoryService categoryService;
 
@@ -37,5 +40,20 @@ public class CategoryController {
     public Result removeCategoryByIds(@RequestBody List<String> ids) {
         categoryService.removeCategoryByIds(ids);
         return Result.ok();
+    }
+
+    /**
+     * 新增Category对象
+     *
+     * @param category 新增的Category数据
+     * @return ：新增的Category
+     */
+    @PutMapping("add")
+    public Result<Category> appendCategory(@RequestBody Category category) {
+        category.setStatus(CATEGORY_STATUS_ACTIVE);
+        category.setCreateTime(new Date());
+        category.setUpdateTime(new Date());
+        categoryService.save(category);
+        return Result.ok(category);
     }
 }

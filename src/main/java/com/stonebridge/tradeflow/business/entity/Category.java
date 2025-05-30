@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import com.stonebridge.tradeflow.business.typehandler.LongToStringTypeHandler;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -58,12 +58,12 @@ public class Category {
     /**
      * 创建时间
      */
-    private LocalDateTime createTime;
+    private Date createTime;
 
     /**
      * 更新时间
      */
-    private LocalDateTime updateTime;
+    private Date updateTime;
 
     @TableField(exist = false)
     private List<Category> children;
