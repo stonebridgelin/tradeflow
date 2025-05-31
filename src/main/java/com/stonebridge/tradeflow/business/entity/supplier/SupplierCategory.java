@@ -13,29 +13,10 @@ import java.util.Date;
 @Data
 @TableName("pms_supplier_category")
 public class SupplierCategory {
-    /**
-     * 关联ID
-     */
     @TableId(type = IdType.AUTO)
-    private String id;
-
-    /**
-     * 供应商ID
-     */
-    private String supplierId;
-
-    /**
-     * 商品分类ID
-     */
-    private String categoryId;
-
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
+    private String id;//关联ID
+    private String supplierId;//供应商ID
+    private String categoryId;//商品分类ID
+    private Date createTime;//创建时间
+    private Date updateTime;//更新时间
 }

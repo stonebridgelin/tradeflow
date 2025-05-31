@@ -16,53 +16,19 @@ import java.util.List;
 @Data
 @TableName("pms_category")
 public class Category {
-    /**
-     * 分类id
-     */
     @TableId(type = IdType.AUTO)
     @TableField(typeHandler = LongToStringTypeHandler.class)
-    private String id;
-
-    /**
-     * 分类名称
-     */
-    private String name;
-
-    /**
-     * 父分类id
-     */
+    private String id;//分类id
+    private String name;//分类名称
     @TableField(typeHandler = LongToStringTypeHandler.class)
-    private String parentId;
-
-    /**
-     * 是否显示[0-不显示，1-显示]
-     */
-    private Integer status;
-
-
-    /**
-     * 等级，分别有1，2，3。等级越小越接近根目录
-     */
-    private Integer level;
-
-    /**
-     * 排序
-     */
-    private Integer orderNum;
-
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
-
+    private String parentId;//父分类id
+    private Integer status;//是否显示[0-不显示，1-显示]
+    private Integer level;//等级，分别有1，2，3。等级越小越接近根目录
+    private Integer orderNum;//排序
+    private Date createTime;//创建时间
+    private Date updateTime;//更新时间
     @TableField(exist = false)
     private List<Category> children;
-
     @TableField(exist = false)
     private boolean hasChildren;
 }

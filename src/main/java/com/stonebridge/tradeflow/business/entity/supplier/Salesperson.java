@@ -13,49 +13,14 @@ import java.util.Date;
 @Data
 @TableName("pms_salesperson")
 public class Salesperson {
-    /**
-     * 业务员ID
-     */
     @TableId(type = IdType.AUTO)
-    private String id;
-
-    /**
-     * 供应商ID
-     */
-    private String supplierId;
-
-    /**
-     * 业务员姓名
-     */
-    private String name;
-
-    /**
-     * 联系电话
-     */
-    private String contactPhone;
-
-    /**
-     * 电子邮件
-     */
-    private String email;
-
-    /**
-     * 职位
-     */
-    private String position;
-
-    /**
-     * 微信号
-     */
-    private String wechat;
-
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
+    private String id;  //业务员ID
+    private String supplierId; //供应商ID
+    private String name; //业务员姓名
+    private String contactPhone; //联系电话
+    private String email; //电子邮件
+    private String position;//职位
+    private String wechat;//微信号
+    private Date createTime; //创建时间
+    private Date updateTime;//更新时间
 }

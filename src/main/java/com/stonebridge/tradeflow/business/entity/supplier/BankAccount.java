@@ -13,44 +13,13 @@ import java.util.Date;
 @Data
 @TableName("pms_bank_account")
 public class BankAccount {
-    /**
-     * 银行账户ID
-     */
     @TableId(type = IdType.AUTO)
-    private String id;
-
-    /**
-     * 供应商ID
-     */
-    private String supplierId;
-
-    /**
-     * 银行名称
-     */
-    private String bankCode;
-
-    /**
-     * 账户名称
-     */
-    private String accountName;
-
-    /**
-     * 账号
-     */
-    private String accountNumber;
-
-    /**
-     * 开户行
-     */
-    private String branchName;
-
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
+    private String id; //银行账户ID
+    private String supplierId; //供应商ID
+    private String bankCode; //银行名称
+    private String accountName; //账户名称
+    private String accountNumber; //账号
+    private String branchName; //开户行
+    private Date createTime; //创建时间
+    private Date updateTime; //更新时间
 }
