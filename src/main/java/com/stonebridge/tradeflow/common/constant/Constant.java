@@ -20,4 +20,15 @@ public class Constant {
      * sys_menu.type = 2 按钮类型<e
      */
     public static final String TYPE_BUTTON = "button";
+
+
+    /**
+     * data_dictionary表中表示供应商销售账号所在银行名称和代码的type
+     */
+    public static final String DATA_DICTIONARY_BANK_TYPE = "bank";
+
+    /**
+     * data_dictionary表中表示供应商销售平台名称和代码的type
+     */
+    public static final String DATA_DICTIONARY_PLATFORM_TYPE = "platform";
 }
