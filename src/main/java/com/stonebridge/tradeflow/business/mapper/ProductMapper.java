@@ -7,5 +7,5 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface ProductMapper extends BaseMapper<Product> {
     // 如果需要自定义方法，可以在这里添加，例如：
-    // List<Product> findByCategory(String category);
+
 }

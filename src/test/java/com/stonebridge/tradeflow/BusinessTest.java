@@ -15,4 +15,10 @@ public class BusinessTest {
     public void test() {
         categoryService.list().forEach(System.out::println);
     }
+
+    @Test
+    public void test1() {
+        System.out.println(categoryService.listWithTree());
+    }
+
 }

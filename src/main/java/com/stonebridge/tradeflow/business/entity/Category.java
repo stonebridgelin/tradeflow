@@ -29,11 +29,6 @@ public class Category {
     private String name;
 
     /**
-     * 图片URL
-     */
-    private String imageUrl;
-
-    /**
      * 父分类id
      */
     @TableField(typeHandler = LongToStringTypeHandler.class)
