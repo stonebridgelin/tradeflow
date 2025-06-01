@@ -15,7 +15,7 @@ public interface DataDictionaryService extends IService<DataDictionary> {
 
     Result<Object> getDataDictionaryPage(int currentPage, int pageSize, String keyword, String type);
 
-    Result<JSONObject> saveDt(DataDictionary dt);
+    Result<JSONObject> saveOrUpdateDt(DataDictionary dt);
 
     Result<List<Map<String, Object>>> getAllTypes();
 }

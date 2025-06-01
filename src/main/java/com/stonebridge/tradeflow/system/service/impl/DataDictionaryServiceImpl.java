@@ -9,6 +9,7 @@ import com.stonebridge.tradeflow.system.entity.DataDictionary;
 import com.stonebridge.tradeflow.system.mapper.DataDictionaryMapper;
 import com.stonebridge.tradeflow.system.service.DataDictionaryService;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
@@ -105,18 +106,29 @@ public class DataDictionaryServiceImpl extends ServiceImpl<DataDictionaryMapper,
         }
     }
 
-    public Result<JSONObject> saveDt(DataDictionary dt) {
-        Integer rows = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM data_dictionary WHERE type=? and name=?", Integer.class, dt.getType(), dt.getName());
+    public Result<JSONObject> saveOrUpdateDt(DataDictionary dt) {
+        Integer id = dt.getId();
+        //如果id不为空，则是更新操作，从数据库获取源数据，将新的属性拷贝到源数据，然后在数据库中完成更新操作。
         JSONObject json = new JSONObject();
-        if (rows > 0) {
-            json.set("message", "新增的数据已存在相同的type和name");
-            return Result.ok(json);
-        }
-        dt.setCreateTime(new Date());
-        dt.setUpdateTime(new Date());
-        dataDictionaryMapper.insert(dt);
         json.set("code", "200");
-        json.set("message", "新增的数据已存在相同的type和name");
+        if (id != null) {
+            DataDictionary dataDictionary = dataDictionaryMapper.selectById(id);
+            BeanUtils.copyProperties(dt, dataDictionary);
+            dataDictionary.setUpdateTime(new Date());
+            dataDictionaryMapper.updateById(dataDictionary);
+        } else {
+            //如果id为空，则是新增操作，先判断数据库中是否已存在相同的type和code，如果存在则返回错误信息，否则执行新增操作。
+            DataDictionary dataDictionary = new DataDictionary();
+            Integer rows = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM data_dictionary WHERE type=? and code=?", Integer.class, dt.getType(), dt.getCode());
+            if (rows > 0) {
+                json.set("code", "500");
+                json.set("message", "新增的数据已存在相同的type和name");
+                return Result.ok(json);
+            }
+            dt.setCreateTime(new Date());
+            dt.setUpdateTime(new Date());
+            dataDictionaryMapper.insert(dt);
+        }
         return Result.ok(json);
     }
 

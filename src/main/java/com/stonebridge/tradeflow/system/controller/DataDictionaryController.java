@@ -20,12 +20,12 @@ public class DataDictionaryController {
 
     @GetMapping("list/{currentPage}/{pageSize}")
     public Result<Object> getAllDataDictionary(@PathVariable(value = "currentPage") int currentPage, @PathVariable(value = "pageSize") int pageSize, String keyword, String type) {
-        return dataDictionaryService.getDataDictionaryPage(currentPage, pageSize,keyword,type);
+        return dataDictionaryService.getDataDictionaryPage(currentPage, pageSize, keyword, type);
     }
 
     @PostMapping("save")
-    public Result<JSONObject> save(@RequestBody DataDictionary dt) {
-        return dataDictionaryService.saveDt(dt);
+    public Result<JSONObject> saveOrUpdate(@RequestBody DataDictionary dt) {
+        return dataDictionaryService.saveOrUpdateDt(dt);
     }
 
 
@@ -43,5 +43,18 @@ public class DataDictionaryController {
     @GetMapping("getAllTypes")
     public Result<List<Map<String, Object>>> getAllTypes() {
         return dataDictionaryService.getAllTypes();
+    }
+
+    @GetMapping("get/{id}")
+    public Result<Object> getDtById(@PathVariable(value = "id") String id) {
+        if (id == null || id.trim().isEmpty()) {
+            return Result.fail().message("无效的ID");
+        } else {
+            DataDictionary dataDictionary = dataDictionaryService.getById(id);
+            if (dataDictionary == null) {
+                return Result.fail().message("数据不存在");
+            }
+            return Result.ok(dataDictionary);
+        }
     }
 }
