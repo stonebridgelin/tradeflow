@@ -31,4 +31,9 @@ public class Constant {
      * data_dictionary表中表示供应商销售平台名称和代码的type
      */
     public static final String DATA_DICTIONARY_PLATFORM_TYPE = "platform";
+
+    /**
+     * data_dictionary表中表示供应商销售类型type
+     */
+    public static final String DATA_DICTIONARY_SUPPLIER_TYPE = "supplier_type";
 }
