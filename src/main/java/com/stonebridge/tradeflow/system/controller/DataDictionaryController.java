@@ -1,6 +1,8 @@
 package com.stonebridge.tradeflow.system.controller;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
+import com.stonebridge.tradeflow.common.constant.Constant;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.system.entity.DataDictionary;
 import com.stonebridge.tradeflow.system.service.DataDictionaryService;
@@ -56,5 +58,14 @@ public class DataDictionaryController {
             }
             return Result.ok(dataDictionary);
         }
+    }
+    /**
+     * 根据DataDictionary的type从Redis缓存中获取对应DataDiction
+     * @return
+     */
+    @GetMapping("getDdByType")
+    public Result<Object> getDdByType(String type) {
+        List<DataDictionary> list = dataDictionaryService.getByType(StrUtil.trim(type));
+        return Result.ok(list);
     }
 }
