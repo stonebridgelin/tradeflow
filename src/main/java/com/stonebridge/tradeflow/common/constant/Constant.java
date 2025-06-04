@@ -36,4 +36,13 @@ public class Constant {
      * data_dictionary表中表示供应商销售类型type
      */
     public static final String DATA_DICTIONARY_SUPPLIER_TYPE = "supplier_type";
+
+    /**
+     * 供应商的状态status-1 启用
+     */
+    public static final Integer SUPPLIER_STATUS_ENABLE = 1;
+    /**
+     * 供应商的状态status-0 停用
+     */
+    public static final Integer SUPPLIER_STATUS_DISABLE = 0;
 }

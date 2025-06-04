@@ -1,5 +1,6 @@
 package com.stonebridge.tradeflow.business.controller;
 
+import com.stonebridge.tradeflow.business.entity.dto.SupplierDetail;
 import com.stonebridge.tradeflow.business.service.SupplierService;
 import com.stonebridge.tradeflow.common.result.Result;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,17 @@ public class SupplierController {
     public Result<Object> deleteSupplier(@PathVariable(value = "id") String id) {
         supplierService.deleteSupplierById(id);
         return Result.ok("删除成功");
+    }
 
+    @PostMapping("add")
+    public Result<Object> addSupplier(@RequestBody SupplierDetail supplierDetail) {
+        supplierService.saveSupplierDetail(supplierDetail);
+        return Result.ok("添加成功");
+    }
+
+    @GetMapping("supplierDetail/{id}")
+    public Result<SupplierDetail> getSupplierDetail(@PathVariable(value = "id") String id) {
+        SupplierDetail supplierDetail = supplierService.getSupplierDetailById(id);
+        return Result.ok(supplierDetail);
     }
 }
