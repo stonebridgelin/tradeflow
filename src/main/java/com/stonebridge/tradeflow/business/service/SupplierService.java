@@ -8,7 +8,7 @@ import com.stonebridge.tradeflow.common.result.Result;
 public interface SupplierService extends IService<Supplier> {
     Result<Object> getSupplierList(int currentPage, int pageSize, String keyword);
 
-    void deleteSupplierById(String id);
+    void deleteSupplierDetailById(String id);
 
     void saveSupplierDetail(SupplierDetail supplierDetail);
 

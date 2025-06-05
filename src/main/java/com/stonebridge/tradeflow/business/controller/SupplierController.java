@@ -24,7 +24,7 @@ public class SupplierController {
 
     @DeleteMapping("delete/{id}")
     public Result<Object> deleteSupplier(@PathVariable(value = "id") String id) {
-        supplierService.deleteSupplierById(id);
+        supplierService.deleteSupplierDetailById(id);
         return Result.ok("删除成功");
     }
 
@@ -32,6 +32,13 @@ public class SupplierController {
     public Result<Object> addSupplier(@RequestBody SupplierDetail supplierDetail) {
         supplierService.saveSupplierDetail(supplierDetail);
         return Result.ok("添加成功");
+    }
+
+
+    @PutMapping("update")
+    public Result<Object> updateSupplierDetail(@RequestBody SupplierDetail supplierDetail) {
+        supplierService.updateSupplierDetail(supplierDetail);
+        return Result.ok("更新成功");
     }
 
     @GetMapping("supplierDetail/{id}")
