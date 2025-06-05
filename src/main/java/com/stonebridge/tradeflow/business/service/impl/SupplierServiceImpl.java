@@ -16,17 +16,18 @@ import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import com.stonebridge.tradeflow.common.constant.Constant;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.system.entity.DataDictionary;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> implements SupplierService {
 
 
@@ -67,38 +68,106 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> i
 
             // 执行分页查询
             Page<Supplier> pageResult = this.page(page, wrapper);
+            if (pageResult.getRecords().isEmpty()) {
+                // 如果无数据，直接返回空分页结果
+                Page<SupplierVO> emptyPage = new Page<>();
+                BeanUtils.copyProperties(pageResult, emptyPage, "records");
+                emptyPage.setRecords(new ArrayList<>());
+                return Result.ok(emptyPage);
+            }
 
-            // 转换 Supplier 数据并添加额外数据
-            List<SupplierVO> voRecords = pageResult.getRecords().stream().map(supplier -> {
-                // 将 Supplier 转换为 DTO
-                SupplierVO vo = new SupplierVO();
-                BeanUtils.copyProperties(supplier, vo);
+            // 1.获取所有的Supplier对象
+            List<Supplier> records = pageResult.getRecords();
+            // 用于保存所有Supplier对象的supplierType数据，避免重复
+            Set<String> supplierTypeSet = new HashSet<>();
+            // 用于保存所有是SupplierCategory对象
+            List<SupplierCategory> supplierCategoryList = new ArrayList<>();
+            // 用于保存每个supplier对应的SupplierCategory对象集合
+            Map<String, List<SupplierCategory>> supplierCategoryMap = new HashMap<>(); // 修复1：键类型从 Integer 改为 String
 
-                // 设置 supplierType 名称（已有逻辑）
-                DataDictionary dataDictionary = myRedisCache.getDataDictionaryByTypeAndCode(Constant.DATA_DICTIONARY_SUPPLIER_TYPE, supplier.getSupplierType());
-                if (dataDictionary != null) {
-                    vo.setSupplierType(dataDictionary.getName());
+            // 遍历所有的Supplier对象，将需要的supplierTypeSet、supplierCategoryList、supplierCategoryMap赋值
+            if (records != null && !records.isEmpty()) { // 条件可以简化，因为 pageResult.getRecords().isEmpty() 已检查
+                List<SupplierCategory> supplierCategories;
+                // 获取供应商类型名称
+                for (Supplier supplier : records) {
+                    supplierTypeSet.add(supplier.getSupplierType());
+                    supplierCategories = supplierCategoryMapper.selectList(new QueryWrapper<SupplierCategory>().eq("supplier_id", supplier.getId()));
+                    supplierCategoryList.addAll(supplierCategories);
+                    supplierCategoryMap.put(String.valueOf(supplier.getId()), supplierCategories); // 修复1：supplier.getId() 是 String
                 }
-                //添加不属于 Supplier 的额外数据
-                supplierCategoryMapper.selectList(new QueryWrapper<SupplierCategory>().eq("supplier_id", supplier.getId())).forEach(supplierCategory -> {
-                    Category category = myRedisCache.getCategoryById(supplierCategory.getCategoryId());
+            }
+
+            // 将所有涉及的DataDictionary保存在Map中，通过supplier.supplierType作为key
+            Map<String, DataDictionary> dataDictionaryMap = new HashMap<>();
+            for (String supplierType : supplierTypeSet) {
+                dataDictionaryMap.put(supplierType, myRedisCache.getDataDictionaryByTypeAndCode(Constant.DATA_DICTIONARY_SUPPLIER_TYPE, supplierType));
+            }
+            // 将所有涉及的Category保存在Map中，通过categoryId作为key
+            Map<String, Category> categoryMap = new HashMap<>();
+            for (SupplierCategory supplierCategory : supplierCategoryList) {
+                categoryMap.put(supplierCategory.getCategoryId(), myRedisCache.getCategoryById(supplierCategory.getCategoryId()));
+            }
+
+            List<SupplierVO> supplierVOList=new ArrayList<>();
+            for (Supplier supplier : pageResult.getRecords()) {
+                // 设置 supplierType 名称（已有逻辑）
+                DataDictionary dataDictionary = dataDictionaryMap.get(supplier.getSupplierType());
+                if (dataDictionary != null) {
+                    supplier.setSupplierType(dataDictionary.getName());
+                }
+                SupplierVO supplierVO = new SupplierVO();
+                // 添加不属于 Supplier 的额外数据，即分类的信息
+                List<SupplierCategory> list = supplierCategoryMap.getOrDefault(String.valueOf(supplier.getId()), new ArrayList<>()); // 修复2：使用 getOrDefault 避免 NPE
+                for (SupplierCategory supplierCategory : list) {
+                    String categoryId = supplierCategory.getCategoryId();
+                    Category category = categoryMap.get(categoryId);
                     if (category != null) {
-                        if (vo.getCategories() == null) {
-                            vo.setCategories(new ArrayList<>());
+                        if (supplierVO.getCategories() == null) {
+                            supplierVO.setCategories(new ArrayList<>());
                         }
-                        vo.getCategories().add(category.getName());
+                        supplierVO.getCategories().add(category.getName());
                     }
-                });
-                return vo;
-            }).collect(Collectors.toList());
+                }
+                BeanUtils.copyProperties(supplier, supplierVO);
+                supplierVOList.add(supplierVO);
+            }
+
+//
+//            // 转换 Supplier 数据并添加额外数据
+//            List<SupplierVO> voRecords = pageResult.getRecords().stream().map(supplier -> {
+//                // 将 Supplier 转换为 DTO
+//                SupplierVO vo = new SupplierVO();
+//                BeanUtils.copyProperties(supplier, vo);
+//
+//                // 设置 supplierType 名称（已有逻辑）
+//                DataDictionary dataDictionary = dataDictionaryMap.get(supplier.getSupplierType());
+//                if (dataDictionary != null) {
+//                    vo.setSupplierType(dataDictionary.getName());
+//                }
+//                // 添加不属于 Supplier 的额外数据，即分类的信息
+//                List<SupplierCategory> list = supplierCategoryMap.getOrDefault(String.valueOf(supplier.getId()), new ArrayList<>()); // 修复2：使用 getOrDefault 避免 NPE
+//                for (SupplierCategory supplierCategory : list) {
+//                    String categoryId = supplierCategory.getCategoryId();
+//                    Category category = categoryMap.get(categoryId);
+//                    if (category != null) {
+//                        if (vo.getCategories() == null) {
+//                            vo.setCategories(new ArrayList<>());
+//                        }
+//                        vo.getCategories().add(category.getName());
+//                    }
+//                }
+//                return vo;
+//            }).collect(Collectors.toList());
 
             // 创建新的 Page 对象，承载 DTO 数据
             Page<SupplierVO> dtoPageResult = new Page<>();
             BeanUtils.copyProperties(pageResult, dtoPageResult, "records"); // 复制分页信息
-            dtoPageResult.setRecords(voRecords);
+            dtoPageResult.setRecords(supplierVOList);
 
             return Result.ok(dtoPageResult);
         } catch (Exception e) {
+            log.error("Failed to query supplier list. CurrentPage: {}, PageSize: {}, Keyword: {}. Error: {}",
+                    currentPage, pageSize, keyword, e.getMessage(), e); // 修复3：记录详细错误日志
             return Result.fail("分页查询失败：" + e.getMessage());
         }
     }
