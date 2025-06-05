@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 public interface DataDictionaryService extends IService<DataDictionary> {
-    List<DataDictionary> getByType(String typeKey);
-
-    DataDictionary getByTypeAndCode(String type, String code);
 
     Result<Object> getDataDictionaryPage(int currentPage, int pageSize, String keyword, String type);
 

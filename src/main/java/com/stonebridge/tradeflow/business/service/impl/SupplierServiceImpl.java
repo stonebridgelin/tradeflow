@@ -5,16 +5,17 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.stonebridge.tradeflow.business.entity.Category;
-import com.stonebridge.tradeflow.business.entity.dto.CategoryNode;
-import com.stonebridge.tradeflow.business.entity.dto.SupplierDetail;
+import com.stonebridge.tradeflow.business.entity.category.Category;
+import com.stonebridge.tradeflow.business.entity.supplier.dto.CategoryNode;
+import com.stonebridge.tradeflow.business.entity.supplier.dto.SupplierDetail;
 import com.stonebridge.tradeflow.business.entity.supplier.*;
+import com.stonebridge.tradeflow.business.entity.supplier.vo.SupplierVO;
 import com.stonebridge.tradeflow.business.mapper.*;
 import com.stonebridge.tradeflow.business.service.SupplierService;
+import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import com.stonebridge.tradeflow.common.constant.Constant;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.system.entity.DataDictionary;
-import com.stonebridge.tradeflow.system.service.DataDictionaryService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,11 +24,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> implements SupplierService {
 
-    private final DataDictionaryService dataDictionaryService;
 
     private final SupplierMapper supplierMapper;
 
@@ -39,46 +40,69 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> i
 
     private final SalespersonMapper salespersonMapper;
 
-    private final CategoryMapper categoryMapper;
+    private final MyRedisCache myRedisCache;
 
     @Autowired
-    public SupplierServiceImpl(DataDictionaryService dataDictionaryService, SupplierMapper supplierMapper,
+    public SupplierServiceImpl(SupplierMapper supplierMapper,
                                SupplierCategoryMapper supplierCategoryMapper, BankAccountMapper bankAccountMapper,
                                PlatformInfoMapper platformInfoMapper, SalespersonMapper salespersonMapper,
-                               CategoryMapper categoryMapper) {
-        this.dataDictionaryService = dataDictionaryService;
+                               MyRedisCache myRedisCache) {
         this.supplierMapper = supplierMapper;
         this.supplierCategoryMapper = supplierCategoryMapper;
         this.bankAccountMapper = bankAccountMapper;
         this.platformInfoMapper = platformInfoMapper;
         this.salespersonMapper = salespersonMapper;
-        this.categoryMapper = categoryMapper;
+        this.myRedisCache = myRedisCache;
     }
+
 
     @Override
     public Result<Object> getSupplierList(int currentPage, int pageSize, String keyword) {
-
         try {
             // 构建分页对象
             Page<Supplier> page = new Page<>(currentPage, pageSize);
             // 构建查询条件
             QueryWrapper<Supplier> wrapper = new QueryWrapper<>();
-
-            // 添加排序条件：按 type 升序，同一 type 内按 update_time 降序
             wrapper.orderByDesc("update_time");
+
             // 执行分页查询
             Page<Supplier> pageResult = this.page(page, wrapper);
-            for (Supplier supplier : pageResult.getRecords()) {
-                DataDictionary dataDictionary = dataDictionaryService.getByTypeAndCode(Constant.DATA_DICTIONARY_SUPPLIER_TYPE, supplier.getSupplierType());
+
+            // 转换 Supplier 数据并添加额外数据
+            List<SupplierVO> voRecords = pageResult.getRecords().stream().map(supplier -> {
+                // 将 Supplier 转换为 DTO
+                SupplierVO vo = new SupplierVO();
+                BeanUtils.copyProperties(supplier, vo);
+
+                // 设置 supplierType 名称（已有逻辑）
+                DataDictionary dataDictionary = myRedisCache.getDataDictionaryByTypeAndCode(Constant.DATA_DICTIONARY_SUPPLIER_TYPE, supplier.getSupplierType());
                 if (dataDictionary != null) {
-                    supplier.setSupplierType(dataDictionary.getName());
+                    vo.setSupplierType(dataDictionary.getName());
                 }
-            }
-            return Result.ok(pageResult);
+                //添加不属于 Supplier 的额外数据
+                supplierCategoryMapper.selectList(new QueryWrapper<SupplierCategory>().eq("supplier_id", supplier.getId())).forEach(supplierCategory -> {
+                    Category category = myRedisCache.getCategoryById(supplierCategory.getCategoryId());
+                    if (category != null) {
+                        if (vo.getCategories() == null) {
+                            vo.setCategories(new ArrayList<>());
+                        }
+                        vo.getCategories().add(category.getName());
+                    }
+                });
+                return vo;
+            }).collect(Collectors.toList());
+
+            // 创建新的 Page 对象，承载 DTO 数据
+            Page<SupplierVO> dtoPageResult = new Page<>();
+            BeanUtils.copyProperties(pageResult, dtoPageResult, "records"); // 复制分页信息
+            dtoPageResult.setRecords(voRecords);
+
+            return Result.ok(dtoPageResult);
         } catch (Exception e) {
             return Result.fail("分页查询失败：" + e.getMessage());
         }
     }
+
 
     @Transactional
     @Override
@@ -177,7 +201,7 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> i
         for (SupplierCategory supplierCategory : supplierCategoryList) {
             String categoryId = supplierCategory.getCategoryId();
             if (StrUtil.isNotEmpty(categoryId)) {
-                Category category = categoryMapper.selectById(categoryId);
+                Category category = myRedisCache.getCategoryById(categoryId);
                 if (category != null) {
                     supplierDetail.getCategories().add(categoryId);
                     CategoryNode categoryNode = new CategoryNode();

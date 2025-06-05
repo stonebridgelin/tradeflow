@@ -1,6 +1,6 @@
 package com.stonebridge.tradeflow.business.controller;
 
-import com.stonebridge.tradeflow.business.entity.dto.SupplierDetail;
+import com.stonebridge.tradeflow.business.entity.supplier.dto.SupplierDetail;
 import com.stonebridge.tradeflow.business.service.SupplierService;
 import com.stonebridge.tradeflow.common.result.Result;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,8 +18,7 @@ public class SupplierController {
 
     @GetMapping("list/{currentPage}/{pageSize}")
     public Result<Object> getSupplierList(@PathVariable(value = "currentPage") int currentPage, @PathVariable(value = "pageSize") int pageSize, String keyword) {
-        Result<Object> supplierRecords = supplierService.getSupplierList(currentPage, pageSize, keyword);
-        return supplierRecords;
+        return supplierService.getSupplierList(currentPage, pageSize, keyword);
     }
 
     @DeleteMapping("delete/{id}")
