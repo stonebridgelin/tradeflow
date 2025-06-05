@@ -87,11 +87,14 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> i
 
             // 遍历所有的Supplier对象，将需要的supplierTypeSet、supplierCategoryList、supplierCategoryMap赋值
             if (records != null && !records.isEmpty()) { // 条件可以简化，因为 pageResult.getRecords().isEmpty() 已检查
+                QueryWrapper<SupplierCategory> queryWrapper = new QueryWrapper<>();
                 List<SupplierCategory> supplierCategories;
                 // 获取供应商类型名称
                 for (Supplier supplier : records) {
+                    // 修复：清空之前的条件
+                    queryWrapper.clear();
                     supplierTypeSet.add(supplier.getSupplierType());
-                    supplierCategories = supplierCategoryMapper.selectList(new QueryWrapper<SupplierCategory>().eq("supplier_id", supplier.getId()));
+                    supplierCategories = supplierCategoryMapper.selectList(queryWrapper.eq("supplier_id", supplier.getId()));
                     supplierCategoryList.addAll(supplierCategories);
                     supplierCategoryMap.put(String.valueOf(supplier.getId()), supplierCategories); // 修复1：supplier.getId() 是 String
                 }
