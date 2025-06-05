@@ -1,7 +1,7 @@
 package com.stonebridge.tradeflow.business.controller;
 
 import cn.hutool.json.JSONObject;
-import com.stonebridge.tradeflow.business.entity.Category;
+import com.stonebridge.tradeflow.business.entity.category.Category;
 import com.stonebridge.tradeflow.business.service.CategoryService;
 import com.stonebridge.tradeflow.common.result.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;

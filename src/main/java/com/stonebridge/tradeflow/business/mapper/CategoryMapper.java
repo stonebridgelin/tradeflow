@@ -1,7 +1,7 @@
 package com.stonebridge.tradeflow.business.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.stonebridge.tradeflow.business.entity.Category;
+import com.stonebridge.tradeflow.business.entity.category.Category;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

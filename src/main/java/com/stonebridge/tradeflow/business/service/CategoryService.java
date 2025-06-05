@@ -1,7 +1,7 @@
 package com.stonebridge.tradeflow.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.stonebridge.tradeflow.business.entity.Category;
+import com.stonebridge.tradeflow.business.entity.category.Category;
 
 import java.util.List;
 

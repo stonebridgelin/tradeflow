@@ -1,4 +1,4 @@
-package com.stonebridge.tradeflow.business.entity;
+package com.stonebridge.tradeflow.business.entity.category;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;

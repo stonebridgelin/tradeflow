@@ -1,4 +1,4 @@
-package com.stonebridge.tradeflow.business.entity.dto;
+package com.stonebridge.tradeflow.business.entity.supplier.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.stonebridge.tradeflow.business.entity.supplier.BankAccount;

@@ -3,7 +3,7 @@
 <mapper namespace="com.stonebridge.tradeflow.business.mapper.CategoryMapper">
 
     <!-- 结果映射，映射数据库列到实体类属性 -->
-    <resultMap id="BaseResultMap" type="com.stonebridge.tradeflow.business.entity.Category">
+    <resultMap id="BaseResultMap" type="com.stonebridge.tradeflow.business.entity.category.Category">
         <id property="id" column="id" jdbcType="BIGINT" javaType="java.lang.String"
             typeHandler="com.stonebridge.tradeflow.business.typehandler.LongToStringTypeHandler"/>
         <result property="name" column="name" jdbcType="VARCHAR"/>

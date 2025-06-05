@@ -1,7 +1,7 @@
 package com.stonebridge.tradeflow.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.stonebridge.tradeflow.business.entity.dto.SupplierDetail;
+import com.stonebridge.tradeflow.business.entity.supplier.dto.SupplierDetail;
 import com.stonebridge.tradeflow.business.entity.supplier.Supplier;
 import com.stonebridge.tradeflow.common.result.Result;
 
