@@ -1,13 +1,13 @@
 package com.stonebridge.tradeflow;
 
 import com.stonebridge.tradeflow.business.service.*;
+import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import com.stonebridge.tradeflow.common.constant.Constant;
 import com.stonebridge.tradeflow.system.entity.DataDictionary;
 import com.stonebridge.tradeflow.system.service.DataDictionaryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.List;
 
@@ -15,22 +15,23 @@ import java.util.List;
 public class DatadictionaryTest {
 
     @Autowired
-    private RedisTemplate redisTemplate;
+    private MyRedisCache redisCache;
 
     @Autowired
     private DataDictionaryService dataDictionaryService;
 
     @Test
     public void TestDataByType() {
-        List<DataDictionary> list = dataDictionaryService.getByType(Constant.DATA_DICTIONARY_BANK_TYPE);
+        List<DataDictionary> list = redisCache.getDataDictionaryByType(Constant.DATA_DICTIONARY_BANK_TYPE);
         System.out.println(list.size());
         list.forEach(System.out::println);
     }
 
     @Test
     public void TestDataByTypeCode() {
-        String code = "020";
-        DataDictionary dictionary = dataDictionaryService.getByTypeAndCode(Constant.DATA_DICTIONARY_PLATFORM_TYPE, code);
+//        String code = "020";
+//        DataDictionary dict = redisCache.getDataDictionaryByTypeAndCode("platform", "050");
+        DataDictionary dictionary = redisCache.getDataDictionaryByTypeAndCode("platform", "050");
         System.out.println(dictionary);
     }
 

@@ -2,7 +2,7 @@ package com.stonebridge.tradeflow.system.controller;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
-import com.stonebridge.tradeflow.common.constant.Constant;
+import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.system.entity.DataDictionary;
 import com.stonebridge.tradeflow.system.service.DataDictionaryService;
@@ -16,8 +16,11 @@ import java.util.Map;
 public class DataDictionaryController {
     private final DataDictionaryService dataDictionaryService;
 
-    public DataDictionaryController(DataDictionaryService dataDictionaryService) {
+    private final MyRedisCache  myRedisCache;
+
+    public DataDictionaryController(DataDictionaryService dataDictionaryService, MyRedisCache myRedisCache) {
         this.dataDictionaryService = dataDictionaryService;
+        this.myRedisCache = myRedisCache;
     }
 
     @GetMapping("list/{currentPage}/{pageSize}")
@@ -65,7 +68,7 @@ public class DataDictionaryController {
      */
     @GetMapping("getDdByType")
     public Result<Object> getDdByType(String type) {
-        List<DataDictionary> list = dataDictionaryService.getByType(StrUtil.trim(type));
+        List<DataDictionary> list = myRedisCache.getDataDictionaryByType(StrUtil.trim(type));
         return Result.ok(list);
     }
 }

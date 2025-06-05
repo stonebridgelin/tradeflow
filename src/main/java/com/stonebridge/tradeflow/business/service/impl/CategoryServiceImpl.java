@@ -1,9 +1,10 @@
 package com.stonebridge.tradeflow.business.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.stonebridge.tradeflow.business.entity.Category;
+import com.stonebridge.tradeflow.business.entity.category.Category;
 import com.stonebridge.tradeflow.business.mapper.CategoryMapper;
 import com.stonebridge.tradeflow.business.service.CategoryService;
+import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +28,8 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
 
     private final CategoryMapper categoryMapper;
 
+    private final MyRedisCache  myRedisCache;
+
     /**
      * 构造函数，通过依赖注入初始化 CategoryMapper。
      *
@@ -34,8 +37,9 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
      * @throws NullPointerException 如果 categoryMapper 为 null
      */
     @Autowired
-    public CategoryServiceImpl(CategoryMapper categoryMapper) {
+    public CategoryServiceImpl(CategoryMapper categoryMapper, MyRedisCache myRedisCache) {
         this.categoryMapper = Objects.requireNonNull(categoryMapper, "CategoryMapper 不能为空");
+        this.myRedisCache = myRedisCache;
     }
 
     /**
@@ -77,6 +81,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         //校验哪些被应用，则不能删除
         //TODO
         categoryMapper.deleteBatchIds(ids);
+        myRedisCache.refreshCache(MyRedisCache.CacheConstants.TYPE_CATEGORY);
     }
 
     /**
