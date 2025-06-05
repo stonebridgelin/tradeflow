@@ -111,61 +111,61 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> i
                 categoryMap.put(supplierCategory.getCategoryId(), myRedisCache.getCategoryById(supplierCategory.getCategoryId()));
             }
 
-            List<SupplierVO> supplierVOList=new ArrayList<>();
-            for (Supplier supplier : pageResult.getRecords()) {
-                // 设置 supplierType 名称（已有逻辑）
-                DataDictionary dataDictionary = dataDictionaryMap.get(supplier.getSupplierType());
-                if (dataDictionary != null) {
-                    supplier.setSupplierType(dataDictionary.getName());
-                }
-                SupplierVO supplierVO = new SupplierVO();
-                // 添加不属于 Supplier 的额外数据，即分类的信息
-                List<SupplierCategory> list = supplierCategoryMap.getOrDefault(String.valueOf(supplier.getId()), new ArrayList<>()); // 修复2：使用 getOrDefault 避免 NPE
-                for (SupplierCategory supplierCategory : list) {
-                    String categoryId = supplierCategory.getCategoryId();
-                    Category category = categoryMap.get(categoryId);
-                    if (category != null) {
-                        if (supplierVO.getCategories() == null) {
-                            supplierVO.setCategories(new ArrayList<>());
-                        }
-                        supplierVO.getCategories().add(category.getName());
-                    }
-                }
-                BeanUtils.copyProperties(supplier, supplierVO);
-                supplierVOList.add(supplierVO);
-            }
-
-//
-//            // 转换 Supplier 数据并添加额外数据
-//            List<SupplierVO> voRecords = pageResult.getRecords().stream().map(supplier -> {
-//                // 将 Supplier 转换为 DTO
-//                SupplierVO vo = new SupplierVO();
-//                BeanUtils.copyProperties(supplier, vo);
-//
+//            List<SupplierVO> supplierVOList=new ArrayList<>();
+//            for (Supplier supplier : pageResult.getRecords()) {
 //                // 设置 supplierType 名称（已有逻辑）
 //                DataDictionary dataDictionary = dataDictionaryMap.get(supplier.getSupplierType());
 //                if (dataDictionary != null) {
-//                    vo.setSupplierType(dataDictionary.getName());
+//                    supplier.setSupplierType(dataDictionary.getName());
 //                }
+//                SupplierVO supplierVO = new SupplierVO();
 //                // 添加不属于 Supplier 的额外数据，即分类的信息
 //                List<SupplierCategory> list = supplierCategoryMap.getOrDefault(String.valueOf(supplier.getId()), new ArrayList<>()); // 修复2：使用 getOrDefault 避免 NPE
 //                for (SupplierCategory supplierCategory : list) {
 //                    String categoryId = supplierCategory.getCategoryId();
 //                    Category category = categoryMap.get(categoryId);
 //                    if (category != null) {
-//                        if (vo.getCategories() == null) {
-//                            vo.setCategories(new ArrayList<>());
+//                        if (supplierVO.getCategories() == null) {
+//                            supplierVO.setCategories(new ArrayList<>());
 //                        }
-//                        vo.getCategories().add(category.getName());
+//                        supplierVO.getCategories().add(category.getName());
 //                    }
 //                }
-//                return vo;
-//            }).collect(Collectors.toList());
+//                BeanUtils.copyProperties(supplier, supplierVO);
+//                supplierVOList.add(supplierVO);
+//            }
+
+//
+            // 转换 Supplier 数据并添加额外数据
+            List<SupplierVO> voRecords = pageResult.getRecords().stream().map(supplier -> {
+                // 将 Supplier 转换为 DTO
+                SupplierVO vo = new SupplierVO();
+                BeanUtils.copyProperties(supplier, vo);
+
+                // 设置 supplierType 名称（已有逻辑）
+                DataDictionary dataDictionary = dataDictionaryMap.get(supplier.getSupplierType());
+                if (dataDictionary != null) {
+                    vo.setSupplierType(dataDictionary.getName());
+                }
+                // 添加不属于 Supplier 的额外数据，即分类的信息
+                List<SupplierCategory> list = supplierCategoryMap.getOrDefault(String.valueOf(supplier.getId()), new ArrayList<>()); // 修复2：使用 getOrDefault 避免 NPE
+                for (SupplierCategory supplierCategory : list) {
+                    String categoryId = supplierCategory.getCategoryId();
+                    Category category = categoryMap.get(categoryId);
+                    if (category != null) {
+                        if (vo.getCategories() == null) {
+                            vo.setCategories(new ArrayList<>());
+                        }
+                        vo.getCategories().add(category.getName());
+                    }
+                }
+                return vo;
+            }).collect(Collectors.toList());
 
             // 创建新的 Page 对象，承载 DTO 数据
             Page<SupplierVO> dtoPageResult = new Page<>();
             BeanUtils.copyProperties(pageResult, dtoPageResult, "records"); // 复制分页信息
-            dtoPageResult.setRecords(supplierVOList);
+            dtoPageResult.setRecords(voRecords);
 
             return Result.ok(dtoPageResult);
         } catch (Exception e) {
