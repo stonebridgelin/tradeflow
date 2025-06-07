@@ -2,6 +2,7 @@ package com.stonebridge.tradeflow.security.filter;
 
 import com.mysql.cj.util.StringUtils;
 import com.stonebridge.tradeflow.common.result.Result;
+import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
 import com.stonebridge.tradeflow.security.utils.JwtUtil;
 import com.stonebridge.tradeflow.security.utils.SecurityUtil;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -10,6 +11,8 @@ import org.springframework.security.web.authentication.logout.LogoutHandler;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 自定义注销处理器，用于处理 Spring Security 的用户注销逻辑
@@ -58,11 +61,14 @@ public class TokenLogoutHandler implements LogoutHandler {
 
             // 构建注销成功的响应对象
             // 使用 Result 类封装响应数据，表示注销成功
-            Result result = Result.ok("注销成功");
-
-            // 使用 SecurityUtil 的 out 方法将 Result 对象序列化为 JSON 并写入响应输出流
-            // 该方法内部使用 Jackson 进行序列化，确保响应格式统一
-            SecurityUtil.out(response, result);
+//            Map<String, Object> errorData = new HashMap<>();
+//            errorData.put("message", "注销成功");
+//            errorData.put("code", ResultCodeEnum.SUCCESS.getCode());
+//            Result result = Result.ok("注销成功");
+//
+//            // 使用 SecurityUtil 的 out 方法将 Result 对象序列化为 JSON 并写入响应输出流
+//            // 该方法内部使用 Jackson 进行序列化，确保响应格式统一
+//            SecurityUtil.out(response, result);
         }
     }
 }

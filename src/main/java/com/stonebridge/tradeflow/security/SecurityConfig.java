@@ -1,5 +1,7 @@
 package com.stonebridge.tradeflow.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.security.filter.*;
 import com.stonebridge.tradeflow.security.utils.JwtUtil;
 import com.stonebridge.tradeflow.security.filter.JwtLoginFilter;
@@ -22,6 +24,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Spring Security 配置类，负责定义安全策略、过滤器链和异常处理逻辑
@@ -133,9 +138,7 @@ public class SecurityConfig {
 
         // 5. 配置注销
         // 定义注销接口和处理逻辑，清理 JWT 或 Redis 中的数据
-        http.logout()
-                .logoutUrl("/auth/logout") // 注销请求的 URL
-                .addLogoutHandler(new TokenLogoutHandler(jwtUtil, redisTemplate)); // 自定义注销处理器
+        http.logout().logoutUrl("/auth/logout").addLogoutHandler(new TokenLogoutHandler(jwtUtil, redisTemplate)).logoutSuccessHandler(jsonLogoutSuccessHandler()); // 自定义 JSON 响应; // 自定义注销处理器
 
         // 6. 添加登录过滤器
         // 替换默认的 UsernamePasswordAuthenticationFilter，处理登录请求并生成 JWT
@@ -154,5 +157,21 @@ public class SecurityConfig {
 
         // 返回构建好的安全过滤器链
         return http.build();
+    }
+    /**
+     * 自定义注销成功处理器，返回 JSON 响应，code 为数字类型
+     * @return LogoutSuccessHandler 注销成功处理器
+     */
+    @Bean
+    public LogoutSuccessHandler jsonLogoutSuccessHandler() {
+        return (request, response, authentication) -> {
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.setContentType("application/json;charset=UTF-8");
+
+            // 使用 ObjectMapper 序列化 JSON
+            ObjectMapper mapper = new ObjectMapper();
+            Result<String> result = Result.ok("Logout successful");
+            response.getWriter().write(mapper.writeValueAsString(result));
+        };
     }
 }
