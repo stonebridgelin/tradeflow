@@ -85,19 +85,24 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> i
             // 用于保存每个supplier对应的SupplierCategory对象集合
             Map<String, List<SupplierCategory>> supplierCategoryMap = new HashMap<>(); // 修复1：键类型从 Integer 改为 String
 
-            // 遍历所有的Supplier对象，将需要的supplierTypeSet、supplierCategoryList、supplierCategoryMap赋值
-            if (records != null && !records.isEmpty()) { // 条件可以简化，因为 pageResult.getRecords().isEmpty() 已检查
-                QueryWrapper<SupplierCategory> queryWrapper = new QueryWrapper<>();
-                List<SupplierCategory> supplierCategories;
-                // 获取供应商类型名称
-                for (Supplier supplier : records) {
-                    // 修复：清空之前的条件
-                    queryWrapper.clear();
-                    supplierTypeSet.add(supplier.getSupplierType());
-                    supplierCategories = supplierCategoryMapper.selectList(queryWrapper.eq("supplier_id", supplier.getId()));
-                    supplierCategoryList.addAll(supplierCategories);
-                    supplierCategoryMap.put(String.valueOf(supplier.getId()), supplierCategories); // 修复1：supplier.getId() 是 String
-                }
+// 遍历所有的Supplier对象，将需要的supplierTypeSet、supplierCategoryList、supplierCategoryMap赋值
+            // 收集所有 Supplier ID
+            List<Integer> supplierIds = new ArrayList<>();
+            for (Supplier supplier : records) {
+                supplierTypeSet.add(supplier.getSupplierType());
+                supplierIds.add(supplier.getId());
+            }
+
+            // 一次性查询所有 SupplierCategory
+            QueryWrapper<SupplierCategory> queryWrapper = new QueryWrapper<>();
+            queryWrapper.in("supplier_id", supplierIds);
+            List<SupplierCategory> supplierCategories = supplierCategoryMapper.selectList(queryWrapper);
+            supplierCategoryList.addAll(supplierCategories);
+
+            // 按 supplier_id 分组
+            for (SupplierCategory supplierCategory : supplierCategories) {
+                String supplierId = supplierCategory.getSupplierId();
+                supplierCategoryMap.computeIfAbsent(supplierId, k -> new ArrayList<>()).add(supplierCategory);
             }
 
             // 将所有涉及的DataDictionary保存在Map中，通过supplier.supplierType作为key
@@ -111,31 +116,6 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> i
                 categoryMap.put(supplierCategory.getCategoryId(), myRedisCache.getCategoryById(supplierCategory.getCategoryId()));
             }
 
-//            List<SupplierVO> supplierVOList=new ArrayList<>();
-//            for (Supplier supplier : pageResult.getRecords()) {
-//                // 设置 supplierType 名称（已有逻辑）
-//                DataDictionary dataDictionary = dataDictionaryMap.get(supplier.getSupplierType());
-//                if (dataDictionary != null) {
-//                    supplier.setSupplierType(dataDictionary.getName());
-//                }
-//                SupplierVO supplierVO = new SupplierVO();
-//                // 添加不属于 Supplier 的额外数据，即分类的信息
-//                List<SupplierCategory> list = supplierCategoryMap.getOrDefault(String.valueOf(supplier.getId()), new ArrayList<>()); // 修复2：使用 getOrDefault 避免 NPE
-//                for (SupplierCategory supplierCategory : list) {
-//                    String categoryId = supplierCategory.getCategoryId();
-//                    Category category = categoryMap.get(categoryId);
-//                    if (category != null) {
-//                        if (supplierVO.getCategories() == null) {
-//                            supplierVO.setCategories(new ArrayList<>());
-//                        }
-//                        supplierVO.getCategories().add(category.getName());
-//                    }
-//                }
-//                BeanUtils.copyProperties(supplier, supplierVO);
-//                supplierVOList.add(supplierVO);
-//            }
-
-//
             // 转换 Supplier 数据并添加额外数据
             List<SupplierVO> voRecords = pageResult.getRecords().stream().map(supplier -> {
                 // 将 Supplier 转换为 DTO
