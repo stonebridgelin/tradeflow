@@ -75,8 +75,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
 
                 String username = jwtUtil.getUsername(token);
+                //校验该用户是否存在
+                if (StringUtils.isNullOrEmpty(username)) {
+                    logger.warn("无效的 token，请求: {} {}，IP: {}", request.getMethod(), requestURI, request.getRemoteAddr());
+                    SecurityContextHolder.clearContext();
+                    sendErrorResponse(response, HttpStatus.UNAUTHORIZED.value(), ResultCodeEnum.LOGIN_AUTH, ResultCodeEnum.LOGIN_AUTH.getMessage());
+                    return;
+                }
+                //从redis中获取token，并和用户传递的token进行比对，如果用户传递的token和数据库中比对不上，则为未登录状态。
+                String tokenFromRedis = (String) redisTemplate.opsForValue().get("token:" + username);
+                if (StringUtils.isNullOrEmpty(tokenFromRedis) || !tokenFromRedis.equals(token)) {
+                    logger.warn("Token 不匹配，请求: {} {}，IP: {}", request.getMethod(), requestURI, request.getRemoteAddr());
+                    SecurityContextHolder.clearContext();
+                    // 删除 Redis 中与该用户关联的权限数据
+                    redisTemplate.delete(username);
+                    // 删除 Redis 中与该用户的token
+                    redisTemplate.delete("token:" + username);
+                    sendErrorResponse(response, HttpStatus.UNAUTHORIZED.value(), ResultCodeEnum.LOGIN_AUTH, ResultCodeEnum.LOGIN_AUTH.getMessage());
+                    return;
+                }
 
-                // 直接从 Redis 获取权限，移除 Caffeine 缓存
+                // 直接从 Redis 获取权限
                 List<String> permissionValueList = (List<String>) redisTemplate.opsForValue().get(username);
 
                 Collection<GrantedAuthority> authorities = new ArrayList<>();

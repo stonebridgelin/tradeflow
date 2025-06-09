@@ -137,6 +137,8 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
 
         // 将用户权限列表存储到 Redis，键为用户名，值为权限列表，设置 12 小时过期时间
         redisTemplate.opsForValue().set(username, user.getPermissionValueList(), 12, TimeUnit.HOURS);
+        // 将用户权限token存储到Redis，键为用户名username，设置 12 小时过期时间
+        redisTemplate.opsForValue().set("token:" + username, token, 12, TimeUnit.HOURS);
 
         // 构建成功响应，包含生成的 token
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

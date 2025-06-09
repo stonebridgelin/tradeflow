@@ -1,11 +1,9 @@
 package com.stonebridge.tradeflow.security.utils;
 
-import cn.hutool.json.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stonebridge.tradeflow.common.result.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -27,12 +25,13 @@ public class SecurityUtil {
      * @param result   响应数据
      */
     public static void out(HttpServletResponse response, Result result) {
-        response.setStatus(HttpStatus.OK.value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.setContentType("application/json;charset=UTF-8");
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        // 使用 ObjectMapper 序列化 JSON
         try {
-            JSONObject json = new JSONObject(result);
-            response.getWriter().write(json.toString());
+            ObjectMapper mapper = new ObjectMapper();
+            response.getWriter().write(mapper.writeValueAsString(result));
         } catch (IOException e) {
             logger.error("序列化响应失败: {}，结果: {}", e.getMessage(), result, e);
             throw new RuntimeException("响应写入失败", e);

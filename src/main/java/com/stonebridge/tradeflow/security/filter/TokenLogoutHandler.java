@@ -56,19 +56,10 @@ public class TokenLogoutHandler implements LogoutHandler {
             // 解析 token，获取用户名
             String username = jwtUtil.getUsername(token);
 
-            // 删除 Redis 中与该用户关联的数据（如 token 或会话信息）
+            // 删除 Redis 中与该用户关联的权限数据
             redisTemplate.delete(username);
-
-            // 构建注销成功的响应对象
-            // 使用 Result 类封装响应数据，表示注销成功
-//            Map<String, Object> errorData = new HashMap<>();
-//            errorData.put("message", "注销成功");
-//            errorData.put("code", ResultCodeEnum.SUCCESS.getCode());
-//            Result result = Result.ok("注销成功");
-//
-//            // 使用 SecurityUtil 的 out 方法将 Result 对象序列化为 JSON 并写入响应输出流
-//            // 该方法内部使用 Jackson 进行序列化，确保响应格式统一
-//            SecurityUtil.out(response, result);
+            // 删除 Redis 中与该用户的token
+            redisTemplate.delete("token:" + username);
         }
     }
 }
