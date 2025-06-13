@@ -10,4 +10,6 @@ public interface BrandService extends IService<Brand> {
     void updateStatus(String brandId, String newStatus);
 
     void delete(String id);
+
+    void createBrand(Brand brand);
 }

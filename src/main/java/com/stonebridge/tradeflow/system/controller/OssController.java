@@ -16,12 +16,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Tag(name = "获取aliyunOss签名", description = "处理图片上传时获取aliyunOss签名，将对象保存到oss存储")
 @RestController
 @Slf4j
 @RequestMapping("system/aliyun")
 public class OssController {
+    private final static Map<String, String> dirMap = new HashMap<>();
+    static {
+        dirMap.put("brand_logo", "logo");
+        dirMap.put("user_avatar", "avatar");
+        dirMap.put("product", "product");
+    }
 
     @Value("${aliyun.oss.endpoint}")
     private String endpoint;
@@ -37,13 +45,13 @@ public class OssController {
 
 
     @RequestMapping(path = "policy", method = RequestMethod.GET)
-    public Result<JSONObject> policy() {
+    public Result<JSONObject> policy(String dirType) {
         // 请填写您的 bucketname 。
         OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
         //https://gulimall-ciel.oss-cn-shanghai.aliyuncs.com/
         String host = "https://" + bucket + ".oss-cn-shanghai.aliyuncs.com"; // host的格式为 bucketname.endpoint
         // callbackUrl为上传回调服务器的URL，请将下面的IP和Port配置为您自己的真实信息。
-        String dir = new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "/";
+        String dir = dirMap.get(dirType) + "/" + new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "/";
         JSONObject jsonObject = new JSONObject();
         try {
             long expireTime = 30;

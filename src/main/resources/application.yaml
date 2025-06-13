@@ -141,6 +141,7 @@ aliyun:
 
 # MyBatis-Plus配置
 mybatis-plus:
+    type-handlers-package: com.stonebridge.tradeflow.business.typehandler
     mapper-locations: classpath*:/mapper/**/*.xml
     type-aliases-package: com.stonebridge.tradeflow.**.entity
     configuration:

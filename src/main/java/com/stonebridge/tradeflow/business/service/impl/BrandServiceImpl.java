@@ -51,4 +51,17 @@ public class BrandServiceImpl extends ServiceImpl<BrandMapper, Brand> implements
     public void delete(String id) {
         brandMapper.deleteById(id);
     }
+
+    @Override
+    public void createBrand(Brand brand) {
+        String sql = "SELECT MAX(sort) FROM pms_brand;";
+        Integer maxSort = jdbcTemplate.queryForObject(sql, Integer.class);
+        if (maxSort == null) {
+            maxSort = 0;
+        }
+        brand.setSort(maxSort + 1);
+        brand.setId(null);
+
+        brandMapper.insert(brand);
+    }
 }

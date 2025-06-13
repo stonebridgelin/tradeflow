@@ -1,5 +1,6 @@
 package com.stonebridge.tradeflow.business.controller;
 
+import com.stonebridge.tradeflow.business.entity.brand.Brand;
 import com.stonebridge.tradeflow.business.service.BrandService;
 import com.stonebridge.tradeflow.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
@@ -72,5 +73,17 @@ public class BrandController {
     @GetMapping("query/{id}")
     public Result<Object> selectById(@PathVariable(value = "id") String id) {
         return Result.ok(brandService.getById(id));
+    }
+
+    @PostMapping("createBrand")
+    public Result<Object> createBrand(@RequestBody Brand brand) {
+        brandService.createBrand(brand);
+        return Result.ok();
+    }
+
+    @PutMapping("updateBrand")
+    public Result<Object> updateBrand(@RequestBody Brand brand) {
+        brandService.updateById(brand);
+        return Result.ok();
     }
 }

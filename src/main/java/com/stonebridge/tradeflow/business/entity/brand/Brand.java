@@ -1,6 +1,7 @@
 package com.stonebridge.tradeflow.business.entity.brand;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.stonebridge.tradeflow.business.typehandler.StringToBigIntTypeHandler;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,7 +22,8 @@ import java.io.Serializable;
 public class Brand implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
-    @TableId(value = "id", type = IdType.AUTO)
+    @TableId(type = IdType.AUTO)
+    @TableField(typeHandler = StringToBigIntTypeHandler.class)
     private String id; //品牌id
     private String name;//品牌名
     private String logo;//品牌logo地址
