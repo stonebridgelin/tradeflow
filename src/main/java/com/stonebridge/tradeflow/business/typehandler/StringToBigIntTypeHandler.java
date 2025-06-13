@@ -11,9 +11,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @MappedTypes({String.class})
-@MappedJdbcTypes({JdbcType.BIGINT})
+@MappedJdbcTypes({JdbcType.BIGINT})//StringToBigIntTypeHandler
 public class StringToBigIntTypeHandler extends BaseTypeHandler<String> {
-
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, String parameter, JdbcType jdbcType) throws SQLException {
         ps.setLong(i, Long.parseLong(parameter));

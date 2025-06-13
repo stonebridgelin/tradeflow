@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import com.stonebridge.tradeflow.business.typehandler.LongToStringTypeHandler;
+import com.stonebridge.tradeflow.business.typehandler.StringToBigIntTypeHandler;
 
 import java.util.Date;
 import java.util.List;
@@ -17,10 +17,10 @@ import java.util.List;
 @TableName("pms_category")
 public class Category {
     @TableId(type = IdType.AUTO)
-    @TableField(typeHandler = LongToStringTypeHandler.class)
+    @TableField(typeHandler = StringToBigIntTypeHandler.class)
     private String id;//分类id
     private String name;//分类名称
-    @TableField(typeHandler = LongToStringTypeHandler.class)
+    @TableField(typeHandler = StringToBigIntTypeHandler.class)
     private String parentId;//父分类id
     private Integer status;//是否显示[0-不显示，1-显示]
     private Integer level;//等级，分别有1，2，3。等级越小越接近根目录
