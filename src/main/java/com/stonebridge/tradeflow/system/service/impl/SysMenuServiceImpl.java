@@ -61,22 +61,21 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
         if (Objects.isNull(userId) || userId.trim().isEmpty()) {
             throw new IllegalArgumentException("User ID cannot be null or empty");
         }
-
-        // 查询一级菜单
-        List<SysMenu> firstLevelMenuList = sysMenuMapper.selectList(new QueryWrapper<SysMenu>().eq("type", "0").orderByAsc("sort_value"));
-
+        QueryWrapper<SysMenu> queryWrapper = new QueryWrapper<>();
+        queryWrapper.in("type", "0", "1");
+        queryWrapper.eq("status", Constant.MENU_STATUS_NORMAL);
+        List<SysMenu> sysMenuList = sysMenuMapper.selectList(queryWrapper);
         // 空列表处理
-        if (firstLevelMenuList == null || firstLevelMenuList.isEmpty()) {
+        if (sysMenuList == null || sysMenuList.isEmpty()) {
             return new JSONArray();
         }
-
         // 转换为JSON数组并添加子菜单
-        return new JSONArray(firstLevelMenuList.stream().map(this::buildMenuTreeNode).collect(Collectors.toList()));
+        return new JSONArray(MenuHelper.buildTree(sysMenuList));
     }
 
     @Override
     public List<SysMenu> findNodes() {
-        List<SysMenu> sysMenuList = sysMenuMapper.selectAll();
+        List<SysMenu> sysMenuList = sysMenuMapper.selectList(null);
         if (CollectionUtils.isEmpty(sysMenuList)) return null;
         //构建树形数据
         return MenuHelper.buildTree(sysMenuList);

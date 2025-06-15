@@ -45,4 +45,9 @@ public class Constant {
      * 供应商的状态status-0 停用
      */
     public static final Integer SUPPLIER_STATUS_DISABLE = 0;
+
+    /**
+     * 菜单的状态status-1 启用
+     */
+    public static final Object MENU_STATUS_NORMAL = 1;
 }
