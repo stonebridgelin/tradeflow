@@ -140,6 +140,17 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
         // 将用户权限token存储到Redis，键为用户名username，设置 12 小时过期时间
         redisTemplate.opsForValue().set("token:" + username, token, 12, TimeUnit.HOURS);
 
+        // 用户的userId和username保存在HashMap中，然后将其保存在redis数据库，
+        // 在JwtAuthenticationFilter#doFilterInternal方法读取数据，
+        // 并将其存入spring security的SecurityContextHolder中，便于业务中使用
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> map = new HashMap<>();
+        map.put("userId", String.valueOf(user.getCurrentUserInfo().getId()));
+        map.put("username", user.getUsername());
+        String userJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
+
+        redisTemplate.opsForValue().set("user:" + username, userJson, 12, TimeUnit.HOURS);
+        logger.info("用户 {} 登录成功，生成 JWT token，请求: {} {}，IP: {}", username, request.getMethod(), request.getRequestURI(), request.getRemoteAddr());
         // 构建成功响应，包含生成的 token
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         Map<String, Object> data = new HashMap<>();

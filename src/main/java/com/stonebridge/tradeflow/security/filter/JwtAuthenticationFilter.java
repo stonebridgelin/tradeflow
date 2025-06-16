@@ -1,5 +1,7 @@
 package com.stonebridge.tradeflow.security.filter;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mysql.cj.util.StringUtils;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
@@ -91,6 +93,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     redisTemplate.delete(username);
                     // 删除 Redis 中与该用户的token
                     redisTemplate.delete("token:" + username);
+                    //删除 Redis 中与该用户的身份信息
+                    redisTemplate.delete("user:" + username);
                     sendErrorResponse(response, HttpStatus.UNAUTHORIZED.value(), ResultCodeEnum.LOGIN_AUTH, ResultCodeEnum.LOGIN_AUTH.getMessage());
                     return;
                 }
@@ -98,29 +102,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // 直接从 Redis 获取权限
                 List<String> permissionValueList = (List<String>) redisTemplate.opsForValue().get(username);
 
+                ObjectMapper mapper = new ObjectMapper();
+                String userJson = (String) redisTemplate.opsForValue().get("user:" + username);
+                Map<String, Object> data = mapper.readValue(userJson, new TypeReference<>() {});
+
                 Collection<GrantedAuthority> authorities = new ArrayList<>();
                 if (!CollectionUtils.isEmpty(permissionValueList)) {
                     for (String perms : permissionValueList) {
                         authorities.add(new SimpleGrantedAuthority(perms));
                     }
                 }
-
-                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, token, authorities);
+                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(data, token, authorities);
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                 logger.debug("为用户 {} 设置认证，请求: {} {}，IP: {}", username, request.getMethod(), requestURI, request.getRemoteAddr());
 
                 filterChain.doFilter(request, response);
             } catch (Exception e) {
-                logger.warn("JWT 验证失败: {}，请求: {} {}，IP: {}", e.getMessage(), request.getMethod(), requestURI, request.getRemoteAddr());
+                logger.error("JWT 验证失败: {}，请求: {} {}，IP: {}", e, request.getMethod(), requestURI, request.getRemoteAddr());
                 SecurityContextHolder.clearContext();
                 sendErrorResponse(response, HttpStatus.UNAUTHORIZED.value(), ResultCodeEnum.LOGIN_AUTH, e.getMessage());
-                return;
             }
         } else {
             logger.debug("请求未携带 token: {} {}，IP: {}", request.getMethod(), requestURI, request.getRemoteAddr());
             SecurityContextHolder.clearContext();
             sendErrorResponse(response, HttpStatus.UNAUTHORIZED.value(), ResultCodeEnum.LOGIN_AUTH, ResultCodeEnum.LOGIN_AUTH.getMessage());
-            return;
         }
     }
 

@@ -156,10 +156,6 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             jsonObject.set("id", sysUser.getId());
             jsonObject.set("avatar", sysUser.getAvatar());
             jsonObject.set("username", sysUser.getUsername());
-//            jsonObject.set("firstName", user.getFirstName());
-//            jsonObject.set("lastName", user.getLastName());
-//            jsonObject.set("email", user.getEmail());
-//            jsonObject.set("phone", user.getPhone());
             //菜单权限数据
             //根据userId查询菜单权限值,菜单的权限是通过sys_menu.path和src/router/config.js里的path进行匹配的
             List<String> routerPaths = sysMenuService.getUserMenuListByUserId(sysUser.getId());
