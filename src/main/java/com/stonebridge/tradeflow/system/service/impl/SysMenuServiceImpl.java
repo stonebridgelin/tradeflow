@@ -110,16 +110,16 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
             }
 
             // 查询 sort_value >= sysMenu.sortValue 的记录（加锁）
-            String sql = "SELECT id, sort_value FROM sys_menu WHERE sort_value >= ? FOR UPDATE";
-            List<Map<String, Object>> list = systemJdbcTemplate.queryForList(sql, sortValue);
+            String sql = "SELECT id, sort_value FROM sys_menu WHERE sort_value >= ? AND parent_id = ? FOR UPDATE";
+            List<Map<String, Object>> list = systemJdbcTemplate.queryForList(sql, sortValue, sysMenu.getParentId());
 
             if (list.isEmpty()) {
                 // 直接插入
                 sysMenuMapper.insert(sysMenu);
             } else {
                 // 更新 sort_value >= sysMenu.sortValue 的记录
-                sql = "UPDATE sys_menu SET sort_value = sort_value + 1 WHERE sort_value >= ?";
-                systemJdbcTemplate.update(sql, sortValue);
+                sql = "UPDATE sys_menu SET sort_value = sort_value + 1 WHERE sort_value >= ? AND parent_id = ?";
+                systemJdbcTemplate.update(sql, sortValue, sysMenu.getParentId());
 
                 // 插入新记录
                 sysMenuMapper.insert(sysMenu);
@@ -152,7 +152,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
             if (oldSortValue < newSortValue) {
                 lockSql = "SELECT id FROM sys_menu WHERE sort_value > ? AND sort_value <= ? AND parent_id = ? AND is_deleted = 0 FOR UPDATE";
                 systemJdbcTemplate.queryForList(lockSql, oldSortValue, newSortValue, parentId);
-            } else {
+            } else if (oldSortValue > newSortValue){
                 lockSql = "SELECT id FROM sys_menu WHERE sort_value >= ? AND sort_value < ? AND parent_id = ? AND is_deleted = 0 FOR UPDATE";
                 systemJdbcTemplate.queryForList(lockSql, newSortValue, oldSortValue, parentId);
             }
@@ -166,12 +166,12 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
                 // 7  < 10         6 [7,8,9,10] 11  ----> 6 [8,9,10,7] 11
 //                sql = "SELECT id, sort_value FROM sys_menu WHERE sort_value > ? AND sort_value <= ? FOR UPDATE";
 //                affectedRecords = systemJdbcTemplate.queryForList(sql, oldSortValue, newSortValue);
-                updateSql = "UPDATE sys_menu SET sort_value = sort_value - 1 WHERE sort_value > ? AND sort_value <= ? AND parent_id=?";
+                updateSql = "UPDATE sys_menu SET sort_value = sort_value - 1 WHERE sort_value > ? AND sort_value <= ? AND parent_id=? AND is_deleted = 0";
                 systemJdbcTemplate.update(updateSql, oldSortValue, newSortValue, parentId);
-            } else {
+            } else if (oldSortValue > newSortValue) {
                 // 新 sortValue < 旧 sortValue，更新 [newSortValue, oldSortValue]
                 //  3  < 7    2 [3,4,5,6,7] 8  --> 2 [7,3,4,5,6] 8
-                updateSql = "UPDATE sys_menu SET sort_value = sort_value + 1 WHERE sort_value >= ? AND sort_value < ? AND parent_id=?";
+                updateSql = "UPDATE sys_menu SET sort_value = sort_value + 1 WHERE sort_value >= ? AND sort_value < ? AND parent_id=? AND is_deleted = 0";
                 systemJdbcTemplate.update(updateSql, newSortValue, oldSortValue, parentId);
             }
             sysMenuMapper.insert(sysMenu);
