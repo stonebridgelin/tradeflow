@@ -56,21 +56,77 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
      * @param userId 用户ID
      * @return 菜单树JSON数组
      */
+    // 获取用户的菜单树结构
     public JSONArray getMenuTreeList(String userId) {
-        // 验证输入
-        if (Objects.isNull(userId) || userId.trim().isEmpty()) {
-            throw new IllegalArgumentException("User ID cannot be null or empty");
+        // 获取用户角色
+        List<SysUserRole> sysUserRoles = sysUserRoleMapper.selectList(new QueryWrapper<SysUserRole>().eq("user_id", userId));
+        if (sysUserRoles == null || sysUserRoles.isEmpty()) {
+            return new JSONArray(); // 如果用户没有角色，返回空数组
         }
-        QueryWrapper<SysMenu> queryWrapper = new QueryWrapper<>();
-        queryWrapper.in("type", "0", "1");
-        queryWrapper.eq("status", Constant.MENU_STATUS_NORMAL);
-        List<SysMenu> sysMenuList = sysMenuMapper.selectList(queryWrapper);
-        // 空列表处理
+        List<Long> roleIds = sysUserRoles.stream().map(SysUserRole::getRoleId).collect(Collectors.toList());
+
+        // 获取角色被授权的菜单和按钮
+        List<SysRoleMenu> sysRoleMenus = sysRoleMenuMapper.selectList(new QueryWrapper<SysRoleMenu>().in("role_id", roleIds));
+        if (sysRoleMenus == null || sysRoleMenus.isEmpty()) {
+            return new JSONArray(); // 如果角色没有授权的菜单或按钮，返回空数组
+        }
+        List<Long> menuIds = new ArrayList<>();
+        for (SysRoleMenu roleMenu : sysRoleMenus) {
+            if (roleMenu.getMenuId() != null) {
+                menuIds.add(Long.valueOf(roleMenu.getMenuId())); // 将菜单ID转换为Long类型并添加到列表
+            }
+        }
+
+        // 获取所有被授权的菜单和按钮
+        List<SysMenu> authorizedMenus = sysMenuMapper.selectBatchIds(menuIds);
+        if (authorizedMenus == null || authorizedMenus.isEmpty()) {
+            return new JSONArray(); // 如果没有授权的菜单或按钮，返回空数组
+        }
+
+        // 获取所有相关菜单（包括父目录）
+        Set<Long> allMenuIds = new HashSet<>(menuIds);
+        for (SysMenu menu : authorizedMenus) {
+            Long parentId = menu.getParentId();
+            while (parentId != null && parentId != 0) {
+                allMenuIds.add(parentId); // 将父菜单ID添加到集合中
+                SysMenu parentMenu = sysMenuMapper.selectById(parentId);
+                if (parentMenu != null) {
+                    parentId = parentMenu.getParentId(); // 继续向上查找父菜单
+                } else {
+                    break;
+                }
+            }
+        }
+
+        // 获取所有相关菜单的详细信息
+        List<SysMenu> sysMenuList = sysMenuMapper.selectBatchIds(new ArrayList<>(allMenuIds));
         if (sysMenuList == null || sysMenuList.isEmpty()) {
-            return new JSONArray();
+            return new JSONArray(); // 如果没有相关菜单，返回空数组
         }
-        // 转换为JSON数组并添加子菜单
+
+        // 设置 isSelect 属性
+        for (SysMenu menu : sysMenuList) {
+            if (menu.getType() == 0) {
+                // 目录：检查所有子菜单是否都被授权
+                List<SysMenu> children = getChildren(menu.getId(), sysMenuList);
+                boolean allChildrenAuthorized = !children.isEmpty() && children.stream()
+                        .allMatch(child -> menuIds.contains(child.getId()));
+                menu.setSelect(allChildrenAuthorized); // 设置目录的isSelect属性
+            } else {
+                // 菜单和按钮：如果在授权列表中，则 isSelect = true
+                menu.setSelect(menuIds.contains(menu.getId()));
+            }
+        }
+
+        // 构建菜单树并转换为 JSON 数组
         return new JSONArray(MenuHelper.buildTree(sysMenuList));
+    }
+
+    // 辅助方法：获取子菜单
+    private List<SysMenu> getChildren(Long parentId, List<SysMenu> allMenus) {
+        return allMenus.stream()
+                .filter(menu -> menu.getParentId().equals(parentId))
+                .collect(Collectors.toList());
     }
 
     @Override

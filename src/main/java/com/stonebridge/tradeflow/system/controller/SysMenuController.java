@@ -34,8 +34,11 @@ public class SysMenuController {
 
     @Operation(summary = "获取首页树形菜单列表", description = "根据用户信息，获取用户权限，最后生成用户的首页侧边栏树形菜单列表")
     @RequestMapping(value = "menuTreeList", method = RequestMethod.GET)
-    public Result<JSONArray> getMenuTreeList(String userId) {
-        System.out.println(SecurityContextHolderUtil.getUserId()+"---------------");
+    public Result<JSONArray> getMenuTreeList() {
+        String userId = SecurityContextHolderUtil.getUserId();
+        if (Objects.isNull(userId)) {
+            throw new CustomizeException(ResultCodeEnum.LOGIN_AUTH);
+        }
         JSONArray jsonArray = sysMenuService.getMenuTreeList(userId);
         return Result.ok(jsonArray);
     }
