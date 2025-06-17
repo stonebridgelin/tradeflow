@@ -1,15 +1,14 @@
 package com.stonebridge.tradeflow.system.service;
 
-import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stonebridge.tradeflow.system.entity.SysRole;
-import com.stonebridge.tradeflow.system.entity.vo.SysRoleQueryVo;
 
 import java.util.List;
 
 public interface SysRoleService extends IService<SysRole> {
 
-    JSONObject queryRolePage(Integer pageNum, Integer pageSize, SysRoleQueryVo roleQueryVo);
+    ObjectNode queryRolePage(Integer pageNum, Integer pageSize, String keyWord);
 
     void deleteById(Long roleId);
 

@@ -1,9 +1,8 @@
 package com.stonebridge.tradeflow.system.controller;
 
-import cn.hutool.json.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.system.entity.SysRole;
-import com.stonebridge.tradeflow.system.entity.vo.SysRoleQueryVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -56,10 +55,9 @@ public class SysRoleController {
             @Parameter(name = "limit", example = "5", required = true)
             @PathVariable Integer limit,
 
-            @Parameter(name = "roleQueryVo")
-            SysRoleQueryVo roleQueryVo) {
-
-        JSONObject jsonObject = sysRoleService.queryRolePage(page, limit, roleQueryVo);
+            @Parameter(name = "keyWord")
+            String keyWord) {
+        ObjectNode jsonObject = sysRoleService.queryRolePage(page, limit, keyWord);
         return Result.ok(jsonObject);
     }
 
@@ -69,5 +67,13 @@ public class SysRoleController {
         sysRoleService.removeById(id);
         return Result.ok();
     }
+
+    @Operation(summary = "根据ID获取角色信息", description = "根据ID获取角色的详细信息，包括权限配置等")
+    @GetMapping("/{id}")
+    public Result<SysRole> getRoleById(@PathVariable Long id) {
+        SysRole role = sysRoleService.getById(id);
+        return Result.ok(role);
+    }
+
 
 }

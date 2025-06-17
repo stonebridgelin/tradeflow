@@ -3,11 +3,12 @@ package com.stonebridge.tradeflow.system.service.impl;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stonebridge.tradeflow.system.entity.SysUserRole;
 import com.stonebridge.tradeflow.system.mapper.SysRoleMapper;
 import com.stonebridge.tradeflow.system.entity.SysRole;
@@ -34,7 +35,7 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
         this.sysRoleMapper = sysRoleMapper;
     }
 
-    public JSONObject queryRolePage(Integer pageNum, Integer pageSize, SysRoleQueryVo roleQueryVo) {
+    public ObjectNode queryRolePage(Integer pageNum, Integer pageSize, String keyWord) {
         try {
             // 参数校验
             if (pageNum == null || pageNum < 1) {
@@ -48,8 +49,9 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
             }
 
             // 设置分页参数
+            keyWord = StrUtil.trim(keyWord);
             SysRoleQueryVo queryVo = new SysRoleQueryVo();
-            queryVo.setRoleName(roleQueryVo != null ? roleQueryVo.getRoleName() : null);
+            queryVo.setKeyWord(keyWord);
             queryVo.setPageSize(pageSize);
             // OFFSET 是从 0 开始，pageNum 转换为偏移量
             queryVo.setPageNum((pageNum - 1) * pageSize);
@@ -58,34 +60,32 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
             List<SysRole> roleList = sysRoleMapper.selectRolePage(queryVo);
 
             // 查询总记录数
-            Long total = sysRoleMapper.selectCount(new QueryWrapper<SysRole>()
-                    .like(roleQueryVo != null && roleQueryVo.getRoleName() != null, "role_name", StrUtil.trim(roleQueryVo.getRoleName())));
+            Long total = sysRoleMapper.selectCount(new QueryWrapper<SysRole>().like("role_name", keyWord).like("description", keyWord));
             // 转换为 JSON
-            JSONArray jsonArray = new JSONArray();
+            ObjectMapper objectMapper = new ObjectMapper();
+            ArrayNode jsonArray = objectMapper.createArrayNode();
             for (SysRole sysRole : roleList) {
-                JSONObject jsonObject = JSONUtil.parseObj(sysRole);
+                ObjectNode jsonObject = objectMapper.valueToTree(sysRole);
                 if (sysRole.getCreateTime() != null) {
-                    jsonObject.set("createTime", DateUtil.format(sysRole.getCreateTime(), DatePattern.NORM_DATETIME_PATTERN));
+                    jsonObject.put("createTime", DateUtil.format(sysRole.getCreateTime(), DatePattern.NORM_DATETIME_PATTERN));
                 }
                 if (sysRole.getUpdateTime() != null) {
-                    jsonObject.set("updateTime", DateUtil.format(sysRole.getUpdateTime(), DatePattern.NORM_DATETIME_PATTERN));
+                    jsonObject.put("updateTime", DateUtil.format(sysRole.getUpdateTime(), DatePattern.NORM_DATETIME_PATTERN));
                 }
                 jsonArray.add(jsonObject);
             }
 
             // 构造返回结果
-            JSONObject result = new JSONObject();
-            result.set("data", jsonArray);
-            result.set("total", total);
-            result.set("rows", jsonArray);
-            result.set("current", pageNum);
+            ObjectNode result = objectMapper.createObjectNode();
+            result.put("list", jsonArray);
+            result.put("total", total);
             return result;
 
         } catch (Exception e) {
             log.error("Page query failed", e);
             JSONObject error = new JSONObject();
             error.set("error", "Query failed: " + e);
-            return error;
+            throw new RuntimeException(error.toString());
         }
     }
 

@@ -17,8 +17,8 @@
     <select id="selectRolePage" parameterType="com.stonebridge.tradeflow.system.entity.vo.SysRoleQueryVo" resultMap="RoleMap">
         SELECT id, role_name, role_code, description, create_time, update_time
         FROM sys_role
-        <if test="vo.roleName != null and vo.roleName != ''">
-            WHERE  role_name LIKE CONCAT('%', #{vo.roleName}, '%')
+        <if test="vo.keyWord != null and vo.keyWord != ''">
+            WHERE role_name LIKE CONCAT('%', #{vo.keyWord}, '%') OR description LIKE CONCAT('%', #{vo.keyWord}, '%')
         </if>
         ORDER BY id ASC
         LIMIT #{vo.pageSize}
