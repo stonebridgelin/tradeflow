@@ -18,7 +18,7 @@ public class SysUser {
     private String password;
     private String firstName;
     private String lastName;
-    private String gender;
+    private String gender;//0:男，1：女，2：未知
     private String email;
     private String phone;
     private String avatar;
@@ -26,7 +26,7 @@ public class SysUser {
     private String jobTitle;
     private Long roleId;
     private String userType;
-    private String status;
+    private String status;//0:正常;1:停职;2离职
     private Date entryDate;
     private Date leaveDate;
     private String address;

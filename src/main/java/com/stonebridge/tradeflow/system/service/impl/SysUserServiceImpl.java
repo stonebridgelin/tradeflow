@@ -133,7 +133,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     @Override
     public Map<String, Object> getUserById(Long userId) {
-        String sql = "SELECT id,username,first_name,last_name,phone,email,gender,avatar FROM sys_user WHERE id = ?";
+        String sql = "SELECT id,username,first_name,last_name,phone,email,status,gender,avatar FROM sys_user WHERE id = ?";
         Map<String, Object> userMap = systemJdbcTemplate.queryForMap(sql, userId);
         // 遍历并替换 null 为 ""
         userMap.replaceAll((k, v) -> v == null ? "" : v);
