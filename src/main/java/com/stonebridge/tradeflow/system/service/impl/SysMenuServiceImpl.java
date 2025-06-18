@@ -7,8 +7,11 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.stonebridge.tradeflow.common.constant.Constant;
+import com.stonebridge.tradeflow.common.exception.CustomizeException;
 import com.stonebridge.tradeflow.common.result.Result;
+import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
 import com.stonebridge.tradeflow.common.utils.MenuHelper;
+import com.stonebridge.tradeflow.security.utils.SecurityContextHolderUtil;
 import com.stonebridge.tradeflow.system.entity.SysRoleMenu;
 import com.stonebridge.tradeflow.system.entity.SysUserRole;
 import com.stonebridge.tradeflow.system.entity.dto.AssginMenuDto;
@@ -53,11 +56,15 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
     /**
      * 获取菜单树结构
      *
-     * @param userId 用户ID
      * @return 菜单树JSON数组
      */
     // 获取用户的菜单树结构
-    public JSONArray getMenuTreeList(String userId) {
+    public JSONArray getMenuTreeList() {
+        //从spring security的作用域获取用户id
+        String userId = SecurityContextHolderUtil.getUserId();
+        if (Objects.isNull(userId)) {
+            throw new CustomizeException(ResultCodeEnum.LOGIN_AUTH);
+        }
         // 获取用户角色
         List<SysUserRole> sysUserRoles = sysUserRoleMapper.selectList(new QueryWrapper<SysUserRole>().eq("user_id", userId));
         if (sysUserRoles == null || sysUserRoles.isEmpty()) {

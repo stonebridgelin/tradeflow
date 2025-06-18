@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface SysMenuService extends IService<SysMenu> {
 
-    JSONArray getMenuTreeList(String userId);
+    JSONArray getMenuTreeList();
 
     List<SysMenu> findNodes();
 
