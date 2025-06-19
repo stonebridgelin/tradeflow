@@ -24,7 +24,7 @@ public class SecurityUtil {
      * @param response HTTP 响应对象
      * @param result   响应数据
      */
-    public static void out(HttpServletResponse response, Result result) {
+    public static void out(HttpServletResponse response, Result<?> result) {
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType("application/json;charset=UTF-8");
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());

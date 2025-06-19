@@ -15,8 +15,16 @@ public class SecurityContextHolderUtil {
     public static Map<String, Object> getCurrentMap() {
         try {
             Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            if (principal instanceof Map) {
-                return (Map<String, Object>) principal;
+            if (principal instanceof Map<?, ?>) {
+                Map<?, ?> rawMap = (Map<?, ?>) principal;
+                // 检查所有 key 和 value 类型
+                boolean allStringKeys = rawMap.keySet().stream().allMatch(k -> k instanceof String);
+                boolean allObjectValues = true; // Object 类型无需检查
+                if (allStringKeys && allObjectValues) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> safeMap = (Map<String, Object>) rawMap;
+                    return safeMap;
+                }
             }
             return null;
         } catch (Exception e) {

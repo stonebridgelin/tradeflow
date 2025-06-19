@@ -109,13 +109,6 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
 
-        <!-- Utilities -->
-        <dependency>
-            <groupId>cn.hutool</groupId>
-            <artifactId>hutool-all</artifactId>
-            <version>5.8.36</version>
-        </dependency>
-
         <!-- JJWT API -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

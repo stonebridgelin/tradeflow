@@ -2,11 +2,13 @@ package com.stonebridge.tradeflow.common.exception;
 
 import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * 自定义全局异常类
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class CustomizeException extends RuntimeException {
 
     private Integer code;

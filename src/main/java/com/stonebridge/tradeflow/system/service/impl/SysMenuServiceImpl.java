@@ -1,8 +1,5 @@
 package com.stonebridge.tradeflow.system.service.impl;
 
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONArray;
-import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -28,6 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.List;
@@ -59,7 +59,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
      * @return 菜单树JSON数组
      */
     // 获取用户的菜单树结构
-    public JSONArray getMenuTreeList() {
+    public ArrayNode getMenuTreeList() {
         //从spring security的作用域获取用户id
         String userId = SecurityContextHolderUtil.getUserId();
         if (Objects.isNull(userId)) {
@@ -70,7 +70,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
         // 获取所有被授权的菜单和按钮
         List<SysMenu> authorizedMenus = sysMenuMapper.selectBatchIds(menuIds);
         if (authorizedMenus == null || authorizedMenus.isEmpty()) {
-            return new JSONArray(); // 如果没有授权的菜单或按钮，返回空数组
+            return null; // 如果没有授权的菜单或按钮，返回空数组
         }
 
         // 获取所有相关菜单（包括父目录）
@@ -91,7 +91,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
         // 获取所有相关菜单的详细信息
         List<SysMenu> sysMenuList = sysMenuMapper.selectBatchIds(new ArrayList<>(allMenuIds));
         if (sysMenuList == null || sysMenuList.isEmpty()) {
-            return new JSONArray(); // 如果没有相关菜单，返回空数组
+            return null; // 如果没有相关菜单，返回空数组
         }
 
         // 设置 isSelect 属性
@@ -100,16 +100,17 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
                 // 目录：检查所有子菜单是否都被授权
                 List<SysMenu> children = getChildren(menu.getId(), sysMenuList);
                 boolean allChildrenAuthorized = !children.isEmpty() && children.stream()
-                        .allMatch(child -> menuIds.contains(child.getId()));
+                        .allMatch(child -> menuIds.contains(String.valueOf(child.getId())));
                 menu.setSelect(allChildrenAuthorized); // 设置目录的isSelect属性
             } else {
                 // 菜单和按钮：如果在授权列表中，则 isSelect = true
-                menu.setSelect(menuIds.contains(menu.getId()));
+                menu.setSelect(menuIds.contains(String.valueOf(menu.getId())));
             }
         }
 
         // 构建菜单树并转换为 JSON 数组
-        return new JSONArray(MenuHelper.buildTree(sysMenuList));
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.valueToTree(MenuHelper.buildTree(sysMenuList));
     }
 
     // 辅助方法：获取子菜单
@@ -129,9 +130,9 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
 
     @Transactional
     @Override
-    public Result updateStatus(String id, String status) {
+    public Result<Object> updateStatus(String id, String status) {
         String sql = "UPDATE sys_menu set status=? WHERE id=?";
-        int row = systemJdbcTemplate.update(sql, StrUtil.trim(status), StrUtil.trim(id));
+        int row = systemJdbcTemplate.update(sql, StringUtils.trimWhitespace(status), StringUtils.trimWhitespace(id));
         if (row == 1) {
             return Result.ok();
         } else {
@@ -142,7 +143,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
     @Override
     public boolean existChildrenNode(String id) {
         String sql = "SELECT COUNT(1) FROM sys_menu WHERE parent_id=?";
-        Integer count = systemJdbcTemplate.queryForObject(sql, Integer.class, StrUtil.trim(id));
+        Integer count = systemJdbcTemplate.queryForObject(sql, Integer.class, StringUtils.trimWhitespace(id));
         return count > 0;
     }
 

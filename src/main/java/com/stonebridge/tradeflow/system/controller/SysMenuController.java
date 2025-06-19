@@ -1,7 +1,6 @@
 package com.stonebridge.tradeflow.system.controller;
 
-import cn.hutool.json.JSONArray;
-import cn.hutool.json.JSONConfig;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.stonebridge.tradeflow.common.exception.CustomizeException;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
@@ -33,8 +32,8 @@ public class SysMenuController {
 
     @Operation(summary = "获取首页树形菜单列表", description = "根据用户信息，获取用户权限，最后生成用户的首页侧边栏树形菜单列表")
     @RequestMapping(value = "menuTreeList", method = RequestMethod.GET)
-    public Result<JSONArray> getMenuTreeList() {
-        JSONArray jsonArray = sysMenuService.getMenuTreeList();
+    public Result<ArrayNode> getMenuTreeList() {
+        ArrayNode jsonArray = sysMenuService.getMenuTreeList();
         return Result.ok(jsonArray);
     }
 
@@ -55,14 +54,13 @@ public class SysMenuController {
      */
     @Operation(summary = "更新某个menu的status")
     @GetMapping("updateStatus")
-    public Result updateStatus(String id, String status) {
-        Result result = sysMenuService.updateStatus(id, status);
-        return result;
+    public Result<Object> updateStatus(String id, String status) {
+        return sysMenuService.updateStatus(id, status);
     }
 
     @Operation(summary = "根据id删除菜单信息", description = "根据id将该菜单从Sys_Menu表删除")
     @DeleteMapping("delete/{id}")
-    public Result deleteMenuNodeById(@PathVariable("id") String id) {
+    public Result<Object> deleteMenuNodeById(@PathVariable("id") String id) {
         if (sysMenuService.existChildrenNode(id)) {
             return Result.fail().message("该节点存在子节点，不能删除");
         }
@@ -75,7 +73,7 @@ public class SysMenuController {
 
     @Operation(summary = "保存Menu信息", description = "新建Menu时，将所有信息保存的Sys_Menu表")
     @PostMapping("save")
-    public Result save(@RequestBody SysMenu sysMenu) {
+    public Result<Object> save(@RequestBody SysMenu sysMenu) {
         sysMenuService.saveMenu(sysMenu);
         return Result.ok();
     }
@@ -96,8 +94,6 @@ public class SysMenuController {
         if (sysMenu == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "菜单不存在");
         }
-        JSONConfig config = new JSONConfig();
-        config.setIgnoreNullValue(true);
         return Result.ok(sysMenu);
     }
 
@@ -109,7 +105,7 @@ public class SysMenuController {
      */
     @Operation(summary = "保存修改后的Menu信息", description = "当修改Menu信息后，对修改后的信息更新到Sys_Menu表")
     @PostMapping("update")
-    public Result update(@RequestBody SysMenu menuDto) {
+    public Result<Object> update(@RequestBody SysMenu menuDto) {
         if (menuDto == null || menuDto.getId() == null) {
             throw new CustomizeException(ResultCodeEnum.ILLEGAL_REQUEST);
         }
@@ -153,7 +149,7 @@ public class SysMenuController {
 
     @Operation(summary = "给角色分配菜单权限", description = "根据前端提交的角色和菜单的对应关系保存到sys_role_menu，完成给角色分配权限")
     @PostMapping("/doAssign")
-    public Result doAssign(@RequestBody AssginMenuDto assginMenuDto) {
+    public Result<Object> doAssign(@RequestBody AssginMenuDto assginMenuDto) {
         sysMenuService.doAssign(assginMenuDto);
         return Result.ok();
     }

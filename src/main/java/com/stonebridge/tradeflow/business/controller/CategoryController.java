@@ -1,6 +1,7 @@
 package com.stonebridge.tradeflow.business.controller;
 
-import cn.hutool.json.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stonebridge.tradeflow.business.entity.category.Category;
 import com.stonebridge.tradeflow.business.service.CategoryService;
 import com.stonebridge.tradeflow.common.result.Result;
@@ -38,7 +39,7 @@ public class CategoryController {
      * @return 处理结构
      */
     @PostMapping("delete")
-    public Result removeCategoryByIds(@RequestBody List<String> ids) {
+    public Result<Object> removeCategoryByIds(@RequestBody List<String> ids) {
         categoryService.removeCategoryByIds(ids);
         return Result.ok();
     }
@@ -59,9 +60,10 @@ public class CategoryController {
     }
 
     @GetMapping("query/{id}")
-    public Result<JSONObject> getCategoryById(@PathVariable String id) {
+    public Result<ObjectNode> getCategoryById(@PathVariable String id) {
         Category category = categoryService.getById(id);
-        JSONObject obj = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode obj = mapper.createObjectNode();
         obj.put("id", category.getId());
         obj.put("name", category.getName());
         String parentId = category.getParentId();

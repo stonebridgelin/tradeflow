@@ -1,11 +1,12 @@
 package com.stonebridge.tradeflow.system.controller;
 
-import cn.hutool.json.JSONObject;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.common.utils.BinaryUtil;
 import com.aliyun.oss.model.MatchMode;
 import com.aliyun.oss.model.PolicyConditions;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stonebridge.tradeflow.common.result.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -45,14 +46,15 @@ public class OssController {
 
 
     @RequestMapping(path = "policy", method = RequestMethod.GET)
-    public Result<JSONObject> policy(String dirType) {
+    public Result<ObjectNode> policy(String dirType) {
         // 请填写您的 bucketname 。
         OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
         //https://gulimall-ciel.oss-cn-shanghai.aliyuncs.com/
         String host = "https://" + bucket + ".oss-cn-shanghai.aliyuncs.com"; // host的格式为 bucketname.endpoint
         // callbackUrl为上传回调服务器的URL，请将下面的IP和Port配置为您自己的真实信息。
         String dir = dirMap.get(dirType) + "/" + new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "/";
-        JSONObject jsonObject = new JSONObject();
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode jsonObject = objectMapper.createObjectNode();
         try {
             long expireTime = 30;
             long expireEndTime = System.currentTimeMillis() + expireTime * 1000;
@@ -68,12 +70,12 @@ public class OssController {
             String encodedPolicy = BinaryUtil.toBase64String(binaryData);
             String postSignature = ossClient.calculatePostSignature(postPolicy);
 
-            jsonObject.set("accessid", accessKeyId);
-            jsonObject.set("policy", encodedPolicy);
-            jsonObject.set("signature", postSignature);
-            jsonObject.set("dir", dir);
-            jsonObject.set("host", host);
-            jsonObject.set("expire", String.valueOf(expireEndTime / 1000));
+            jsonObject.put("accessid", accessKeyId);
+            jsonObject.put("policy", encodedPolicy);
+            jsonObject.put("signature", postSignature);
+            jsonObject.put("dir", dir);
+            jsonObject.put("host", host);
+            jsonObject.put("expire", String.valueOf(expireEndTime / 1000));
             // respMap.put("expire", formatISO8601Date(expiration));
         } catch (Exception e) {
             log.error("获取签名失败", e);

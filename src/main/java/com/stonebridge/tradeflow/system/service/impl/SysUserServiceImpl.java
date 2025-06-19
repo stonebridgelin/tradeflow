@@ -1,16 +1,13 @@
 package com.stonebridge.tradeflow.system.service.impl;
 
-import cn.hutool.core.date.DatePattern;
-import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONArray;
-import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.stonebridge.tradeflow.common.utils.DateUtil;
 import com.stonebridge.tradeflow.common.utils.StatusConverter;
 import com.stonebridge.tradeflow.system.entity.SysRole;
 import com.stonebridge.tradeflow.system.entity.dto.AssginRoleDto;
@@ -31,6 +28,8 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
 
 @Service
 @Slf4j
@@ -56,7 +55,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     }
 
     @Override
-    public JSONObject findByPage(Page<SysUser> page, UserQueryVo userQueryVo) {
+    public ObjectNode findByPage(Page<SysUser> page, UserQueryVo userQueryVo) {
+        ObjectMapper objectMapper = new ObjectMapper();
         // 创建 LambdaQueryWrapper 用于动态构建查询条件
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
 
@@ -71,43 +71,48 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         // 时间范围查询
         if (StringUtils.hasText(userQueryVo.getCreateTimeBegin())) {
 
-            wrapper.ge(SysUser::getCreateTime, DateUtil.format(DateUtil.beginOfDay(DateUtil.parse(userQueryVo.getCreateTimeBegin())), DatePattern.NORM_DATETIME_FORMAT));
+            wrapper.ge(SysUser::getCreateTime, LocalDateTime.parse(userQueryVo.getCreateTimeBegin(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         }
         if (StringUtils.hasText(userQueryVo.getCreateTimeEnd())) {
-            wrapper.le(SysUser::getCreateTime, DateUtil.format(DateUtil.endOfDay(DateUtil.parse(userQueryVo.getCreateTimeEnd())), DatePattern.NORM_DATETIME_FORMAT));
+            wrapper.le(SysUser::getCreateTime, LocalDateTime.parse(userQueryVo.getCreateTimeEnd(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         }
 
         // 逻辑删除条件
         // 执行分页查询
         IPage<SysUser> userIPage = page(page, wrapper);
         List<SysUser> sysUserList = userIPage.getRecords();
-        JSONArray jsonArray = new JSONArray();
+        ArrayNode jsonArray = objectMapper.createArrayNode();
         for (SysUser sysUser : sysUserList) {
-            JSONObject jsonObject = new JSONObject(sysUser);
+            ObjectNode jsonObject = objectMapper.createObjectNode();
+            // 先合并 sysUser 所有字段
+            ObjectNode userNode = objectMapper.valueToTree(sysUser);
+            jsonObject.setAll(userNode);
+
+            // 再补充自定义字段
             if (sysUser.getCreateTime() != null) {
-                jsonObject.set("createTime", DateUtil.format(sysUser.getCreateTime(), DatePattern.NORM_DATETIME_FORMAT));
+                jsonObject.put("createTime", DateUtil.format(sysUser.getCreateTime(), DateUtil.DEFAULT_DATETIME_PATTERN));
             }
             if (sysUser.getUpdateTime() != null) {
-                jsonObject.set("updateTime", DateUtil.format(sysUser.getUpdateTime(), DatePattern.NORM_DATETIME_FORMAT));
+                jsonObject.put("updateTime", DateUtil.format(sysUser.getUpdateTime(), DateUtil.DEFAULT_DATETIME_PATTERN));
             }
-            if (StrUtil.isNotBlank(sysUser.getStatus())) {
-                jsonObject.set("status", StatusConverter.getStatusDescription(sysUser.getStatus()));
+            if (StringUtils.hasText(sysUser.getStatus())) {
+                jsonObject.put("status", StatusConverter.getStatusDescription(sysUser.getStatus()));
             }
-            if (StrUtil.isNotBlank(sysUser.getFirstName()) && StrUtil.isNotBlank(sysUser.getLastName())) {
-                jsonObject.set("fullName", sysUser.getFirstName() + " " + sysUser.getLastName());
+            if (StringUtils.hasText(sysUser.getFirstName()) && StringUtils.hasText(sysUser.getLastName())) {
+                jsonObject.put("fullName", sysUser.getFirstName() + " " + sysUser.getLastName());
             }
             jsonArray.add(jsonObject);
         }
-        JSONObject resultObjct = new JSONObject();
+        ObjectNode resultObjct = objectMapper.createObjectNode();
         resultObjct.set("data", jsonArray);
-        resultObjct.set("total", userIPage.getTotal());
+        resultObjct.put("total", userIPage.getTotal());
 
         return resultObjct;
     }
 
     @Override
-    public JSONObject getAllRoles(Long userId) {
-
+    public ObjectNode getAllRoles(Long userId) {
+        ObjectMapper objectMapper = new ObjectMapper();
         // 查询所有的角色数据（id, role_name）
         List<SysRole> sysRoleList = sysRoleMapper.findAllRoles();
 
@@ -115,9 +120,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         List<Long> sysRoles = sysUserRoleMapper.findSysUserRoleByUserId(userId);
 
         // 构建响应结果数据
-        JSONObject object = new JSONObject();
-        object.set("allRolesList", sysRoleList);
-        object.set("UserRoleIds", sysRoles);
+        ObjectNode object = objectMapper.createObjectNode();
+        object.putPOJO("allRolesList", sysRoleList);
+        object.putPOJO("UserRoleIds", sysRoles);
         return object;
     }
 

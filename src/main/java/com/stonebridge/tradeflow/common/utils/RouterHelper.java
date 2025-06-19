@@ -1,10 +1,10 @@
 package com.stonebridge.tradeflow.common.utils;
 
-import cn.hutool.core.util.StrUtil;
 import com.stonebridge.tradeflow.system.entity.SysMenu;
 import com.stonebridge.tradeflow.system.entity.vo.MetaVo;
 import com.stonebridge.tradeflow.system.entity.vo.RouterVo;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +52,7 @@ public class RouterHelper {
             // 处理菜单（type=1），添加隐藏的按钮路由
             if (menuType == TYPE_MENU) {
                 for (SysMenu child : children) {
-                    if (!StrUtil.isEmpty(child.getComponent())) {
+                    if (StringUtils.hasText(child.getComponent())) {
                         RouterVo hiddenRouter = createRouter(child, true);
                         routers.add(hiddenRouter);
                     }
@@ -80,10 +80,10 @@ public class RouterHelper {
         router.setHidden(hidden);
         router.setAlwaysShow(false);
         router.setPath(getRouterPath(menu));
-        router.setComponent(StrUtil.isEmpty(menu.getComponent()) ? "" : menu.getComponent());
+        router.setComponent(!StringUtils.hasText(menu.getComponent()) ? "" : menu.getComponent());
         router.setMeta(new MetaVo(
-                StrUtil.isEmpty(menu.getName()) ? "" : menu.getName(),
-                StrUtil.isEmpty(menu.getIcon()) ? "" : menu.getIcon()
+                !StringUtils.hasText(menu.getName()) ? "" : menu.getName(),
+                !StringUtils.hasText(menu.getIcon()) ? "" : menu.getIcon()
         ));
         return router;
     }
@@ -96,7 +96,7 @@ public class RouterHelper {
      */
     public static String getRouterPath(SysMenu menu) {
         Objects.requireNonNull(menu, "Menu cannot be null");
-        String path = StrUtil.isEmpty(menu.getPath()) ? "" : menu.getPath();
+        String path = !StringUtils.hasText(menu.getPath()) ? "" : menu.getPath();
         long parentId = menu.getParentId() != null ? menu.getParentId() : PARENT_ID_ROOT;
 
         // 确保路径以 / 开头

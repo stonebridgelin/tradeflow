@@ -41,11 +41,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final List<String> SKIP_AUTH_PATHS = Arrays.asList("/auth/login", "/auth/refresh", "/auth/register");
 
-    private final JwtUtil jwtUtil;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil, RedisTemplate<String, Object> redisTemplate) {
-        this.jwtUtil = jwtUtil;
+    public JwtAuthenticationFilter(RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
@@ -69,14 +67,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
 
-                if (!jwtUtil.validateToken(token)) {
+                if (!JwtUtil.validateToken(token)) {
                     logger.warn("无效的 token，请求: {} {}，IP: {}", request.getMethod(), requestURI, request.getRemoteAddr());
                     SecurityContextHolder.clearContext();
                     sendErrorResponse(response, HttpStatus.UNAUTHORIZED.value(), ResultCodeEnum.LOGIN_AUTH, ResultCodeEnum.LOGIN_AUTH.getMessage());
                     return;
                 }
 
-                String username = jwtUtil.getUsername(token);
+                String username = JwtUtil.getUsername(token);
                 //校验该用户是否存在
                 if (StringUtils.isNullOrEmpty(username)) {
                     logger.warn("无效的 token，请求: {} {}，IP: {}", request.getMethod(), requestURI, request.getRemoteAddr());
@@ -100,7 +98,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
 
                 // 直接从 Redis 获取权限
-                List<String> permissionValueList = (List<String>) redisTemplate.opsForValue().get(username);
+                Object permsObj = redisTemplate.opsForValue().get(username);
+                List<String> permissionValueList = new ArrayList<>();
+                if (permsObj instanceof List<?>) {
+                    for (Object obj : (List<?>) permsObj) {
+                        if (obj instanceof String) {
+                            permissionValueList.add((String) obj);
+                        }
+                    }
+                }
 
                 ObjectMapper mapper = new ObjectMapper();
                 String userJson = (String) redisTemplate.opsForValue().get("user:" + username);
@@ -136,7 +142,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         Map<String, Object> errorData = new HashMap<>();
         errorData.put("code", errorCode.getCode());
         errorData.put("message", message);
-        Result result = Result.ok(errorData);
+        Result<Map<String, Object>> result = Result.ok(errorData);
         SecurityUtil.out(response, result);
     }
 }

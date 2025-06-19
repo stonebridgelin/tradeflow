@@ -37,8 +37,8 @@ public class AuthenticationEntryPointImpl implements AuthenticationEntryPoint {
         errorData.put("code", ResultCodeEnum.LOGIN_AUTH.getCode());
         // 构建错误响应对象
         // 使用 Result 类封装响应数据，包含错误码和错误消息
-        // ResultCodeEnum.LOGIN_AUTH 提供未认证的错误码和消息（如 401 和“未登录”）
-        Result result = Result.ok(errorData);
+        // ResultCodeEnum.LOGIN_AUTH 提供未认证的错误码和消息（如 401 和"未登录"）
+        Result<Map<String, Object>> result = Result.ok(errorData);
         // 输出响应，设置状态码为 401
         SecurityUtil.out(response, result);
     }

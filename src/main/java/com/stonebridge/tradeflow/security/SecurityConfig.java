@@ -3,7 +3,6 @@ package com.stonebridge.tradeflow.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.security.filter.*;
-import com.stonebridge.tradeflow.security.utils.JwtUtil;
 import com.stonebridge.tradeflow.security.filter.JwtLoginFilter;
 import com.stonebridge.tradeflow.security.utils.PasswordUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +24,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -37,7 +39,6 @@ import javax.servlet.http.HttpServletResponse;
 public class SecurityConfig {
 
     // 依赖注入的工具类和组件
-    private final JwtUtil jwtUtil; // JWT 工具类，用于生成和验证 JWT token
     private final RedisTemplate<String, Object> redisTemplate; // Redis 模板，用于存储 JWT 或会话相关数据
     private final AuthenticationConfiguration authenticationConfiguration; // 认证配置，用于获取 AuthenticationManager
     private final AccessDeniedHandlerImpl accessDeniedHandlerImpl; // 自定义无权限处理器
@@ -46,16 +47,14 @@ public class SecurityConfig {
     /**
      * 构造函数，通过 Spring 的依赖注入初始化所需组件
      *
-     * @param jwtUtil                      JWT 工具类
      * @param redisTemplate                Redis 模板
      * @param authenticationConfiguration  认证配置
      * @param accessDeniedHandlerImpl      无权限处理器
      * @param authenticationEntryPointImpl 未认证处理器
      */
     @Autowired
-    public SecurityConfig(JwtUtil jwtUtil, RedisTemplate<String, Object> redisTemplate, AuthenticationConfiguration authenticationConfiguration,
+    public SecurityConfig(RedisTemplate<String, Object> redisTemplate, AuthenticationConfiguration authenticationConfiguration,
                           AccessDeniedHandlerImpl accessDeniedHandlerImpl, AuthenticationEntryPointImpl authenticationEntryPointImpl) {
-        this.jwtUtil = jwtUtil;
         this.redisTemplate = redisTemplate;
         this.authenticationConfiguration = authenticationConfiguration;
         this.accessDeniedHandlerImpl = accessDeniedHandlerImpl;
@@ -108,13 +107,13 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager, AuthenticationProvider daoAuthenticationProvider) throws Exception {
-       http.authenticationProvider(daoAuthenticationProvider); // 注入自定义 DaoAuthenticationProvider
+        http.cors().and(); // 开启跨域
+        http.authenticationProvider(daoAuthenticationProvider);
         // 1. 配置异常处理
         // 设置未认证和无权限的处理方式
         http.exceptionHandling()
-                .authenticationEntryPoint(authenticationEntryPointImpl) // 未提供有效身份凭据（例如未登录或 token 无效）时试图访问受保护资源的情况，返回 401 响应（如 JSON 格式）
-                .accessDeniedHandler(accessDeniedHandlerImpl); // 试访问受保护资源（如通过 @PreAuthorize 限制的接口）但缺乏所需权限时，返回 403 响应（如 JSON 格式）
-
+                .authenticationEntryPoint(authenticationEntryPointImpl) // 401
+                .accessDeniedHandler(accessDeniedHandlerImpl); // 403
         // 2. 关闭 CSRF 保护
         // 由于使用 JWT 认证，无需 CSRF 保护，适合 RESTful API
         http.csrf().disable();
@@ -125,12 +124,14 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
         // 4. 配置权限规则
-        // 定义哪些请求需要认证，哪些可以匿名访问
         http.authorizeHttpRequests()
                 .antMatchers(HttpMethod.POST, "/auth/login").permitAll()
                 // 允许匿名访问的路径（如登录、注册和 Swagger 相关接口）
-                .antMatchers("/auth/register", "/druid-system/**", "/druid-business/**",
-                        "/swagger-ui.html", "/webjars/**", "/v2/api-docs").permitAll()
+                .antMatchers(
+                        "/auth/register", "/druid-system/**", "/druid-business/**",
+                        "/swagger-ui.html", "/swagger-ui/**", "/webjars/**", "/v2/api-docs", "/v3/api-docs/**",
+                        "/doc.html", "/favicon.ico", "/static/**", "/public/**"
+                ).permitAll()
                 // 其他所有请求都需要认证
                 // 显式要求 /user/info 需要认证
                 .antMatchers("/user/info").authenticated()
@@ -138,16 +139,14 @@ public class SecurityConfig {
 
         // 5. 配置注销
         // 定义注销接口和处理逻辑，清理 JWT 或 Redis 中的数据
-        http.logout().logoutUrl("/auth/logout").addLogoutHandler(new TokenLogoutHandler(jwtUtil, redisTemplate)).logoutSuccessHandler(jsonLogoutSuccessHandler()); // 自定义 JSON 响应; // 自定义注销处理器
-
+        http.logout().logoutUrl("/auth/logout").addLogoutHandler(new TokenLogoutHandler(redisTemplate)).logoutSuccessHandler(jsonLogoutSuccessHandler());
         // 6. 添加登录过滤器
         // 替换默认的 UsernamePasswordAuthenticationFilter，处理登录请求并生成 JWT
-        JwtLoginFilter loginFilter = new JwtLoginFilter(authenticationManager, jwtUtil, redisTemplate);
+        JwtLoginFilter loginFilter = new JwtLoginFilter(authenticationManager, redisTemplate);
         http.addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
-
         // 7. 添加 JWT 认证过滤器
         // 在每次请求前验证 JWT，确保用户已认证
-        JwtAuthenticationFilter authFilter = new JwtAuthenticationFilter(jwtUtil, redisTemplate);
+        JwtAuthenticationFilter authFilter = new JwtAuthenticationFilter(redisTemplate);
         http.addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
 
         // 8. 确保 ExceptionTranslationFilter 在过滤器链中
@@ -173,5 +172,17 @@ public class SecurityConfig {
             Result<String> result = Result.ok("Logout successful");
             response.getWriter().write(mapper.writeValueAsString(result));
         };
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.addAllowedOriginPattern("*");
+        configuration.addAllowedHeader("*");
+        configuration.addAllowedMethod("*");
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

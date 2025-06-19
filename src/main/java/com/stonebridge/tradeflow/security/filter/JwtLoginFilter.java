@@ -41,10 +41,6 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
      */
     private final AuthenticationManager authenticationManager;
 
-    /**
-     * JWT 工具类，用于生成和解析 JWT token
-     */
-    private final JwtUtil jwtUtil;
 
     /**
      * Redis 模板，用于存储用户权限信息
@@ -55,12 +51,10 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
      * 构造函数，初始化过滤器所需的依赖并设置登录接口路径
      *
      * @param authenticationManager 认证管理器
-     * @param jwtUtil               JWT 工具类
      * @param redisTemplate         Redis 模板
      */
-    public JwtLoginFilter(AuthenticationManager authenticationManager, JwtUtil jwtUtil, RedisTemplate<String, Object> redisTemplate) {
+    public JwtLoginFilter(AuthenticationManager authenticationManager, RedisTemplate<String, Object> redisTemplate) {
         this.authenticationManager = authenticationManager;
-        this.jwtUtil = jwtUtil;
         this.redisTemplate = redisTemplate;
         // 设置登录接口路径为 /auth/login，覆盖默认的 /login
         setFilterProcessesUrl("/auth/login");
@@ -91,7 +85,7 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
         try {
             // 使用 ObjectMapper 从请求的 JSON 体中解析登录数据
             ObjectMapper mapper = new ObjectMapper();
-            Map<String, String> loginData = mapper.readValue(request.getInputStream(), Map.class);
+            Map<String, String> loginData = mapper.readValue(request.getInputStream(), new com.fasterxml.jackson.core.type.TypeReference<Map<String, String>>() {});
             String username = loginData.get("username");
             String password = loginData.get("password");
             // 存入 request attribute，供 unsuccessfulAuthentication 使用
@@ -133,7 +127,7 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
         String username = user.getUsername();
 
         // 使用 JwtUtil 生成 JWT token
-        String token = jwtUtil.generateToken(username);
+        String token = JwtUtil.generateToken(username);
 
         // 将用户权限列表存储到 Redis，键为用户名，值为权限列表，设置 12 小时过期时间
         redisTemplate.opsForValue().set(username, user.getPermissionValueList(), 12, TimeUnit.HOURS);
@@ -193,7 +187,7 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
         errorData.put("message", message);
         errorData.put("code", code);
         // 使用 SecurityUtil 的 out 方法返回错误响应
-        // ResultCodeEnum.LOGIN_AUTH 提供认证失败的错误码和消息（如 401 和“登录失败”）
+        // ResultCodeEnum.LOGIN_AUTH 提供认证失败的错误码和消息（如 401 和"登录失败"）
         SecurityUtil.out(response, Result.ok(errorData));
     }
 }

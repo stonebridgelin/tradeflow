@@ -2,14 +2,12 @@ package com.stonebridge.tradeflow;
 
 import com.stonebridge.tradeflow.business.entity.Product;
 import com.stonebridge.tradeflow.business.service.ProductService;
-import com.stonebridge.tradeflow.system.entity.SysDept;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.util.List;
 
 
 @SpringBootTest

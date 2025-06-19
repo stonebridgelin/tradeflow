@@ -1,14 +1,11 @@
 package com.stonebridge.tradeflow.system.service.impl;
 
-import cn.hutool.core.date.DatePattern;
-import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.stonebridge.tradeflow.common.utils.DateUtil;
 import com.stonebridge.tradeflow.system.entity.SysUserRole;
 import com.stonebridge.tradeflow.system.mapper.SysRoleMapper;
 import com.stonebridge.tradeflow.system.entity.SysRole;
@@ -18,6 +15,7 @@ import com.stonebridge.tradeflow.system.entity.vo.SysRoleQueryVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +47,7 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
             }
 
             // 设置分页参数
-            keyWord = StrUtil.trim(keyWord);
+            keyWord = StringUtils.trimWhitespace(keyWord);
             SysRoleQueryVo queryVo = new SysRoleQueryVo();
             queryVo.setKeyWord(keyWord);
             queryVo.setPageSize(pageSize);
@@ -67,24 +65,25 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
             for (SysRole sysRole : roleList) {
                 ObjectNode jsonObject = objectMapper.valueToTree(sysRole);
                 if (sysRole.getCreateTime() != null) {
-                    jsonObject.put("createTime", DateUtil.format(sysRole.getCreateTime(), DatePattern.NORM_DATETIME_PATTERN));
+                    jsonObject.put("createTime", DateUtil.format(sysRole.getCreateTime(), DateUtil.DEFAULT_DATETIME_PATTERN));
                 }
                 if (sysRole.getUpdateTime() != null) {
-                    jsonObject.put("updateTime", DateUtil.format(sysRole.getUpdateTime(), DatePattern.NORM_DATETIME_PATTERN));
+                    jsonObject.put("updateTime", DateUtil.format(sysRole.getUpdateTime(), DateUtil.DEFAULT_DATETIME_PATTERN));
                 }
                 jsonArray.add(jsonObject);
             }
 
             // 构造返回结果
             ObjectNode result = objectMapper.createObjectNode();
-            result.put("list", jsonArray);
+            result.set("list", jsonArray);
             result.put("total", total);
             return result;
 
         } catch (Exception e) {
             log.error("Page query failed", e);
-            JSONObject error = new JSONObject();
-            error.set("error", "Query failed: " + e);
+            ObjectMapper objectMapper = new ObjectMapper();
+            ObjectNode error = objectMapper.createObjectNode();
+            error.put("error", "Query failed: " + e);
             throw new RuntimeException(error.toString());
         }
     }

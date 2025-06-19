@@ -4,7 +4,6 @@ import com.stonebridge.tradeflow.business.service.*;
 import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import com.stonebridge.tradeflow.common.constant.Constant;
 import com.stonebridge.tradeflow.system.entity.DataDictionary;
-import com.stonebridge.tradeflow.system.service.DataDictionaryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,9 +15,6 @@ public class DatadictionaryTest {
 
     @Autowired
     private MyRedisCache redisCache;
-
-    @Autowired
-    private DataDictionaryService dataDictionaryService;
 
     @Test
     public void TestDataByType() {

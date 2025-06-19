@@ -1,6 +1,5 @@
 package com.stonebridge.tradeflow.system.controller;
 
-import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stonebridge.tradeflow.common.exception.CustomizeException;
@@ -26,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.stonebridge.tradeflow.common.result.ResultCodeEnum.ACCOUNT_ERROR;
-import static com.stonebridge.tradeflow.common.result.ResultCodeEnum.LOGIN_AUTH;
 
 @Tag(name = "用户管理的的接口类", description = "完成用户的增删改查操作，以及为用户授权角色信息，对应Sys_User表")
 // 定义 API 组名称
@@ -34,9 +32,6 @@ import static com.stonebridge.tradeflow.common.result.ResultCodeEnum.LOGIN_AUTH;
 @Slf4j
 @RequestMapping("/system/user")
 public class SysUserController {
-    private static final String AUTH_HEADER = "Authorization";
-
-    private static final String BEARER_PREFIX = "Bearer ";
 
     private final SysUserService sysUserService;
 
@@ -61,7 +56,7 @@ public class SysUserController {
         // 创建分页对象
         Page<SysUser> page = new Page<>(pageNum, pageSize);
         // 执行分页查询
-        JSONObject resultObjct = sysUserService.findByPage(page, userQueryVo);
+        ObjectNode resultObjct = sysUserService.findByPage(page, userQueryVo);
         return Result.ok(resultObjct);
     }
 
@@ -92,9 +87,9 @@ public class SysUserController {
 
     @Operation(summary = "为用户分配权限时，获取所有角色信息和当前用户的被赋予的所有角色")
     @GetMapping(value = "/getAllRoles/{userId}")
-    public Result<JSONObject> getAllRoles(@PathVariable(value = "userId") Long userId) {
+    public Result<ObjectNode> getAllRoles(@PathVariable(value = "userId") Long userId) {
         log.info("获取所有角色信息和当前用户的被赋予的所有角色，用户的ID是：{}", userId);
-        JSONObject jsonObject = sysUserService.getAllRoles(userId);
+        ObjectNode jsonObject = sysUserService.getAllRoles(userId);
         log.info("获取所有角色信息和当前用户的被赋予的所有角色成功,数据为：{}", jsonObject);
         return Result.ok(jsonObject);
     }
@@ -107,7 +102,7 @@ public class SysUserController {
      */
     @Operation(summary = "为用户分配角色信息，将角色信息保存在sys_user_role表中")
     @PostMapping("/doAssign")
-    public Result<JSONObject> doAssign(@RequestBody AssginRoleDto assginRoleDto) {
+    public Result<ObjectNode> doAssign(@RequestBody AssginRoleDto assginRoleDto) {
         log.info("分配角色，数据为：{}", assginRoleDto);
         sysUserService.doAssign(assginRoleDto);
         return Result.ok();
@@ -121,7 +116,7 @@ public class SysUserController {
      */
     @Operation(summary = "根据用户的id删除用户信息")
     @DeleteMapping("delete/{id}")
-    public Result deleteUser(@PathVariable(value = "id") Long id) {
+    public Result<Object> deleteUser(@PathVariable(value = "id") Long id) {
         log.info("删除用户信息，用户的ID是：{}", id);
         sysUserService.removeById(id);
         log.info("删除用户信息成功，用户的ID是：{}", id);
@@ -151,7 +146,7 @@ public class SysUserController {
      */
     @Operation(summary = "更新用户信息")
     @PostMapping("update")
-    public Result updateUser(@RequestBody SysUser sysUser) {
+    public Result<Object> updateUser(@RequestBody SysUser sysUser) {
         log.info("更新用户信息，用户的信息是：{}", sysUser.toString());
         sysUser.setUpdateTime(new Date());
         sysUserService.updateById(sysUser);
@@ -181,7 +176,7 @@ public class SysUserController {
 
     @Operation(summary = "用户注册", description = "处理用户注册请求")
     @PostMapping("register")
-    public Result register(@RequestBody RegisterDto registerDto) {
+    public Result<Object> register(@RequestBody RegisterDto registerDto) {
         log.info("开始处理用户注册请求: username={}", registerDto.getUsername());
         try {
             SysUser newSysUser = new SysUser();

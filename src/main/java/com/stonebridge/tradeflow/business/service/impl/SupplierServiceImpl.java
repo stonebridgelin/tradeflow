@@ -1,7 +1,5 @@
 package com.stonebridge.tradeflow.business.service.impl;
 
-import cn.hutool.core.util.IdUtil;
-import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -21,6 +19,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import java.util.UUID;
 
 import java.util.*;
 import java.util.HashMap;
@@ -159,7 +159,7 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> i
     @Transactional
     @Override
     public void updateSupplierDetail(SupplierDetail supplierDetail) {
-        if (supplierDetail == null || StrUtil.isEmpty(supplierDetail.getId())) {
+        if (supplierDetail == null || !StringUtils.hasText(supplierDetail.getId())) {
             throw new IllegalArgumentException("SupplierDetail 或 ID 不能为空");
         }
 
@@ -192,7 +192,7 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> i
     @Transactional
     @Override
     public void deleteSupplierDetailById(String id) {
-        if (StrUtil.isEmpty(id)) {
+        if (!StringUtils.hasText(id)) {
             throw new IllegalArgumentException("供应商 ID 不能为空");
         }
 
@@ -213,7 +213,7 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> i
     public void saveSupplierDetail(SupplierDetail supplierDetail) {
         Supplier supplier = new Supplier();
         BeanUtils.copyProperties(supplierDetail, supplier);
-        supplier.setSupplierCode(IdUtil.fastSimpleUUID());
+        supplier.setSupplierCode(UUID.randomUUID().toString().replace("-", ""));
         supplier.setStatus(Constant.SUPPLIER_STATUS_ENABLE);
         supplier.setCreateTime(new Date());
         supplier.setUpdateTime(new Date());
@@ -228,7 +228,7 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> i
 
     @Override
     public SupplierDetail getSupplierDetailById(String id) {
-        if (StrUtil.isEmpty(id)) {
+        if (!StringUtils.hasText(id)) {
             return null;
         }
 
@@ -252,7 +252,7 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> i
                 new QueryWrapper<SupplierCategory>().eq("supplier_id", id));
         for (SupplierCategory supplierCategory : supplierCategoryList) {
             String categoryId = supplierCategory.getCategoryId();
-            if (StrUtil.isNotEmpty(categoryId)) {
+            if (StringUtils.hasText(categoryId)) {
                 Category category = myRedisCache.getCategoryById(categoryId);
                 if (category != null) {
                     supplierDetail.getCategories().add(categoryId);
@@ -286,7 +286,7 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> i
     private void insertCategories(List<String> categories, String supplierId) {
         if (categories != null && !categories.isEmpty()) {
             for (String categoryId : categories) {
-                if (StrUtil.isNotEmpty(categoryId)) {
+                if (StringUtils.hasText(categoryId)) {
                     SupplierCategory supplierCategory = new SupplierCategory();
                     supplierCategory.setSupplierId(supplierId);
                     supplierCategory.setCategoryId(categoryId);

@@ -49,9 +49,6 @@ public class MyRedisCache implements CommandLineRunner {
         public static final String TYPE_DATA_DICTIONARY = "dataDictionary";
         public static final String TYPE_CATEGORY = "category";
 
-        // 缓存名称
-        private static final String NAME_DATA_DICTIONARY = "DataDictionary";
-        private static final String NAME_CATEGORY = "Category";
 
         /**
          * 生成 DataDictionary 的 type 键。
@@ -92,13 +89,10 @@ public class MyRedisCache implements CommandLineRunner {
      */
     private void initializeCacheLoaders() {
         // 注册 DataDictionary 缓存加载器
-        cacheLoaders.put(CacheConstants.TYPE_DATA_DICTIONARY, new CacheLoader(() -> loadDataDictionary(), CacheConstants.NAME_DATA_DICTIONARY));
+        cacheLoaders.put(CacheConstants.TYPE_DATA_DICTIONARY, new CacheLoader(() -> loadDataDictionary()));
 
         // 注册 Category 缓存加载器
-        cacheLoaders.put(CacheConstants.TYPE_CATEGORY, new CacheLoader(
-                () -> loadCategory(),
-                CacheConstants.NAME_CATEGORY
-        ));
+        cacheLoaders.put(CacheConstants.TYPE_CATEGORY, new CacheLoader(() -> loadCategory()));
     }
 
     @Override
@@ -320,11 +314,9 @@ public class MyRedisCache implements CommandLineRunner {
      */
     private static class CacheLoader {
         private final Runnable loadCacheMethod;
-        private final String cacheName;
 
-        CacheLoader(Runnable loadCacheMethod, String cacheName) {
+        CacheLoader(Runnable loadCacheMethod) {
             this.loadCacheMethod = loadCacheMethod;
-            this.cacheName = cacheName;
         }
 
         void loadCache() {

@@ -1,9 +1,10 @@
 package com.stonebridge.tradeflow.system.service.impl;
 
-import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.system.entity.DataDictionary;
@@ -70,11 +71,12 @@ public class DataDictionaryServiceImpl extends ServiceImpl<DataDictionaryMapper,
         }
     }
 
-    public Result<JSONObject> saveOrUpdateDt(DataDictionary dt) {
+    public Result<ObjectNode> saveOrUpdateDt(DataDictionary dt) {
         Integer id = dt.getId();
         //如果id不为空，则是更新操作，从数据库获取源数据，将新的属性拷贝到源数据，然后在数据库中完成更新操作。
-        JSONObject json = new JSONObject();
-        json.set("code", "200");
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode json = objectMapper.createObjectNode();
+        json.put("code", "200");
         if (id != null) {
             DataDictionary dataDictionary = dataDictionaryMapper.selectById(id);
             BeanUtils.copyProperties(dt, dataDictionary);
@@ -82,11 +84,10 @@ public class DataDictionaryServiceImpl extends ServiceImpl<DataDictionaryMapper,
             dataDictionaryMapper.updateById(dataDictionary);
         } else {
             //如果id为空，则是新增操作，先判断数据库中是否已存在相同的type和code，如果存在则返回错误信息，否则执行新增操作。
-            DataDictionary dataDictionary = new DataDictionary();
             Integer rows = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM data_dictionary WHERE type=? and code=?", Integer.class, dt.getType(), dt.getCode());
             if (rows > 0) {
-                json.set("code", "500");
-                json.set("message", "新增的数据已存在相同的type和name");
+                json.put("code", "500");
+                json.put("message", "新增的数据已存在相同的type和name");
                 return Result.ok(json);
             }
             dt.setCreateTime(new Date());
