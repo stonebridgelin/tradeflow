@@ -2,10 +2,11 @@ package com.stonebridge.tradeflow.system.controller;
 
 import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stonebridge.tradeflow.common.exception.CustomizeException;
 import com.stonebridge.tradeflow.common.result.Result;
-import com.stonebridge.tradeflow.security.utils.JwtUtil;
 import com.stonebridge.tradeflow.security.utils.PasswordUtils;
+import com.stonebridge.tradeflow.security.utils.SecurityContextHolderUtil;
 import com.stonebridge.tradeflow.system.entity.SysUser;
 import com.stonebridge.tradeflow.system.entity.dto.AssginRoleDto;
 import com.stonebridge.tradeflow.system.entity.dto.RegisterDto;
@@ -20,7 +21,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -160,46 +160,23 @@ public class SysUserController {
     }
 
     /**
-     * 获取用户信息接口
-     * 从请求头的 Authorization 中提取 Bearer Token，解析 userId，查询用户信息并返回。
-     *
-     * @param request HTTP 请求，包含 Authorization 头
+     * 获取用户信息接口,从spring security作用域获取用户id，然后查询用户信息并返回。
      * @return Result 封装的用户信息（UserInfoVO）
      */
     @Operation(summary = "用户信息", description = "获取当前用户信息")
     @GetMapping("info")
-    public Result<JSONObject> info(HttpServletRequest request) {
-        // 1. 从请求头获取 Token
-        String authHeader = request.getHeader(AUTH_HEADER);
-        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-            log.warn("Invalid or missing Authorization header: {}", authHeader);
-            throw new CustomizeException(LOGIN_AUTH.getCode(), LOGIN_AUTH.getMessage());
-        }
-        String token = authHeader.substring(BEARER_PREFIX.length());
-        if (token.isEmpty()) {
-            log.warn("Token is empty");
-            throw new CustomizeException(LOGIN_AUTH.getCode(), LOGIN_AUTH.getMessage());
-        }
-
-        // 2. 解析 Token 获取 userId
-        String username = JwtUtil.getUsername(token);
-        if (username == null) {
-            log.warn("UserId not found in token");
-            throw new CustomizeException(ACCOUNT_ERROR.getCode(), ACCOUNT_ERROR.getMessage());
-
-        }
-
-        // 3. 查询用户信息
+    public Result<ObjectNode> info() {
+        // 1. 从spring security中获取用户id
+        String userId = SecurityContextHolderUtil.getUserId();
+        // 2. 查询用户信息
         //根据用户id获取用户信息（基本信息 菜单权限 按钮权限信息）
-        JSONObject userInfo = sysUserService.getUserInfo(username);
+        ObjectNode userInfo = sysUserService.getUserInfo(userId);
         if (userInfo == null) {
-            log.warn("User info not found for userId: {}", username);
+            log.warn("User info not found for userId: {}", userId);
             throw new CustomizeException(ACCOUNT_ERROR.getCode(), ACCOUNT_ERROR.getMessage());
         }
-        Result<JSONObject> objectResult = Result.ok(userInfo);
-        System.out.println(objectResult.toString());
         // 4. 返回用户信息
-        return objectResult;
+        return Result.ok(userInfo);
     }
 
     @Operation(summary = "用户注册", description = "处理用户注册请求")

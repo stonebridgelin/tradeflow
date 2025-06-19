@@ -9,6 +9,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stonebridge.tradeflow.common.utils.StatusConverter;
 import com.stonebridge.tradeflow.system.entity.SysRole;
 import com.stonebridge.tradeflow.system.entity.dto.AssginRoleDto;
@@ -22,7 +24,6 @@ import com.stonebridge.tradeflow.system.entity.SysUser;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,14 +43,16 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     private final SysMenuService sysMenuService;
 
     private final JdbcTemplate systemJdbcTemplate;
+    private final SysUserMapper sysUserMapper;
 
 
     @Autowired
-    public SysUserServiceImpl(SysRoleMapper sysRoleMapper, SysUserRoleMapper sysUserRoleMapper, SysMenuService sysMenuService, @Qualifier("systemJdbcTemplate") JdbcTemplate systemJdbcTemplate) {
+    public SysUserServiceImpl(SysRoleMapper sysRoleMapper, SysUserRoleMapper sysUserRoleMapper, SysMenuService sysMenuService, @Qualifier("systemJdbcTemplate") JdbcTemplate systemJdbcTemplate, SysUserMapper sysUserMapper) {
         this.sysRoleMapper = sysRoleMapper;
         this.sysUserRoleMapper = sysUserRoleMapper;
         this.systemJdbcTemplate = systemJdbcTemplate;
         this.sysMenuService = sysMenuService;
+        this.sysUserMapper = sysUserMapper;
     }
 
     @Override
@@ -143,29 +146,32 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     /**
      * 根据用户id获取用户信息（基本信息 菜单权限 按钮权限信息）
      *
-     * @param username : 用户名
+     * @param userId : 用户id
      * @return : 用户信息（基本信息 菜单权限 按钮权限信息）
      */
     @Override
-    public JSONObject getUserInfo(String username) {
-        log.info("用户信息：{}", username);
-        String sql = "select * from sys_user where username = ?";
-        SysUser sysUser = systemJdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(SysUser.class), username);
+    public ObjectNode getUserInfo(String userId) {
+        log.info("用户id：{}", userId);
+        // 查询用户信息
+        SysUser sysUser = sysUserMapper.selectById(userId);
         if (sysUser != null) {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.set("id", sysUser.getId());
-            jsonObject.set("avatar", sysUser.getAvatar());
-            jsonObject.set("username", sysUser.getUsername());
-            //菜单权限数据
-            //根据userId查询菜单权限值,菜单的权限是通过sys_menu.path和src/router/config.js里的path进行匹配的
-            List<String> routerPaths = sysMenuService.getUserMenuListByUserId(sysUser.getId());
-            jsonObject.set("rights", routerPaths);
-            //按钮权限数据
-            //根据userId查询按钮权限值,按钮权限
-            List<String> permsList = sysMenuService.getUserPermsListByUserId(sysUser.getId());
-            jsonObject.set("buttons", permsList);
-            return jsonObject;
+            ObjectMapper objectMapper = new ObjectMapper(); // Jackson ObjectMapper 实例
+            // 创建 Jackson ObjectNode 用于构建 JSON
+            ObjectNode jsonObject = objectMapper.createObjectNode();
+            // 设置用户基本信息
+            jsonObject.put("id", sysUser.getId());
+            jsonObject.put("avatar", sysUser.getAvatar());
+            jsonObject.put("username", sysUser.getUsername());
+            // 根据用户的id获取该用户被授权的菜单(sys_menu.type=1)的所有菜单数据Map必须包含{name:"",path:"",componet:""}
+            List<Map<String, String>> Routes = sysMenuService.getAuthorizedMenu(userId);
+            // 根据 userId 查询菜单权限值，菜单权限通过 sys_menu.path 和 src/router/config.js 的 path 匹配
+            jsonObject.putPOJO("routes", Routes);
+            // 按钮权限数据
+            // // 根据用户的id获取该用户被授权的按钮(sys_menu.type=2)的所有按钮数据
+            List<String> permsList = sysMenuService.getAuthorizedButton(userId);
+            jsonObject.putPOJO("buttonPermissions", permsList);
+            return jsonObject; // 返回 JSON 对象
         }
-        return null;
+        return null; // 用户不存在时返回 null
     }
 }

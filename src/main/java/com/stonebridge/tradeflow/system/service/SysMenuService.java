@@ -7,6 +7,7 @@ import com.stonebridge.tradeflow.system.entity.SysMenu;
 import com.stonebridge.tradeflow.system.entity.dto.AssginMenuDto;
 
 import java.util.List;
+import java.util.Map;
 
 public interface SysMenuService extends IService<SysMenu> {
 
@@ -28,9 +29,9 @@ public interface SysMenuService extends IService<SysMenu> {
 
     void doAssign(AssginMenuDto assginMenuDto);
 
-    List<String> getUserMenuListByUserId(String id);
-
-    List<String> getUserPermsListByUserId(String id);
-
     List<String> getPermissionsByUserId(Long userId);
+
+    List<Map<String, String>> getAuthorizedMenu(String userId);
+
+    List<String> getAuthorizedButton(String userId);
 }

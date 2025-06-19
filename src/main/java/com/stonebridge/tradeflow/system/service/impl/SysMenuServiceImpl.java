@@ -65,24 +65,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
         if (Objects.isNull(userId)) {
             throw new CustomizeException(ResultCodeEnum.LOGIN_AUTH);
         }
-        // 获取用户角色
-        List<SysUserRole> sysUserRoles = sysUserRoleMapper.selectList(new QueryWrapper<SysUserRole>().eq("user_id", userId));
-        if (sysUserRoles == null || sysUserRoles.isEmpty()) {
-            return new JSONArray(); // 如果用户没有角色，返回空数组
-        }
-        List<Long> roleIds = sysUserRoles.stream().map(SysUserRole::getRoleId).collect(Collectors.toList());
-
-        // 获取角色被授权的菜单和按钮
-        List<SysRoleMenu> sysRoleMenus = sysRoleMenuMapper.selectList(new QueryWrapper<SysRoleMenu>().in("role_id", roleIds));
-        if (sysRoleMenus == null || sysRoleMenus.isEmpty()) {
-            return new JSONArray(); // 如果角色没有授权的菜单或按钮，返回空数组
-        }
-        List<Long> menuIds = new ArrayList<>();
-        for (SysRoleMenu roleMenu : sysRoleMenus) {
-            if (roleMenu.getMenuId() != null) {
-                menuIds.add(Long.valueOf(roleMenu.getMenuId())); // 将菜单ID转换为Long类型并添加到列表
-            }
-        }
+        List<String> menuIds = getAuthorizedMenuIds(userId);
 
         // 获取所有被授权的菜单和按钮
         List<SysMenu> authorizedMenus = sysMenuMapper.selectBatchIds(menuIds);
@@ -91,14 +74,14 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
         }
 
         // 获取所有相关菜单（包括父目录）
-        Set<Long> allMenuIds = new HashSet<>(menuIds);
+        Set<String> allMenuIds = new HashSet<>(menuIds);
         for (SysMenu menu : authorizedMenus) {
-            Long parentId = menu.getParentId();
-            while (parentId != null && parentId != 0) {
+            String parentId = String.valueOf(menu.getParentId());
+            while (parentId != null && (!"0".equals(parentId))) {
                 allMenuIds.add(parentId); // 将父菜单ID添加到集合中
                 SysMenu parentMenu = sysMenuMapper.selectById(parentId);
                 if (parentMenu != null) {
-                    parentId = parentMenu.getParentId(); // 继续向上查找父菜单
+                    parentId = String.valueOf(parentMenu.getParentId()); // 继续向上查找父菜单
                 } else {
                     break;
                 }
@@ -249,26 +232,6 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
         return row == 1 ? Boolean.TRUE : Boolean.FALSE;
     }
 
-    /**
-     * 构建菜单树节点
-     *
-     * @param menu 菜单实体
-     * @return 包含子菜单的JSON对象
-     */
-    private JSONObject buildMenuTreeNode(SysMenu menu) {
-        // 将菜单对象转换为JSONObject
-        JSONObject menuObject = new JSONObject(menu);
-
-        // 查询子菜单
-        List<SysMenu> subMenus = sysMenuMapper.selectList(new QueryWrapper<SysMenu>().eq("parent_id", menu.getId()).orderByAsc("sort_value"));
-
-        // 添加子菜单（如果存在）
-        if (subMenus != null && !subMenus.isEmpty()) {
-            menuObject.put("children", new JSONArray(subMenus));
-        }
-        return menuObject;
-    }
-
 
     /**
      * 构建树型Menu，根据角色ID获取所有的菜单和已经为该角色分配了菜单的组合（如果已经被分配isSelect为true）
@@ -308,97 +271,6 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
         }
     }
 
-    //根据userId查询菜单权限值
-    @Override
-    public List<String> getUserMenuListByUserId(String userId) {
-        //超级管理员admin账号id为：1
-        List<SysMenu> sysMenuList;
-        if (StrUtil.equals(Constant.SUPER_ADMIN_ID, userId)) {
-            sysMenuList = sysMenuMapper.selectList(new QueryWrapper<SysMenu>().eq("status", 1).in("type", "0", "1").orderByAsc("sort_value"));
-        } else {
-            sysMenuList = this.findMenuListByUserId(userId, Constant.TYPE_MENU);
-        }
-        //构建树形数据
-//        List<SysMenu> sysMenuTreeList = MenuHelper.buildTree(sysMenuList);
-        //构建路由
-        List<String> rights = new ArrayList<>();
-        for (SysMenu sysMenu : sysMenuList) {
-            rights.add(sysMenu.getPath());
-        }
-        return rights;
-    }
-
-    /**
-     * 根据userId查询按钮权限值
-     *
-     * @param userId
-     * @return
-     */
-    @Override
-    public List<String> getUserPermsListByUserId(String userId) {
-        //超级管理员admin账号id为：1
-        List<SysMenu> sysMenuList;
-        if (StrUtil.equals("1", userId)) {
-            sysMenuList = sysMenuMapper.selectList(new QueryWrapper<SysMenu>().eq("status", 1));
-        } else {
-            sysMenuList = this.findMenuListByUserId(userId, Constant.TYPE_BUTTON);
-        }
-        //创建返回的集合
-        List<String> permissionList = new ArrayList<>();
-        for (SysMenu sysMenu : sysMenuList) {
-            if (sysMenu.getType() == 2) {
-                permissionList.add(sysMenu.getPerms());
-            }
-        }
-        return permissionList;
-    }
-
-    /**
-     * 根据 userId 查询用户授权的菜单列表。
-     * 1. 从 sys_user_role 表查询用户的所有角色 ID。
-     * 2. 从 sys_role_menu 表查询角色对应的所有菜单 ID（去重）。
-     * 3. 从 sys_menu 表查询符合条件的菜单列表（状态为启用，类型为菜单或目录，按排序值升序）。
-     *
-     * @param userId 用户 ID
-     * @return 菜单列表（不会返回 null）
-     */
-    private List<SysMenu> findMenuListByUserId(String userId, String type) {
-        // 输入校验
-        if (userId == null || userId.trim().isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // 1. 查询用户的所有角色 ID
-        List<String> roleIds = systemJdbcTemplate.queryForList("SELECT role_id FROM sys_user_role WHERE user_id = ?", String.class, userId);
-
-        if (roleIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // 2. 查询所有角色对应的菜单 ID（去重）
-        String roleIdsPlaceholder = String.join(",", Collections.nCopies(roleIds.size(), "?"));
-        String menuIdQuery = String.format("SELECT DISTINCT menu_id FROM sys_role_menu WHERE role_id IN (%s)", roleIdsPlaceholder);
-        List<String> menuIds = systemJdbcTemplate.queryForList(menuIdQuery, String.class, roleIds.toArray());
-
-        if (menuIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // 3. 查询菜单列表
-        QueryWrapper<SysMenu> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("status", 1) // 状态：1 表示启用
-                .in("id", menuIds) // 菜单 ID 列表
-                .orderByAsc("sort_value"); // 按排序值升序
-
-        if (StrUtil.equals(Constant.TYPE_BUTTON, type)) {
-            queryWrapper.eq("type", "2"); // 类型：2按钮
-        } else if (StrUtil.equals(Constant.TYPE_MENU, type)) {
-            queryWrapper.in("type", "0", "1"); // 类型：0 表示目录，1 表示菜单
-        } else {
-            return Collections.emptyList(); // 无效类型返回空列表
-        }
-        return sysMenuMapper.selectList(queryWrapper);
-    }
 
     /**
      * 根据用户id，从数据库查询用户所具有的权限，将查询结果返回给用户
@@ -409,33 +281,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
      */
     @Override
     public List<String> getPermissionsByUserId(Long userId) {
-        // 1. 查询用户的所有角色 ID
-        QueryWrapper<SysUserRole> userRoleQuery = new QueryWrapper<>();
-        userRoleQuery.eq("user_id", userId).select("role_id");
-        List<SysUserRole> userRoles = sysUserRoleMapper.selectList(userRoleQuery);
-        if (userRoles.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // 去重角色 ID
-        Set<Long> roleIds = new HashSet<>();
-        for (SysUserRole userRole : userRoles) {
-            roleIds.add(userRole.getRoleId());
-        }
-
-        // 2. 查询所有角色关联的菜单 ID
-        QueryWrapper<SysRoleMenu> roleMenuQuery = new QueryWrapper<>();
-        roleMenuQuery.in("role_id", roleIds).select("menu_id");
-        List<SysRoleMenu> roleMenus = sysRoleMenuMapper.selectList(roleMenuQuery);
-        if (roleMenus.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // 去重菜单 ID
-        Set<Long> menuIds = new HashSet<>();
-        for (SysRoleMenu roleMenu : roleMenus) {
-            menuIds.add(Long.valueOf(roleMenu.getMenuId()));
-        }
+        List<String> menuIds = getAuthorizedMenuIds(userId.toString());
 
         // 3. 查询所有菜单的权限标识
         QueryWrapper<SysMenu> menuQuery = new QueryWrapper<>();
@@ -451,8 +297,57 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
             }
         }
 
-//        log.debug("Found permissions: {}", permissions);
         return permissions;
+    }
+
+    /**
+     * 根据用户id，从数据库查询用户所具有菜单的权限，将查询结果返回给用户
+     * userId --> Sys_UserRole.RoleId -->Sys_RoleMenu.MenuId-->返回menuIds
+     *
+     * @param userId :用户id
+     * @return
+     */
+    public List<String> getAuthorizedMenuIds(String userId) {
+        // 1. 查询用户的所有角色 ID
+        QueryWrapper<SysUserRole> userRoleQuery = new QueryWrapper<>();
+        userRoleQuery.eq("user_id", userId).select("role_id");
+        List<Long> roleIds = sysUserRoleMapper.findSysUserRoleByUserId(Long.valueOf(userId));
+
+        // 2. 查询所有角色关联的菜单 ID
+        QueryWrapper<SysRoleMenu> roleMenuQuery = new QueryWrapper<>();
+        roleMenuQuery.in("role_id", roleIds).select("menu_id");
+        return sysRoleMenuMapper.selectList(roleMenuQuery).stream().map(SysRoleMenu::getMenuId).toList();
+    }
+
+    @Override
+    public List<Map<String, String>> getAuthorizedMenu(String userId) {
+        List<String> menuIds = getAuthorizedMenuIds(userId);
+        QueryWrapper<SysMenu> menuQuery = new QueryWrapper<>();
+        menuQuery.in("id", menuIds).eq("type", Constant.MENU_TYPE_VALUE_MENU).select("path", "component");
+        List<SysMenu> sysMenuList = sysMenuMapper.selectList(menuQuery);
+        if (sysMenuList != null && !sysMenuList.isEmpty()) {
+            return sysMenuList.stream().map(sysMenu -> {
+                String path = sysMenu.getPath();
+                Map<String, String> map = new HashMap<>();
+                map.put("path", path);
+                map.put("component", sysMenu.getComponent());
+                map.put("name", path.substring(path.lastIndexOf('/') + 1));
+                return map;
+            }).toList();
+        }
+        return List.of();
+    }
+
+    @Override
+    public List<String> getAuthorizedButton(String userId) {
+        List<String> menuIds = getAuthorizedMenuIds(userId);
+        QueryWrapper<SysMenu> menuQuery = new QueryWrapper<>();
+        menuQuery.in("id", menuIds).eq("type", Constant.MENU_TYPE_VALUE_BUTTON).select("perms");
+        List<SysMenu> sysMenuList = sysMenuMapper.selectList(menuQuery);
+        if (sysMenuList != null && !sysMenuList.isEmpty()) {
+            return sysMenuList.stream().map(SysMenu::getPerms).toList();
+        }
+        return List.of();
     }
 
 }

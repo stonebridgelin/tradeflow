@@ -2,24 +2,20 @@ package com.stonebridge.tradeflow.common.constant;
 
 public class Constant {
 
-    public static final String AUTH_HEADER = "Authorization";
-    public static final String BEARER_PREFIX = "Bearer ";
 
 
     /**
-     * sys_user.id = 1 超级管理员
+     * sys_menu.type = 0 目录类型
      */
-    public static final String SUPER_ADMIN_ID = "1";
-
+    public static final String MENU_TYPE_VALUE_DIR = "0";
     /**
-     * sys_menu.type = 0 OR 1 菜单类型（目录和菜单）
+     * sys_menu.type = 1 菜单类型
      */
-    public static final String TYPE_MENU = "menu";
-
+    public static final String MENU_TYPE_VALUE_MENU = "1";
     /**
-     * sys_menu.type = 2 按钮类型<e
+     * sys_menu.type = 2 按钮类型
      */
-    public static final String TYPE_BUTTON = "button";
+    public static final String MENU_TYPE_VALUE_BUTTON = "2";
 
 
     /**
@@ -49,5 +45,5 @@ public class Constant {
     /**
      * 菜单的状态status-1 启用
      */
-    public static final Object MENU_STATUS_NORMAL = 1;
+    public static final Integer MENU_STATUS_NORMAL = 1;
 }
