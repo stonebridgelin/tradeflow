@@ -42,32 +42,49 @@ public class JwtUtil {
 
     private static Claims getClaims(String token) {
         try {
-            return Jwts.parser()
+            // 修改：使用 parserBuilder() 替代已弃用的 parser()
+            return Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
         } catch (ExpiredJwtException e) {
+            logger.warn("Token已过期: {}", e.getMessage());
             throw new RuntimeException("Token 已过期", e);
         } catch (UnsupportedJwtException e) {
+            logger.warn("不支持的JWT: {}", e.getMessage());
             throw new RuntimeException("不支持的 JWT", e);
         } catch (MalformedJwtException e) {
+            logger.warn("无效的JWT: {}", e.getMessage());
             throw new RuntimeException("无效的 JWT", e);
-        } catch (SignatureException e) {
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            // 修改：使用正确的SignatureException包路径
+            logger.warn("JWT签名验证失败: {}", e.getMessage());
             throw new RuntimeException("JWT 签名验证失败", e);
         } catch (IllegalArgumentException e) {
+            logger.warn("Token参数为空: {}", e.getMessage());
             throw new RuntimeException("Token 参数为空", e);
         }
     }
 
     public static String getUsername(String token) {
-        Object val = getClaims(token).get("username");
-        return val != null ? val.toString() : null;
+        try {
+            Object val = getClaims(token).get("username");
+            return val != null ? val.toString() : null;
+        } catch (RuntimeException e) {
+            logger.warn("获取用户名失败: {}", e.getMessage());
+            return null;
+        }
     }
 
     public static boolean isTokenExpired(String token) {
-        Date expiration = getClaims(token).getExpiration();
-        return expiration.before(new Date());
+        try {
+            Date expiration = getClaims(token).getExpiration();
+            return expiration.before(new Date());
+        } catch (RuntimeException e) {
+            logger.warn("检查token过期状态失败: {}", e.getMessage());
+            return true; // 如果无法解析，认为已过期
+        }
     }
 
     /**
@@ -93,6 +110,74 @@ public class JwtUtil {
         } catch (RuntimeException e) {
             logger.warn("Token validation failed: {}", e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * 从token中获取过期时间
+     *
+     * @param token JWT token
+     * @return 过期时间，如果token无效则返回null
+     */
+    public static Date getExpirationDate(String token) {
+        try {
+            return getClaims(token).getExpiration();
+        } catch (RuntimeException e) {
+            logger.warn("获取token过期时间失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 从token中获取签发时间
+     *
+     * @param token JWT token
+     * @return 签发时间，如果token无效则返回null
+     */
+    public static Date getIssuedAtDate(String token) {
+        try {
+            return getClaims(token).getIssuedAt();
+        } catch (RuntimeException e) {
+            logger.warn("获取token签发时间失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 检查token是否可以被刷新（距离过期还有一定时间）
+     *
+     * @param token JWT token
+     * @param refreshWindow 刷新窗口时间（毫秒），在过期前多长时间允许刷新
+     * @return true如果可以刷新，否则false
+     */
+    public static boolean canTokenBeRefreshed(String token, long refreshWindow) {
+        try {
+            Date expiration = getClaims(token).getExpiration();
+            Date now = new Date();
+            Date refreshTime = new Date(expiration.getTime() - refreshWindow);
+            return now.after(refreshTime) && now.before(expiration);
+        } catch (RuntimeException e) {
+            logger.warn("检查token刷新状态失败: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 刷新token（重新生成）
+     *
+     * @param token 原始token
+     * @return 新的token，如果原token无效则返回null
+     */
+    public static String refreshToken(String token) {
+        try {
+            String username = getUsername(token);
+            if (username != null) {
+                return generateToken(username);
+            }
+            return null;
+        } catch (Exception e) {
+            logger.warn("刷新token失败: {}", e.getMessage());
+            return null;
         }
     }
 }
