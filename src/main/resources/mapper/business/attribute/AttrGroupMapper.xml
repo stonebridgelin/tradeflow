@@ -2,4 +2,16 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.stonebridge.tradeflow.business.mapper.AttrGroupMapper">
 
+    <!-- 结果映射，映射数据库列到实体类属性 -->
+    <resultMap id="BaseResultMap" type="com.stonebridge.tradeflow.business.entity.attribute.AttrGroup">
+        <id property="attrGroupId" column="attr_group_id" jdbcType="BIGINT" javaType="java.lang.String"
+            typeHandler="com.stonebridge.tradeflow.business.typehandler.StringToBigIntTypeHandler"/>
+        <result property="attrGroupName" column="attr_group_name" jdbcType="VARCHAR"/>
+        <result property="sort" column="sort" jdbcType="INTEGER"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="icon" column="icon" jdbcType="VARCHAR"/>
+        <result property="categoryId" column="category_id" jdbcType="BIGINT" javaType="java.lang.String"
+            typeHandler="com.stonebridge.tradeflow.business.typehandler.StringToBigIntTypeHandler"/>
+    </resultMap>
+
 </mapper>

@@ -235,6 +235,16 @@ public class MyRedisCache implements CommandLineRunner {
     }
 
     /**
+     *
+     * @param categoryId
+     * @return 根据categoryId获取对应的categoryName
+     */
+    public String getCategoryNameById(String categoryId) {
+        Category category = this.getCategoryById(categoryId);
+        return category.getName();
+    }
+
+    /**
      * 根据 type 从 Redis 获取 DataDictionary 数据，未命中时从数据库加载。
      * <p>
      * 如果 Redis 中存在指定 type 的 DataDictionary 数据，则直接返回；否则从数据库加载并存入 Redis。
