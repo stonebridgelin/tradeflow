@@ -31,7 +31,7 @@ public class BusinessDataSourceConfig {
         factoryBean.setPlugins(interceptor); // 绑定分页拦截器
 
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-        Resource[] resources = resolver.getResources("classpath:mapper/business/*.xml");
+        Resource[] resources = resolver.getResources("classpath:mapper/business/**/*.xml");
         if (resources != null && resources.length > 0) {
             factoryBean.setMapperLocations(resources);
             System.out.println("Loaded " + resources.length + " XML files for businessSqlSessionFactory");

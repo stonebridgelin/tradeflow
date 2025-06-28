@@ -9,13 +9,19 @@ import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 
 @MappedTypes({String.class})
-@MappedJdbcTypes({JdbcType.BIGINT})//StringToBigIntTypeHandler
+@MappedJdbcTypes({JdbcType.BIGINT})
 public class StringToBigIntTypeHandler extends BaseTypeHandler<String> {
+
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, String parameter, JdbcType jdbcType) throws SQLException {
-        ps.setLong(i, Long.parseLong(parameter));
+        if (parameter == null || parameter.trim().isEmpty()) {
+            ps.setNull(i, Types.BIGINT); // 传 null，启用数据库自增
+        } else {
+            ps.setLong(i, Long.parseLong(parameter));
+        }
     }
 
     @Override
