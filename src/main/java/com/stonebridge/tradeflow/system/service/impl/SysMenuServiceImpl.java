@@ -225,7 +225,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
 
     @Override
     public Boolean deleteSysMenuById(String id) {
-        Integer row = systemJdbcTemplate.update("DELETE FROM sys_menu WHERE id = ?", id);
+        int row = systemJdbcTemplate.update("DELETE FROM sys_menu WHERE id = ?", id);
         return row == 1 ? Boolean.TRUE : Boolean.FALSE;
     }
 
@@ -274,7 +274,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
      * userId --> Sys_UserRole.RoleId -->Sys_RoleMenu.MenuId -->Sys_Menu.perms
      *
      * @param userId :用户id
-     * @return
+     * @return ：所有权限的集合
      */
     @Override
     public List<String> getPermissionsByUserId(Long userId) {
@@ -302,7 +302,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
      * userId --> Sys_UserRole.RoleId -->Sys_RoleMenu.MenuId-->返回menuIds
      *
      * @param userId :用户id
-     * @return
+     * @return ：所有授权的menuIds
      */
     public List<String> getAuthorizedMenuIds(String userId) {
         // 1. 查询用户的所有角色 ID

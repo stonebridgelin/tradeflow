@@ -36,7 +36,7 @@ public class AttrGroupController {
 
     @PutMapping("update")
     public Result<Object> update(@RequestBody AttrGroup attrGroup) {
-        attrGroupService.updateById(attrGroup);
+        attrGroupService.updateAttrGroup(attrGroup);
         return Result.ok();
     }
 
@@ -48,7 +48,12 @@ public class AttrGroupController {
 
     @PostMapping("save")
     public Result<Object> save(@RequestBody AttrGroup attrGroup) {
-        attrGroupService.save(attrGroup);
+        attrGroupService.saveAttrGroup(attrGroup);
         return Result.ok();
+    }
+
+    @GetMapping("getSortRangeByCatId/{catId}")
+    public Result<Integer> getSortRangeByCatId(@PathVariable("catId") String catId) {
+        return Result.ok(attrGroupService.getSortRangeByCatId(catId));
     }
 }

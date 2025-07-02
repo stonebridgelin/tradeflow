@@ -9,15 +9,18 @@ import com.stonebridge.tradeflow.business.entity.attribute.vo.AttrGroupVO;
 import com.stonebridge.tradeflow.business.mapper.AttrGroupMapper;
 import com.stonebridge.tradeflow.business.service.AttrGroupService;
 import com.stonebridge.tradeflow.common.cache.MyRedisCache;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup> implements AttrGroupService {
@@ -53,10 +56,10 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
         int size = 10;
 
         try {
-            if (StringUtils.hasText(currentPage)) {
+            if (StringUtils.isNotBlank(currentPage)) {
                 pageNum = Integer.parseInt(currentPage);
             }
-            if (StringUtils.hasText(limit)) {
+            if (StringUtils.isNotBlank(limit)) {
                 size = Integer.parseInt(limit);
             }
         } catch (NumberFormatException e) {
@@ -81,12 +84,12 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
         LambdaQueryWrapper<AttrGroup> wrapper = new LambdaQueryWrapper<>();
 
         // 添加分类ID条件
-        if (StringUtils.hasText(categoryId)) {
+        if (StringUtils.isNotBlank(categoryId)) {
             wrapper.eq(AttrGroup::getCategoryId, categoryId);
         }
 
         // 添加关键词模糊查询条件
-        if (StringUtils.hasText(keyWord)) {
+        if (StringUtils.isNotBlank(keyWord)) {
             wrapper.like(AttrGroup::getAttrGroupName, keyWord);
         }
 
@@ -96,9 +99,7 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
         // 执行分页查询,查询结果为：groupPage
         Page<AttrGroup> groupPage = this.page(page, wrapper);
         Page<AttrGroupVO> attrGroupVOPage = new Page<>();
-        attrGroupVOPage.setCurrent(groupPage.getCurrent());
-        attrGroupVOPage.setSize(groupPage.getSize());
-        attrGroupVOPage.setTotal(groupPage.getTotal());
+        BeanUtils.copyProperties(groupPage, attrGroupVOPage);
 
         //将groupPage的records数据拿出来，将CategoryId转化为CategoryName保存到AttrGroupVO对象，返回到前端
         List<AttrGroup> records = groupPage.getRecords();
@@ -117,22 +118,91 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
      * 保存AttrGroup对象数据
      *
      * @param attrGroup AttrGroup对象
-     * @return 保存结果
      */
     @Override
-    public boolean save(AttrGroup attrGroup) {
-        String sql = "SELECT COUNT(1) from pms_attr_group WHERE category_id=?";
-        Integer rows = jdbcTemplate.queryForObject(sql, Integer.class, attrGroup.getCategoryId());
-        attrGroup.setSort(rows + 1);
-        attrGroup.setAttrGroupId(null);
-        return super.save(attrGroup);
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public void saveAttrGroup(AttrGroup attrGroup) {
+        try {
+            // 验证 sortValue
+            Integer sortValue = attrGroup.getSort();
+            if (sortValue == null) {
+                throw new IllegalArgumentException("sort cannot be null");
+            }
+
+            // 查询 sort >= attrGroup.sort 的记录（加锁）
+            String sql = "SELECT attr_group_id, sort FROM pms_attr_group WHERE sort >= ? AND category_id = ? FOR UPDATE";
+            List<Map<String, Object>> list = jdbcTemplate.queryForList(sql, sortValue, attrGroup.getCategoryId());
+
+            if (!list.isEmpty()) {
+                // 更新 sort >= attrGroup.sort 的记录
+                sql = "UPDATE pms_attr_group SET sort = sort + 1 WHERE sort >= ? AND category_id = ?";
+                jdbcTemplate.update(sql, sortValue, attrGroup.getCategoryId());
+            }
+            // 插入新记录
+            attrGroup.setAttrGroupId(null);
+            super.save(attrGroup);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save AttrGroup: " + e.getMessage(), e);
+        }
     }
 
     /**
-     * 根据
+     * 更新AttrGroup，处理 sort 变化
      *
-     * @param attrGroupId
-     * @return
+     * @param attrGroup 包含更新属性的 AttrGroup对象,但是sort为前端传来为最新的
+     */
+    @Override
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    public void updateAttrGroup(AttrGroup attrGroup) {
+        String categoryId = StringUtils.trim(attrGroup.getCategoryId());
+        // 获取当前数据库中的attrGroup以获取旧的 sort 值
+        AttrGroup existingAttrGroup = this.getById(attrGroup.getAttrGroupId());
+        if (existingAttrGroup == null) {
+            throw new IllegalArgumentException("属性分组不存在");
+        }
+        //获取旧的sort值
+        Integer oldSort = existingAttrGroup.getSort();
+
+        //获取旧的新的值
+        Integer newSort = attrGroup.getSort();
+        if (newSort == null || newSort <= 0) {
+            throw new IllegalArgumentException("sort 必须为正整数");
+        }
+
+        try {
+            // 锁定受影响的记录
+            String lockSql;
+            if (oldSort < newSort) {
+                lockSql = "SELECT attr_group_id FROM pms_attr_group WHERE sort > ? AND sort <= ? AND category_id = ? FOR UPDATE";
+                jdbcTemplate.queryForList(lockSql, oldSort, newSort, categoryId);
+            } else if (oldSort > newSort){
+                lockSql = "SELECT attr_group_id FROM pms_attr_group WHERE sort >= ? AND sort < ? AND category_id = ? FOR UPDATE";
+                jdbcTemplate.queryForList(lockSql, newSort, oldSort, categoryId);
+            }
+
+            jdbcTemplate.update("DELETE FROM pms_attr_group WHERE attr_group_id = ?", attrGroup.getAttrGroupId());
+            String updateSql;
+
+            //根据旧排序位置的比较，进行更新
+            if (oldSort < newSort) {
+                // 旧 sort < 新 sort，更新 [oldSort, newSort]
+                updateSql = "UPDATE pms_attr_group SET sort = sort - 1 WHERE sort > ? AND sort <= ? AND category_id = ?";
+                jdbcTemplate.update(updateSql, oldSort, newSort, categoryId);
+            } else if (oldSort > newSort) {
+                // 新 sort < 旧 sort，更新 [newSort, oldSort]
+                updateSql = "UPDATE pms_attr_group SET sort = sort + 1 WHERE sort >= ? AND sort < ? AND category_id = ?";
+                jdbcTemplate.update(updateSql, newSort, oldSort, categoryId);
+            }
+            super.save(attrGroup);
+        } catch (Exception e) {
+            throw new RuntimeException("更新AttrGroup失败，可能存在主键冲突: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     *
+     * @param attrGroupId :pms_attr_group的主键id
+     * @return ：AttrGroup信息+ CategoryName
      */
     @Override
     public AttrGroupVO selectAttrGroupById(String attrGroupId) {
@@ -142,4 +212,16 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
         attrGroupVO.setCategoryName(myRedisCache.getCategoryNameById(attrGroup.getCategoryId()));
         return attrGroupVO;
     }
+
+    @Override
+    public Integer getSortRangeByCatId(String catId) {
+        String sql = "SELECT COUNT(1) from pms_attr_group WHERE category_id=?";
+        int rows = jdbcTemplate.queryForObject(sql, Integer.class, catId);
+        if (rows < 1) {
+            rows = 1;
+        }
+        return rows;
+    }
+
+
 }
