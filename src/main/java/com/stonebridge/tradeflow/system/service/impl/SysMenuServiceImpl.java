@@ -207,8 +207,6 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
             if (oldSortValue < newSortValue) {
                 // 旧 sortValue < 新 sortValue，更新 [oldSortValue, newSortValue]
                 // 7  < 10         6 [7,8,9,10] 11  ----> 6 [8,9,10,7] 11
-//                sql = "SELECT id, sort_value FROM sys_menu WHERE sort_value > ? AND sort_value <= ? FOR UPDATE";
-//                affectedRecords = systemJdbcTemplate.queryForList(sql, oldSortValue, newSortValue);
                 updateSql = "UPDATE sys_menu SET sort_value = sort_value - 1 WHERE sort_value > ? AND sort_value <= ? AND parent_id=? AND is_deleted = 0";
                 systemJdbcTemplate.update(updateSql, oldSortValue, newSortValue, parentId);
             } else if (oldSortValue > newSortValue) {
@@ -225,7 +223,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
 
     @Override
     public Boolean deleteSysMenuById(String id) {
-        Integer row = systemJdbcTemplate.update("DELETE FROM sys_menu WHERE id = ?", id);
+        int row = systemJdbcTemplate.update("DELETE FROM sys_menu WHERE id = ?", id);
         return row == 1 ? Boolean.TRUE : Boolean.FALSE;
     }
 
@@ -274,7 +272,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
      * userId --> Sys_UserRole.RoleId -->Sys_RoleMenu.MenuId -->Sys_Menu.perms
      *
      * @param userId :用户id
-     * @return
+     * @return ：所有权限的集合
      */
     @Override
     public List<String> getPermissionsByUserId(Long userId) {
@@ -302,7 +300,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
      * userId --> Sys_UserRole.RoleId -->Sys_RoleMenu.MenuId-->返回menuIds
      *
      * @param userId :用户id
-     * @return
+     * @return ：所有授权的menuIds
      */
     public List<String> getAuthorizedMenuIds(String userId) {
         // 1. 查询用户的所有角色 ID

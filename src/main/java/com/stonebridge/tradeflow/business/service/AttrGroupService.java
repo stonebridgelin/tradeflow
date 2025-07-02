@@ -9,7 +9,11 @@ import com.stonebridge.tradeflow.business.entity.attribute.vo.AttrGroupVO;
 public interface AttrGroupService extends IService<AttrGroup> {
     Page<AttrGroupVO> queryPage(AttrGroupDTO attrGroupDTO);
 
-    boolean save(AttrGroup attrGroup);
+    void saveAttrGroup(AttrGroup attrGroup);
 
     AttrGroupVO selectAttrGroupById(String attrGroupId);
+
+    Integer getSortRangeByCatId(String catId);
+
+    void updateAttrGroup(AttrGroup attrGroup);
 }
