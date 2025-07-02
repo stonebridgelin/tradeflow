@@ -160,17 +160,13 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
             String sql = "SELECT id, sort_value FROM sys_menu WHERE sort_value >= ? AND parent_id = ? FOR UPDATE";
             List<Map<String, Object>> list = systemJdbcTemplate.queryForList(sql, sortValue, sysMenu.getParentId());
 
-            if (list.isEmpty()) {
-                // 直接插入
-                sysMenuMapper.insert(sysMenu);
-            } else {
+            if (!list.isEmpty()) {
                 // 更新 sort_value >= sysMenu.sortValue 的记录
                 sql = "UPDATE sys_menu SET sort_value = sort_value + 1 WHERE sort_value >= ? AND parent_id = ?";
                 systemJdbcTemplate.update(sql, sortValue, sysMenu.getParentId());
-
-                // 插入新记录
-                sysMenuMapper.insert(sysMenu);
             }
+            // 插入新记录
+            sysMenuMapper.insert(sysMenu);
         } catch (Exception e) {
             throw new RuntimeException("Failed to save menu: " + e.getMessage(), e);
         }
