@@ -38,6 +38,7 @@ public class DataDictionaryController {
     public Result<Object> deleteData(@PathVariable(value = "id") String id) {
         Boolean result = dataDictionaryService.removeById(id);
         if (result) {
+            myRedisCache.refreshCache(MyRedisCache.CacheConstants.TYPE_DATA_DICTIONARY);
             return Result.ok();
         } else {
             return Result.fail();

@@ -4,12 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stonebridge.tradeflow.business.entity.category.Category;
 import com.stonebridge.tradeflow.business.service.CategoryService;
+import com.stonebridge.tradeflow.common.exception.CustomizeException;
 import com.stonebridge.tradeflow.common.result.Result;
+import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
+import java.util.Collections;
 import java.util.List;
 
 @Tag(name = "Business库category表的Controller") // 定义 API 组名称
@@ -21,9 +24,12 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
+    private final JdbcTemplate jdbcTemplate;
+
     @Autowired
-    public CategoryController(final CategoryService categoryService) {
+    public CategoryController(CategoryService categoryService,JdbcTemplate jdbcTemplate) {
         this.categoryService = categoryService;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @GetMapping("listWithTree")
@@ -40,8 +46,21 @@ public class CategoryController {
      */
     @PostMapping("delete")
     public Result<Object> removeCategoryByIds(@RequestBody List<String> ids) {
-        categoryService.removeCategoryByIds(ids);
-        return Result.ok();
+        if (ids == null || ids.isEmpty()) {
+            throw new CustomizeException(ResultCodeEnum.MISSING_PARAMETER);
+        }
+        try {
+            String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
+            String sql = "SELECT COUNT(1) FROM pms_category WHERE parent_id IN (" + placeholders + ")";
+            int rows = jdbcTemplate.queryForObject(sql, Integer.class, ids.toArray());
+            if (rows > 0) {
+                throw new CustomizeException(ResultCodeEnum.NODE_ERROR);
+            }
+            categoryService.removeCategoryByIds(ids);
+            return Result.ok();
+        } catch (Exception e) {
+            throw new CustomizeException(ResultCodeEnum.FAIL);
+        }
     }
 
     /**
@@ -52,10 +71,7 @@ public class CategoryController {
      */
     @PutMapping("add")
     public Result<Category> appendCategory(@RequestBody Category category) {
-        category.setStatus(CATEGORY_STATUS_ACTIVE);
-        category.setCreateTime(new Date());
-        category.setUpdateTime(new Date());
-        categoryService.save(category);
+        categoryService.saveCategory(category);
         return Result.ok(category);
     }
 
@@ -79,7 +95,7 @@ public class CategoryController {
 
     @PutMapping("update")
     public Result<Category> updateCategory(@RequestBody Category category) {
-        categoryService.updateById(category);
+        categoryService.updateCategory(category);
         return Result.ok(category);
     }
 }

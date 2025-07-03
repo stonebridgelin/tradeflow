@@ -253,12 +253,12 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> i
         for (SupplierCategory supplierCategory : supplierCategoryList) {
             String categoryId = supplierCategory.getCategoryId();
             if (StringUtils.hasText(categoryId)) {
-                Category category = myRedisCache.getCategoryById(categoryId);
-                if (category != null) {
+                String categoryName = myRedisCache.getCategoryNameById(categoryId);
+                if (categoryName != null) {
                     supplierDetail.getCategories().add(categoryId);
                     CategoryNode categoryNode = new CategoryNode();
                     categoryNode.setId(categoryId);
-                    categoryNode.setName(category.getName());
+                    categoryNode.setName(categoryName);
                     supplierDetail.getCategoryNodes().add(categoryNode);
                 }
             }

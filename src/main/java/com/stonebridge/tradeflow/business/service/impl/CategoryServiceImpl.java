@@ -8,11 +8,10 @@ import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.stonebridge.tradeflow.business.controller.CategoryController.CATEGORY_STATUS_ACTIVE;
 
 /**
  * 分类服务实现类，用于管理分类相关的业务逻辑。
@@ -28,7 +27,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
 
     private final CategoryMapper categoryMapper;
 
-    private final MyRedisCache  myRedisCache;
+    private final MyRedisCache myRedisCache;
 
     /**
      * 构造函数，通过依赖注入初始化 CategoryMapper。
@@ -76,12 +75,37 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 删除指定id的category
+     * @param ids :category的id集合
+     */
     @Override
     public void removeCategoryByIds(List<String> ids) {
-        //校验哪些被应用，则不能删除
-        //TODO
         categoryMapper.deleteBatchIds(ids);
-        myRedisCache.refreshCache(MyRedisCache.CacheConstants.TYPE_CATEGORY);
+        this.refreshCategoryCache();
+    }
+
+    /**
+     * 保存Category对象
+     * @param category ：Category对象
+     */
+    @Override
+    public void saveCategory(Category category) {
+        category.setStatus(CATEGORY_STATUS_ACTIVE);
+        category.setCreateTime(new Date());
+        category.setUpdateTime(new Date());
+        this.save(category);
+        this.refreshCategoryCache();
+    }
+
+    /**
+     * 更新Category对象
+     * @param category ：要更新的Category对象
+     */
+    @Override
+    public void updateCategory(Category category) {
+        this.updateById(category);
+        this.refreshCategoryCache();
     }
 
     /**
@@ -104,5 +128,12 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
                 })
                 .sorted(Comparator.comparingInt(category -> category.getOrderNum() == null ? 0 : category.getOrderNum()))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 刷新Category在redis的缓存
+     */
+    public void refreshCategoryCache() {
+        myRedisCache.refreshCache(MyRedisCache.CacheConstants.TYPE_CATEGORY);
     }
 }

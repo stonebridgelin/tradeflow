@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.stonebridge.tradeflow.business.entity.brand.Brand;
 import com.stonebridge.tradeflow.business.mapper.BrandMapper;
 import com.stonebridge.tradeflow.business.service.BrandService;
+import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import com.stonebridge.tradeflow.common.result.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -19,10 +20,12 @@ public class BrandServiceImpl extends ServiceImpl<BrandMapper, Brand> implements
 
     private final JdbcTemplate jdbcTemplate;
     private final BrandMapper brandMapper;
+    private final MyRedisCache myRedisCache;
 
-    public BrandServiceImpl(@Qualifier("businessJdbcTemplate") JdbcTemplate jdbcTemplate,BrandMapper brandMapper) {
+    public BrandServiceImpl(@Qualifier("businessJdbcTemplate") JdbcTemplate jdbcTemplate, BrandMapper brandMapper, MyRedisCache myRedisCache) {
         this.jdbcTemplate = jdbcTemplate;
-        this.brandMapper=brandMapper;
+        this.brandMapper = brandMapper;
+        this.myRedisCache = myRedisCache;
     }
 
     @Override
@@ -45,11 +48,13 @@ public class BrandServiceImpl extends ServiceImpl<BrandMapper, Brand> implements
     public void updateStatus(String brandId, String newStatus) {
         String updateSql = "UPDATE pms_brand set show_status=? where id=?";
         jdbcTemplate.update(updateSql, Integer.parseInt(newStatus), brandId);
+        this.refreshRedisCache();
     }
 
     @Override
     public void delete(String id) {
         brandMapper.deleteById(id);
+        this.refreshRedisCache();
     }
 
     @Override
@@ -63,5 +68,17 @@ public class BrandServiceImpl extends ServiceImpl<BrandMapper, Brand> implements
         brand.setId(null);
 
         brandMapper.insert(brand);
+        this.refreshRedisCache();
+    }
+
+    @Override
+    public void updateBrand(Brand brand) {
+        this.brandMapper.updateById(brand);
+        this.refreshRedisCache();
+
+    }
+
+    public void refreshRedisCache() {
+        myRedisCache.refreshCache(MyRedisCache.CacheConstants.TYPE_BRAND);
     }
 }

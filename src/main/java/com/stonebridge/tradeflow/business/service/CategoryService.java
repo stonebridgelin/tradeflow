@@ -9,4 +9,8 @@ public interface CategoryService extends IService<Category> {
     List<Category> listWithTree();
 
     void removeCategoryByIds(List<String> ids);
+
+    void saveCategory(Category category);
+
+    void updateCategory(Category category);
 }

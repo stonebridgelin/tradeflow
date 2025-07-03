@@ -2,6 +2,7 @@ package com.stonebridge.tradeflow.business.controller;
 
 import com.stonebridge.tradeflow.business.entity.brand.Brand;
 import com.stonebridge.tradeflow.business.service.BrandService;
+import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import com.stonebridge.tradeflow.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,9 +18,12 @@ import org.springframework.web.bind.annotation.*;
 public class BrandController {
     private final BrandService brandService;
 
+    private final MyRedisCache myRedisCache;
+
     @Autowired
-    public BrandController(BrandService brandService) {
+    public BrandController(BrandService brandService,MyRedisCache myRedisCache) {
         this.brandService = brandService;
+        this.myRedisCache = myRedisCache;
     }
 
     @GetMapping("list/{currentPage}/{pageSize}")
@@ -83,7 +87,7 @@ public class BrandController {
 
     @PutMapping("updateBrand")
     public Result<Object> updateBrand(@RequestBody Brand brand) {
-        brandService.updateById(brand);
+        brandService.updateBrand(brand);
         return Result.ok();
     }
 }

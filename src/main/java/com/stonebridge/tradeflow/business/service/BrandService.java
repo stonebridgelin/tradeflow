@@ -12,4 +12,6 @@ public interface BrandService extends IService<Brand> {
     void delete(String id);
 
     void createBrand(Brand brand);
+
+    void updateBrand(Brand brand);
 }
