@@ -1,7 +1,9 @@
 package com.stonebridge.tradeflow.common.cache;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.stonebridge.tradeflow.business.entity.brand.Brand;
 import com.stonebridge.tradeflow.business.entity.category.Category;
+import com.stonebridge.tradeflow.business.mapper.BrandMapper;
 import com.stonebridge.tradeflow.business.mapper.CategoryMapper;
 import com.stonebridge.tradeflow.system.entity.DataDictionary;
 import com.stonebridge.tradeflow.system.mapper.DataDictionaryMapper;
@@ -26,12 +28,15 @@ public class MyRedisCache implements CommandLineRunner {
     private final RedisTemplate<String, Object> redisTemplate;
     private final DataDictionaryMapper dataDictionaryMapper;
     private final CategoryMapper categoryMapper;
+    private final BrandMapper brandMapper;
 
-    public MyRedisCache(DataDictionaryMapper dataDictionaryMapper, CategoryMapper categoryMapper,
-                        RedisTemplate<String, Object> redisTemplate) {
+    public MyRedisCache(DataDictionaryMapper dataDictionaryMapper, RedisTemplate<String, Object> redisTemplate,
+                        CategoryMapper categoryMapper,
+                        BrandMapper brandMapper) {
         this.dataDictionaryMapper = dataDictionaryMapper;
         this.categoryMapper = categoryMapper;
         this.redisTemplate = redisTemplate;
+        this.brandMapper = brandMapper;
 
         // 初始化缓存加载器
         initializeCacheLoaders();
@@ -47,7 +52,10 @@ public class MyRedisCache implements CommandLineRunner {
 
         // 缓存类型
         public static final String TYPE_DATA_DICTIONARY = "dataDictionary";
+
         public static final String TYPE_CATEGORY = "category";
+
+        public static final String TYPE_BRAND = "brand";
 
 
         /**
@@ -80,6 +88,16 @@ public class MyRedisCache implements CommandLineRunner {
         static String getCategoryKey(String id) {
             return CACHE_PREFIX + "category:" + id;
         }
+
+        /**
+         * 生成 Brand 的 id 键。
+         *
+         * @param id Brand ID
+         * @return 缓存键，例如 "tradeflow:cache:brand:123"
+         */
+        static String getBrandKey(String id) {
+            return CACHE_PREFIX + "brand:" + id;
+        }
     }
 
 
@@ -93,6 +111,9 @@ public class MyRedisCache implements CommandLineRunner {
 
         // 注册 Category 缓存加载器
         cacheLoaders.put(CacheConstants.TYPE_CATEGORY, new CacheLoader(() -> loadCategory()));
+
+        // 注册 Brand 缓存加载器
+        cacheLoaders.put(CacheConstants.TYPE_BRAND, new CacheLoader(() -> loadBrand()));
     }
 
     @Override
@@ -199,6 +220,22 @@ public class MyRedisCache implements CommandLineRunner {
         }
 
         log.info("Loaded {} Category records into Redis cache.", list.size());
+    }
+
+    /**
+     * 加载 Brand数据到 Redis 缓存。
+     */
+    private void loadBrand() {
+        List<Brand> list = brandMapper.selectList(null);
+        if (list == null || list.isEmpty()) {
+            log.warn("No Brand data found in database.");
+            return;
+        }
+        for (Brand brand : list) {
+            String key = CacheConstants.getBrandKey(brand.getId());
+            redisTemplate.opsForValue().set(key, brand);
+        }
+        log.info("Loaded {} Brand records into Redis cache.", list.size());
     }
 
     /**
@@ -317,6 +354,40 @@ public class MyRedisCache implements CommandLineRunner {
             }
         }
         return dict;
+    }
+
+
+    /**
+     * 根据 ID 从 Redis 获取 Brand 数据，未命中时从数据库加载。
+     * <p>
+     * 如果 Redis 中存在指定 ID 的 Brand 数据，则直接返回；否则从数据库加载并存入 Redis。
+     * </p>
+     *
+     * @param id Brand ID
+     * @return Brand 对象，如果未找到则返回 null
+     * <p><b>调用示例：</b></p>
+     * <pre>
+     * // 获取 ID 为 "123" 的 Brand 数据
+     * Brand brand = redisCache.getBrandById("123");
+     * if (brand != null) {
+     *     System.out.println("brand name: " + brand.getName());
+     * }
+     * </pre>
+     */
+    public Brand getBrandById(String id) {
+        String key = CacheConstants.getBrandKey(id);
+        Brand brand = (Brand) redisTemplate.opsForValue().get(key);
+        if (brand == null) {
+            log.debug("Cache miss for Brand ID: {}. Loading from database...", id);
+            brand = brandMapper.selectById(id);
+            if (brand != null) {
+                redisTemplate.opsForValue().set(key, brand);
+                log.debug("Loaded Brand ID: {} from database and cached in Redis.", id);
+            } else {
+                log.warn("Brand ID: {} not found in database.", id);
+            }
+        }
+        return brand;
     }
 
     /**
