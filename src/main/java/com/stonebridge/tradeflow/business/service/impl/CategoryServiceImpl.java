@@ -5,7 +5,12 @@ import com.stonebridge.tradeflow.business.entity.category.Category;
 import com.stonebridge.tradeflow.business.mapper.CategoryMapper;
 import com.stonebridge.tradeflow.business.service.CategoryService;
 import com.stonebridge.tradeflow.common.cache.MyRedisCache;
+import com.stonebridge.tradeflow.common.exception.CustomizeException;
+import com.stonebridge.tradeflow.common.result.Result;
+import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -29,6 +34,8 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
 
     private final MyRedisCache myRedisCache;
 
+    private final JdbcTemplate jdbcTemplate;
+
     /**
      * 构造函数，通过依赖注入初始化 CategoryMapper。
      *
@@ -36,9 +43,10 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
      * @throws NullPointerException 如果 categoryMapper 为 null
      */
     @Autowired
-    public CategoryServiceImpl(CategoryMapper categoryMapper, MyRedisCache myRedisCache) {
+    public CategoryServiceImpl(CategoryMapper categoryMapper, MyRedisCache myRedisCache, @Qualifier("businessJdbcTemplate") JdbcTemplate jdbcTemplate) {
         this.categoryMapper = Objects.requireNonNull(categoryMapper, "CategoryMapper 不能为空");
         this.myRedisCache = myRedisCache;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     /**
@@ -77,16 +85,30 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
 
     /**
      * 删除指定id的category
+     *
      * @param ids :category的id集合
      */
     @Override
     public void removeCategoryByIds(List<String> ids) {
-        categoryMapper.deleteBatchIds(ids);
-        this.refreshCategoryCache();
+        if (ids == null || ids.isEmpty()) {
+            throw new CustomizeException(ResultCodeEnum.MISSING_PARAMETER);
+        }
+        try {
+            String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
+            String sql = "SELECT COUNT(1) FROM pms_category WHERE parent_id IN (" + placeholders + ")";
+            int rows = jdbcTemplate.queryForObject(sql, Integer.class, ids.toArray());
+            if (rows > 0) {
+                throw new CustomizeException(ResultCodeEnum.NODE_ERROR);
+            }
+            categoryMapper.deleteBatchIds(ids);
+        } catch (Exception e) {
+            throw new CustomizeException(ResultCodeEnum.FAIL);
+        }
     }
 
     /**
      * 保存Category对象
+     *
      * @param category ：Category对象
      */
     @Override
@@ -100,6 +122,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
 
     /**
      * 更新Category对象
+     *
      * @param category ：要更新的Category对象
      */
     @Override
