@@ -1,7 +1,6 @@
 package com.stonebridge.tradeflow.business.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.stonebridge.tradeflow.business.entity.brand.Brand;
 import com.stonebridge.tradeflow.business.entity.categoryBrandRelation.CategoryBrandRelation;
 import com.stonebridge.tradeflow.business.entity.categoryBrandRelation.vo.CategoryBrandRelationVO;
 import com.stonebridge.tradeflow.business.mapper.CategoryBrandRelationMapper;
@@ -28,23 +27,7 @@ public class CategoryBrandRelationServiceImpl extends ServiceImpl<CategoryBrandR
 
     @Override
     public void saveDetail(CategoryBrandRelation categoryBrandRelation) {
-        categoryBrandRelation.setId(null);
         this.save(categoryBrandRelation);
-    }
-
-    @Override
-    public void updateBrand(Long brandId, String name) {
-
-    }
-
-    @Override
-    public void updateCategory(Long catId, String name) {
-
-    }
-
-    @Override
-    public List<Brand> getBrandsByCatId(Long catId) {
-        return List.of();
     }
 
     @Override

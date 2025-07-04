@@ -1,6 +1,8 @@
 package com.stonebridge.tradeflow.business.entity.categoryBrandRelation;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
 import com.stonebridge.tradeflow.business.typehandler.StringToBigIntTypeHandler;
@@ -13,7 +15,7 @@ import lombok.Data;
 @TableName("pms_category_brand_relation")
 public class CategoryBrandRelation {
 
-	@TableField(value = "id", typeHandler = StringToBigIntTypeHandler.class)
+	@TableId(value = "id",type = IdType.AUTO)
 	private String id;//主键ID
 
 	@TableField(value = "brand_id", typeHandler = StringToBigIntTypeHandler.class)
