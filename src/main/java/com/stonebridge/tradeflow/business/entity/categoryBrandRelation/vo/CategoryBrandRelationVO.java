@@ -1,7 +1,5 @@
 package com.stonebridge.tradeflow.business.entity.categoryBrandRelation.vo;
 
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.stonebridge.tradeflow.business.typehandler.StringToBigIntTypeHandler;
 import lombok.Data;
 
 @Data

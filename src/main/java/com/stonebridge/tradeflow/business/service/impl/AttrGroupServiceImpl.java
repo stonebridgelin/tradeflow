@@ -7,6 +7,7 @@ import com.stonebridge.tradeflow.business.entity.attribute.AttrGroup;
 import com.stonebridge.tradeflow.business.entity.attribute.dto.AttrGroupDTO;
 import com.stonebridge.tradeflow.business.entity.attribute.vo.AttrGroupVO;
 import com.stonebridge.tradeflow.business.mapper.AttrGroupMapper;
+import com.stonebridge.tradeflow.business.mapper.AttrMapper;
 import com.stonebridge.tradeflow.business.service.AttrGroupService;
 import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import org.apache.commons.lang3.StringUtils;
@@ -25,14 +26,16 @@ import java.util.Map;
 @Service
 public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup> implements AttrGroupService {
 
+    private final AttrMapper attrMapper;
     JdbcTemplate jdbcTemplate;
     MyRedisCache myRedisCache;
 
 
     @Autowired
-    public AttrGroupServiceImpl(@Qualifier("businessJdbcTemplate") JdbcTemplate jdbcTemplate, MyRedisCache myRedisCache) {
+    public AttrGroupServiceImpl(@Qualifier("businessJdbcTemplate") JdbcTemplate jdbcTemplate, MyRedisCache myRedisCache, AttrMapper attrMapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.myRedisCache = myRedisCache;
+        this.attrMapper = attrMapper;
     }
 
     /**
@@ -221,6 +224,17 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
             rows = 1;
         }
         return rows;
+    }
+
+
+    @Override
+    public List<Map<String, Object>> getAttrGroupListByCatId(String catId) {
+        String sql = "SELECT attr_group_id as attrGroupId,attr_group_name as attrGroupName from pms_attr_group WHERE category_id=?";
+        List<Map<String, Object>> list = jdbcTemplate.queryForList(sql, catId);
+        if (list.isEmpty()) {
+            return null;
+        }
+        return list;
     }
 
 

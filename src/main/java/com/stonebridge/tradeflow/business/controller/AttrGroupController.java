@@ -56,4 +56,9 @@ public class AttrGroupController {
     public Result<Integer> getSortRangeByCatId(@PathVariable("catId") String catId) {
         return Result.ok(attrGroupService.getSortRangeByCatId(catId));
     }
+
+    @GetMapping("getAttrGroupListByCatId/{catId}")
+    public Result<Object> getAttrGroupListByCatId(@PathVariable("catId") String catId) {
+        return Result.ok(attrGroupService.getAttrGroupListByCatId(catId));
+    }
 }

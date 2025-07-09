@@ -3,7 +3,6 @@ package com.stonebridge.tradeflow.business.controller;
 import java.util.List;
 
 import com.stonebridge.tradeflow.business.entity.categoryBrandRelation.CategoryBrandRelation;
-import com.stonebridge.tradeflow.business.entity.brand.Brand;
 import com.stonebridge.tradeflow.business.entity.categoryBrandRelation.vo.CategoryBrandRelationVO;
 import com.stonebridge.tradeflow.business.service.CategoryBrandRelationService;
 import com.stonebridge.tradeflow.common.result.Result;

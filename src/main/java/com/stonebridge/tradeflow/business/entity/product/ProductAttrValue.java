@@ -1,6 +1,8 @@
 package com.stonebridge.tradeflow.business.entity.product;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.stonebridge.tradeflow.business.typehandler.StringToBigIntTypeHandler;
 import lombok.Data;
@@ -11,6 +13,8 @@ import lombok.Data;
 @Data
 @TableName("pms_product_attr_value")
 public class ProductAttrValue {
+
+    @TableId(type = IdType.AUTO)
     @TableField(value = "id", typeHandler = StringToBigIntTypeHandler.class)
     private String id;//主键ID
 
@@ -27,8 +31,8 @@ public class ProductAttrValue {
     private String attrValue;//属性值
 
     @TableField("attr_sort")
-    private Integer attrSort;//顺序
+    private String attrSort;//顺序
 
     @TableField("quick_show")
-    private Integer quickShow;//快速展示【是否展示在介绍上；0-否 1-是】
+    private String quickShow;//快速展示【是否展示在介绍上；0-否 1-是】
 }

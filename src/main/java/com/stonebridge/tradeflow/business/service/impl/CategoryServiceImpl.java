@@ -6,7 +6,6 @@ import com.stonebridge.tradeflow.business.mapper.CategoryMapper;
 import com.stonebridge.tradeflow.business.service.CategoryService;
 import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import com.stonebridge.tradeflow.common.exception.CustomizeException;
-import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
