@@ -2,6 +2,8 @@ package com.stonebridge.tradeflow.business.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.stonebridge.tradeflow.business.entity.attribute.Attr;
 import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import org.apache.commons.lang3.StringUtils;
@@ -22,16 +24,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-
-import java.util.ArrayList;
-
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.ArrayList;
 
 @Service("attrService")
 public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements AttrService {
