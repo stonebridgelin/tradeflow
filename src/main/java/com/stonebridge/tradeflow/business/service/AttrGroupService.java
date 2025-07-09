@@ -16,4 +16,6 @@ public interface AttrGroupService extends IService<AttrGroup> {
     Integer getSortRangeByCatId(String catId);
 
     void updateAttrGroup(AttrGroup attrGroup);
+
+    Object getAttrGroupListByCatId(String catId);
 }

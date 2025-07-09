@@ -1,6 +1,8 @@
 package com.stonebridge.tradeflow.business.entity.attribute;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.stonebridge.tradeflow.business.typehandler.StringToBigIntTypeHandler;
 import lombok.Data;
@@ -11,7 +13,7 @@ import lombok.Data;
 @Data
 @TableName("pms_attr")
 public class Attr {
-
+    @TableId(type = IdType.AUTO)
     @TableField(value = "attr_id", typeHandler = StringToBigIntTypeHandler.class)
     private String attrId;//属性id
 
