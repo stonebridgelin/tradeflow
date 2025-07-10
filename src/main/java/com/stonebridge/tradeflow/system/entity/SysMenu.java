@@ -30,5 +30,6 @@ public class SysMenu implements Serializable {
     private List<SysMenu> children;
     @TableField(exist = false)
     private boolean isSelect;
+    private String props; // 路由props配置（JSON对象）
 
 }

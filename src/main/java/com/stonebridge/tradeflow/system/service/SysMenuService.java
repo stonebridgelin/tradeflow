@@ -5,6 +5,7 @@ import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.system.entity.SysMenu;
 import com.stonebridge.tradeflow.system.entity.dto.AssginMenuDto;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.stonebridge.tradeflow.system.entity.dto.MenuDto;
 
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,7 @@ public interface SysMenuService extends IService<SysMenu> {
 
     boolean existChildrenNode(String id);
 
-    void saveMenu(SysMenu sysMenu);
+    void saveMenu(MenuDto menuDto);
 
     void updateMenu(SysMenu sysMenu,Integer newSortValue);
 
@@ -31,7 +32,7 @@ public interface SysMenuService extends IService<SysMenu> {
 
     List<String> getPermissionsByUserId(Long userId);
 
-    List<Map<String, String>> getAuthorizedMenu(String userId);
+    List<Map<String, Object>> getAuthorizedMenu(String userId);
 
     List<String> getAuthorizedButton(String userId);
 }

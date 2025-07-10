@@ -168,7 +168,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             jsonObject.put("avatar", sysUser.getAvatar());
             jsonObject.put("username", sysUser.getUsername());
             // 根据用户的id获取该用户被授权的菜单(sys_menu.type=1)的所有菜单数据Map必须包含{name:"",path:"",componet:""}
-            List<Map<String, String>> Routes = sysMenuService.getAuthorizedMenu(userId);
+            List<Map<String, Object>> Routes = sysMenuService.getAuthorizedMenu(userId);
             // 根据 userId 查询菜单权限值，菜单权限通过 sys_menu.path 和 src/router/config.js 的 path 匹配
             jsonObject.putPOJO("routes", Routes);
             // 按钮权限数据

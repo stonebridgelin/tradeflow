@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.stonebridge.tradeflow.common.exception.CustomizeException;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
+import com.stonebridge.tradeflow.common.utils.JsonUtils;
 import com.stonebridge.tradeflow.system.entity.SysMenu;
 import com.stonebridge.tradeflow.system.entity.dto.AssginMenuDto;
+import com.stonebridge.tradeflow.system.entity.dto.MenuDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
@@ -73,8 +75,8 @@ public class SysMenuController {
 
     @Operation(summary = "保存Menu信息", description = "新建Menu时，将所有信息保存的Sys_Menu表")
     @PostMapping("save")
-    public Result<Object> save(@RequestBody SysMenu sysMenu) {
-        sysMenuService.saveMenu(sysMenu);
+    public Result<Object> save(@RequestBody MenuDto menuDto) {
+        sysMenuService.saveMenu(menuDto);
         return Result.ok();
     }
 
@@ -105,7 +107,7 @@ public class SysMenuController {
      */
     @Operation(summary = "保存修改后的Menu信息", description = "当修改Menu信息后，对修改后的信息更新到Sys_Menu表")
     @PostMapping("update")
-    public Result<Object> update(@RequestBody SysMenu menuDto) {
+    public Result<Object> update(@RequestBody MenuDto menuDto) {
         if (menuDto == null || menuDto.getId() == null) {
             throw new CustomizeException(ResultCodeEnum.ILLEGAL_REQUEST);
         }
@@ -127,6 +129,7 @@ public class SysMenuController {
         sysMenu.setPerms(menuDto.getPerms());
         sysMenu.setIcon(menuDto.getIcon());
         sysMenu.setStatus(menuDto.getStatus());
+        sysMenu.setProps(JsonUtils.toJsonString(menuDto.getProps()));
 
         if (Objects.equals(menuDto.getSortValue(), sysMenu.getSortValue())) {
             //当菜单的位置没有修改时，直接更新保存

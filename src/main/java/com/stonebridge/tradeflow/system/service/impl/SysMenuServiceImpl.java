@@ -7,16 +7,19 @@ import com.stonebridge.tradeflow.common.constant.Constant;
 import com.stonebridge.tradeflow.common.exception.CustomizeException;
 import com.stonebridge.tradeflow.common.result.Result;
 import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
+import com.stonebridge.tradeflow.common.utils.JsonUtils;
 import com.stonebridge.tradeflow.common.utils.MenuHelper;
 import com.stonebridge.tradeflow.security.utils.SecurityContextHolderUtil;
 import com.stonebridge.tradeflow.system.entity.SysRoleMenu;
 import com.stonebridge.tradeflow.system.entity.SysUserRole;
 import com.stonebridge.tradeflow.system.entity.dto.AssginMenuDto;
+import com.stonebridge.tradeflow.system.entity.dto.MenuDto;
 import com.stonebridge.tradeflow.system.mapper.SysMenuMapper;
 import com.stonebridge.tradeflow.system.entity.SysMenu;
 import com.stonebridge.tradeflow.system.mapper.SysRoleMenuMapper;
 import com.stonebridge.tradeflow.system.mapper.SysUserRoleMapper;
 import com.stonebridge.tradeflow.system.service.SysMenuService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -148,22 +151,27 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public void saveMenu(SysMenu sysMenu) {
+    public void saveMenu(MenuDto menuDto) {
         try {
             // 验证 sortValue
-            Integer sortValue = sysMenu.getSortValue();
+            Integer sortValue = menuDto.getSortValue();
             if (sortValue == null) {
                 throw new IllegalArgumentException("sort_value cannot be null");
             }
 
             // 查询 sort_value >= sysMenu.sortValue 的记录（加锁）
             String sql = "SELECT id, sort_value FROM sys_menu WHERE sort_value >= ? AND parent_id = ? FOR UPDATE";
-            List<Map<String, Object>> list = systemJdbcTemplate.queryForList(sql, sortValue, sysMenu.getParentId());
+            List<Map<String, Object>> list = systemJdbcTemplate.queryForList(sql, sortValue, menuDto.getParentId());
 
             if (!list.isEmpty()) {
                 // 更新 sort_value >= sysMenu.sortValue 的记录
                 sql = "UPDATE sys_menu SET sort_value = sort_value + 1 WHERE sort_value >= ? AND parent_id = ?";
-                systemJdbcTemplate.update(sql, sortValue, sysMenu.getParentId());
+                systemJdbcTemplate.update(sql, sortValue, menuDto.getParentId());
+            }
+            SysMenu sysMenu = new SysMenu();
+            BeanUtils.copyProperties(menuDto, sysMenu);
+            if (menuDto.getProps() != null) {
+                sysMenu.setProps(JsonUtils.toJsonString(menuDto.getProps()));
             }
             // 插入新记录
             sysMenuMapper.insert(sysMenu);
@@ -315,18 +323,19 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
     }
 
     @Override
-    public List<Map<String, String>> getAuthorizedMenu(String userId) {
+    public List<Map<String, Object>> getAuthorizedMenu(String userId) {
         List<String> menuIds = getAuthorizedMenuIds(userId);
         QueryWrapper<SysMenu> menuQuery = new QueryWrapper<>();
-        menuQuery.in("id", menuIds).eq("type", Constant.MENU_TYPE_VALUE_MENU).select("path", "component");
+        menuQuery.in("id", menuIds).eq("type", Constant.MENU_TYPE_VALUE_MENU).select("path", "component","props");
         List<SysMenu> sysMenuList = sysMenuMapper.selectList(menuQuery);
         if (sysMenuList != null && !sysMenuList.isEmpty()) {
             return sysMenuList.stream().map(sysMenu -> {
                 String path = sysMenu.getPath();
-                Map<String, String> map = new HashMap<>();
+                Map<String, Object> map = new HashMap<>();
                 map.put("path", path);
                 map.put("component", sysMenu.getComponent());
                 map.put("name", path.substring(path.lastIndexOf('/') + 1));
+                map.put("props", JsonUtils.parseObject(sysMenu.getProps(),Map.class));
                 return map;
             }).toList();
         }

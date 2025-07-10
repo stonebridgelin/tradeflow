@@ -48,7 +48,7 @@ public class JsonUtils {
     }
 
     /**
-     * 对象转JSON字符串
+     * 将任意对象（包括 Map 类型）转换为 JSON 字符串。
      */
     public static String toJsonString(Object obj) {
         if (obj == null) {
@@ -255,6 +255,41 @@ public class JsonUtils {
             return result != null ? result : defaultValue;
         } catch (Exception e) {
             log.warn("对象转JSON失败，返回默认值", e);
+            return defaultValue;
+        }
+    }
+
+    /**
+     * 将JSON字符串验证并返回为JSON字符串（可选择格式化输出）
+     */
+    public static String toJsonStringFormat(String jsonString, boolean prettyPrint) {
+        if (jsonString == null || jsonString.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            // 验证JSON字符串有效性
+            JsonNode jsonNode = OBJECT_MAPPER.readTree(jsonString);
+            // 根据prettyPrint参数选择是否格式化输出
+            if (prettyPrint) {
+                return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
+            } else {
+                return OBJECT_MAPPER.writeValueAsString(jsonNode);
+            }
+        } catch (IOException e) {
+            log.error("JSON字符串格式化失败，json: {}", jsonString, e);
+            throw new RuntimeException("JSON字符串格式化失败", e);
+        }
+    }
+
+    /**
+     * 安全的JSON字符串格式化（不抛异常，返回默认值）
+     */
+    public static String toJsonStringFormatSafely(String jsonString, boolean prettyPrint, String defaultValue) {
+        try {
+            String result = toJsonStringFormat(jsonString, prettyPrint);
+            return result != null ? result : defaultValue;
+        } catch (Exception e) {
+            log.warn("JSON字符串格式化失败，返回默认值，json: {}", jsonString, e);
             return defaultValue;
         }
     }
