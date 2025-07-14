@@ -1,7 +1,6 @@
 package com.stonebridge.tradeflow.business.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.stonebridge.tradeflow.business.entity.attribute.AttrGroup;
@@ -9,6 +8,7 @@ import com.stonebridge.tradeflow.business.entity.attribute.dto.AttrGroupDTO;
 import com.stonebridge.tradeflow.business.entity.attribute.vo.AttrGroupVO;
 import com.stonebridge.tradeflow.business.mapper.AttrGroupMapper;
 import com.stonebridge.tradeflow.business.mapper.AttrMapper;
+import com.stonebridge.tradeflow.business.service.AttrAttrgroupRelationService;
 import com.stonebridge.tradeflow.business.service.AttrGroupService;
 import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import org.apache.commons.lang3.StringUtils;
@@ -27,16 +27,15 @@ import java.util.Map;
 @Service
 public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup> implements AttrGroupService {
 
-    private final AttrMapper attrMapper;
     JdbcTemplate jdbcTemplate;
     MyRedisCache myRedisCache;
-
+    AttrAttrgroupRelationService attrAttrgroupRelationService;
 
     @Autowired
-    public AttrGroupServiceImpl(@Qualifier("businessJdbcTemplate") JdbcTemplate jdbcTemplate, MyRedisCache myRedisCache, AttrMapper attrMapper) {
+    public AttrGroupServiceImpl(@Qualifier("businessJdbcTemplate") JdbcTemplate jdbcTemplate, MyRedisCache myRedisCache, AttrAttrgroupRelationService attrAttrgroupRelationService) {
         this.jdbcTemplate = jdbcTemplate;
         this.myRedisCache = myRedisCache;
-        this.attrMapper = attrMapper;
+        this.attrAttrgroupRelationService = attrAttrgroupRelationService;
     }
 
     /**
@@ -179,7 +178,7 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
             if (oldSort < newSort) {
                 lockSql = "SELECT attr_group_id FROM pms_attr_group WHERE sort > ? AND sort <= ? AND category_id = ? FOR UPDATE";
                 jdbcTemplate.queryForList(lockSql, oldSort, newSort, categoryId);
-            } else if (oldSort > newSort){
+            } else if (oldSort > newSort) {
                 lockSql = "SELECT attr_group_id FROM pms_attr_group WHERE sort >= ? AND sort < ? AND category_id = ? FOR UPDATE";
                 jdbcTemplate.queryForList(lockSql, newSort, oldSort, categoryId);
             }
@@ -204,7 +203,6 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
     }
 
     /**
-     *
      * @param attrGroupId :pms_attr_group的主键id
      * @return ：AttrGroup信息+ CategoryName
      */
@@ -238,5 +236,9 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
         return list;
     }
 
-
+    @Override
+    public void deleteAttrGroup(String id) {
+        this.removeById(id);
+        attrAttrgroupRelationService.deleteAttrGroupRelation(id);
+    }
 }

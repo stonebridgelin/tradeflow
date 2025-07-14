@@ -18,4 +18,6 @@ public interface AttrGroupService extends IService<AttrGroup> {
     void updateAttrGroup(AttrGroup attrGroup);
 
     Object getAttrGroupListByCatId(String catId);
+
+    void deleteAttrGroup(String id);
 }

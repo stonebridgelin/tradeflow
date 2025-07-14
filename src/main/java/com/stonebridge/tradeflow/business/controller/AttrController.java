@@ -1,22 +1,34 @@
 package com.stonebridge.tradeflow.business.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.stonebridge.tradeflow.business.entity.BasePageDTO;
+import com.stonebridge.tradeflow.business.entity.attribute.Attr;
+import com.stonebridge.tradeflow.business.entity.attribute.AttrAttrgroupRelation;
+import com.stonebridge.tradeflow.business.entity.attribute.dto.AttrAttrgroupRelationDto;
 import com.stonebridge.tradeflow.business.entity.attribute.dto.AttrDTO;
 import com.stonebridge.tradeflow.business.entity.attribute.vo.AttrRespVo;
 import com.stonebridge.tradeflow.business.entity.attribute.vo.AttrVo;
+import com.stonebridge.tradeflow.business.service.AttrAttrgroupRelationService;
 import com.stonebridge.tradeflow.business.service.AttrService;
 import com.stonebridge.tradeflow.common.result.Result;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/attr")
 public class AttrController {
     private final AttrService attrService;
 
+    private final AttrAttrgroupRelationService attrAttrgroupRelationService;
+
     @Autowired
-    public AttrController(AttrService attrService) {
+    public AttrController(AttrService attrService, AttrAttrgroupRelationService attrAttrgroupRelationService) {
         this.attrService = attrService;
+        this.attrAttrgroupRelationService = attrAttrgroupRelationService;
     }
 
     /**
@@ -81,6 +93,48 @@ public class AttrController {
     @DeleteMapping("/delete")
     public Result<Object> delete(@PathVariable("attrId") String attrId) {
         attrService.deleteAttrById(attrId);
+        return Result.ok();
+    }
+
+    /**
+     * 根据attrGroupId获取已经绑定的Attr基础属性(Attr.type='base')
+     *
+     * @param attrGroupId :分组id
+     * @return ：
+     */
+    @GetMapping("getAttrByAttrGoupId/{attrGroupId}")
+    public Result<Object> getAttrByAttrGoupId(@PathVariable("attrGroupId") String attrGroupId) {
+        List<Attr> attrList = attrService.getAttrByAttrGoupId(attrGroupId);
+        return Result.ok(attrList);
+    }
+
+    /**
+     * 获取本分类下没有关联其他分组关联的属性
+     *
+     * @param attrGroupId 属性分组的id
+     * @param basePageDTO 所在分类信息
+     * @return :查询结果
+     */
+    @PostMapping("/getNoAttrRelation/{attrGroupId}")
+    public Result<Object> attrNoRelation(@PathVariable("attrGroupId") String attrGroupId, @RequestBody BasePageDTO basePageDTO) {
+        Page<Attr> attrPage = attrService.getNoRelationAttr(attrGroupId, basePageDTO);
+        return Result.ok(attrPage);
+    }
+
+    /**
+     * 属性和属性分组保存关联关系
+     *
+     * @param list: 参数集合
+     * @return :处理结果
+     */
+    @PostMapping("/relation")
+    public Result<Object> addRelation(@RequestBody List<AttrAttrgroupRelationDto> list) {
+        List<AttrAttrgroupRelation> attrgroupRelationEntityList = list.stream().map((item) -> {
+            AttrAttrgroupRelation relationEntity = new AttrAttrgroupRelation();
+            BeanUtils.copyProperties(item, relationEntity);
+            return relationEntity;
+        }).collect(Collectors.toList());
+        attrAttrgroupRelationService.saveBatch(attrgroupRelationEntityList);
         return Result.ok();
     }
 }
