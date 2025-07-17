@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(name = "Business库pms_brand表的Controller") // 定义 API 组名称
 @RestController
 @RequestMapping("/api/brand")
@@ -90,4 +92,15 @@ public class BrandController {
         brandService.updateBrand(brand);
         return Result.ok();
     }
+
+
+    /**
+     * 根据分类的id（categoryId），先根据categoryId从pms_category_brand_relation查询对应的brand的id，再查询brand的详细信息
+     */
+    @GetMapping("queryBrandByCategoryId/{categoryId}")
+    public Result<Object> queryBrandByCategoryId(@PathVariable("categoryId") String categoryId, String keyWord) {
+        List<Brand> brandList = brandService.queryBrandByCategoryId(categoryId, keyWord);
+        return Result.ok(brandList);
+    }
+
 }

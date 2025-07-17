@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.stonebridge.tradeflow.business.entity.brand.Brand;
 import com.stonebridge.tradeflow.common.result.Result;
 
+import java.util.List;
+
 public interface BrandService extends IService<Brand> {
     Result<Object> queryBrandList(int currentPage, int pageSize, String keyword);
 
@@ -14,4 +16,6 @@ public interface BrandService extends IService<Brand> {
     void createBrand(Brand brand);
 
     void updateBrand(Brand brand);
+
+    List<Brand> queryBrandByCategoryId(String categoryId, String keyWord);
 }

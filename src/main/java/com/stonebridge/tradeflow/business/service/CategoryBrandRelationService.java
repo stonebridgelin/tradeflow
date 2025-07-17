@@ -14,5 +14,7 @@ public interface CategoryBrandRelationService extends IService<CategoryBrandRela
     void saveDetail(CategoryBrandRelation categoryBrandRelation);
 
     List<CategoryBrandRelationVO> cateloglist(String brandId);
+
+    List<String> queryBrandIdsByCategoryId(String categoryId);
 }
 

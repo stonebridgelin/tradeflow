@@ -6,12 +6,16 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.stonebridge.tradeflow.business.entity.brand.Brand;
 import com.stonebridge.tradeflow.business.mapper.BrandMapper;
 import com.stonebridge.tradeflow.business.service.BrandService;
+import com.stonebridge.tradeflow.business.service.CategoryBrandRelationService;
 import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import com.stonebridge.tradeflow.common.result.Result;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 
 @Service
@@ -21,11 +25,13 @@ public class BrandServiceImpl extends ServiceImpl<BrandMapper, Brand> implements
     private final JdbcTemplate jdbcTemplate;
     private final BrandMapper brandMapper;
     private final MyRedisCache myRedisCache;
+    private final CategoryBrandRelationService categoryBrandRelationService;
 
-    public BrandServiceImpl(@Qualifier("businessJdbcTemplate") JdbcTemplate jdbcTemplate, BrandMapper brandMapper, MyRedisCache myRedisCache) {
+    public BrandServiceImpl(@Qualifier("businessJdbcTemplate") JdbcTemplate jdbcTemplate, BrandMapper brandMapper, CategoryBrandRelationService categoryBrandRelationService,MyRedisCache myRedisCache) {
         this.jdbcTemplate = jdbcTemplate;
         this.brandMapper = brandMapper;
         this.myRedisCache = myRedisCache;
+        this.categoryBrandRelationService = categoryBrandRelationService;
     }
 
     @Override
@@ -78,6 +84,32 @@ public class BrandServiceImpl extends ServiceImpl<BrandMapper, Brand> implements
 
     }
 
+    /**
+     * 根据分类的id（categoryId），先根据categoryId从pms_category_brand_relation查询对应的brand的id，再查询brand的详细信息
+     * @param categoryId :被选中的categoryId
+     * @param keyWord ：与brand.name匹配的关键词
+     * @return ：查询结果
+     */
+    @Override
+    public List<Brand> queryBrandByCategoryId(String categoryId, String keyWord) {
+        List<String> brandIds = categoryBrandRelationService.queryBrandIdsByCategoryId(categoryId);
+        QueryWrapper<Brand> wrapper = new QueryWrapper<>();
+        keyWord = StringUtils.trim(keyWord);
+        if (keyWord != null && !keyWord.isEmpty()) {
+            wrapper.like("name", keyWord);
+        }
+        if (!brandIds.isEmpty()) {
+            wrapper.in("id", brandIds);
+            wrapper.orderByDesc("sort");
+            return this.list(wrapper);
+        }else {
+            return null;
+        }
+    }
+
+    /**
+     * 刷新的brand的redis缓存
+     */
     public void refreshRedisCache() {
         myRedisCache.refreshCache(MyRedisCache.CacheConstants.TYPE_BRAND);
     }

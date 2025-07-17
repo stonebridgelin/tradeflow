@@ -44,4 +44,21 @@ public class CategoryBrandRelationServiceImpl extends ServiceImpl<CategoryBrandR
         }
         return voList;
     }
+
+    /**
+     * 根据pms_category_brand_relation根据CategoryId查询对应的brandId
+     *
+     * @param categoryId ：
+     * @return ：pms_category_brand_relation表关联的brandId
+     */
+    public List<String> queryBrandIdsByCategoryId(String categoryId) {
+        List<String> brandIds = new ArrayList<>();
+        QueryWrapper<CategoryBrandRelation> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("category_id", categoryId);
+        List<CategoryBrandRelation> list = this.list(queryWrapper);
+        for (CategoryBrandRelation categoryBrandRelation : list) {
+            brandIds.add(categoryBrandRelation.getBrandId());
+        }
+        return brandIds;
+    }
 }
