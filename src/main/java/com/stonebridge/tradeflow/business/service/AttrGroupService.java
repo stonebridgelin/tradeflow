@@ -3,8 +3,11 @@ package com.stonebridge.tradeflow.business.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.stonebridge.tradeflow.business.entity.attribute.AttrGroup;
+import com.stonebridge.tradeflow.business.entity.attribute.AttrGroupWithAttrsVo;
 import com.stonebridge.tradeflow.business.entity.attribute.dto.AttrGroupDTO;
 import com.stonebridge.tradeflow.business.entity.attribute.vo.AttrGroupVO;
+
+import java.util.List;
 
 public interface AttrGroupService extends IService<AttrGroup> {
     Page<AttrGroupVO> queryPage(AttrGroupDTO attrGroupDTO);
@@ -20,4 +23,6 @@ public interface AttrGroupService extends IService<AttrGroup> {
     Object getAttrGroupListByCatId(String catId);
 
     void deleteAttrGroup(String id);
+
+    List<AttrGroupWithAttrsVo> getAttrGroupWithAttrsByCatelogId(String categoryId);
 }

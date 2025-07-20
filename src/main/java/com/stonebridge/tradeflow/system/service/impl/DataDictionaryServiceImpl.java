@@ -7,10 +7,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import com.stonebridge.tradeflow.common.result.Result;
+import com.stonebridge.tradeflow.common.utils.StringUtil;
 import com.stonebridge.tradeflow.system.entity.DataDictionary;
 import com.stonebridge.tradeflow.system.mapper.DataDictionaryMapper;
 import com.stonebridge.tradeflow.system.service.DataDictionaryService;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -48,12 +48,12 @@ public class DataDictionaryServiceImpl extends ServiceImpl<DataDictionaryMapper,
             QueryWrapper<DataDictionary> wrapper = new QueryWrapper<>();
 
             // 添加 type 精确匹配条件
-            if (StringUtils.isNotBlank(type)) {
+            if (StringUtil.isNotBlank(type)) {
                 wrapper.eq("type", type);
             }
 
             // 添加 keyword 模糊匹配条件（匹配 type, name, comment）
-            if (StringUtils.isNotBlank(keyword)) {
+            if (StringUtil.isNotBlank(keyword)) {
                 wrapper.and(w -> w.like("type", keyword)
                         .or().like("name", keyword)
                         .or().like("comment", keyword));

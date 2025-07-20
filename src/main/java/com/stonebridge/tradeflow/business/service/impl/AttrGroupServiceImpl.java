@@ -1,20 +1,25 @@
 package com.stonebridge.tradeflow.business.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.stonebridge.tradeflow.business.entity.attribute.Attr;
+import com.stonebridge.tradeflow.business.entity.attribute.AttrAttrgroupRelation;
 import com.stonebridge.tradeflow.business.entity.attribute.AttrGroup;
+import com.stonebridge.tradeflow.business.entity.attribute.AttrGroupWithAttrsVo;
 import com.stonebridge.tradeflow.business.entity.attribute.dto.AttrGroupDTO;
 import com.stonebridge.tradeflow.business.entity.attribute.vo.AttrGroupVO;
 import com.stonebridge.tradeflow.business.mapper.AttrGroupMapper;
-import com.stonebridge.tradeflow.business.mapper.AttrMapper;
 import com.stonebridge.tradeflow.business.service.AttrAttrgroupRelationService;
 import com.stonebridge.tradeflow.business.service.AttrGroupService;
+import com.stonebridge.tradeflow.business.service.AttrService;
 import com.stonebridge.tradeflow.common.cache.MyRedisCache;
-import org.apache.commons.lang3.StringUtils;
+import com.stonebridge.tradeflow.common.utils.StringUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -23,19 +28,22 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup> implements AttrGroupService {
 
     JdbcTemplate jdbcTemplate;
     MyRedisCache myRedisCache;
+    AttrService attrService;
     AttrAttrgroupRelationService attrAttrgroupRelationService;
 
     @Autowired
-    public AttrGroupServiceImpl(@Qualifier("businessJdbcTemplate") JdbcTemplate jdbcTemplate, MyRedisCache myRedisCache, AttrAttrgroupRelationService attrAttrgroupRelationService) {
+    public AttrGroupServiceImpl(@Qualifier("businessJdbcTemplate") JdbcTemplate jdbcTemplate, MyRedisCache myRedisCache, AttrAttrgroupRelationService attrAttrgroupRelationService,@Lazy AttrService attrService) {
         this.jdbcTemplate = jdbcTemplate;
         this.myRedisCache = myRedisCache;
         this.attrAttrgroupRelationService = attrAttrgroupRelationService;
+        this.attrService = attrService;
     }
 
     /**
@@ -59,10 +67,10 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
         int size = 10;
 
         try {
-            if (StringUtils.isNotBlank(currentPage)) {
+            if (StringUtil.isNotBlank(currentPage)) {
                 pageNum = Integer.parseInt(currentPage);
             }
-            if (StringUtils.isNotBlank(limit)) {
+            if (StringUtil.isNotBlank(limit)) {
                 size = Integer.parseInt(limit);
             }
         } catch (NumberFormatException e) {
@@ -87,12 +95,12 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
         LambdaQueryWrapper<AttrGroup> wrapper = new LambdaQueryWrapper<>();
 
         // 添加分类ID条件
-        if (StringUtils.isNotBlank(categoryId)) {
+        if (StringUtil.isNotBlank(categoryId)) {
             wrapper.eq(AttrGroup::getCategoryId, categoryId);
         }
 
         // 添加关键词模糊查询条件
-        if (StringUtils.isNotBlank(keyWord)) {
+        if (StringUtil.isNotBlank(keyWord)) {
             wrapper.like(AttrGroup::getAttrGroupName, keyWord);
         }
 
@@ -157,7 +165,7 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
     @Override
     @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void updateAttrGroup(AttrGroup attrGroup) {
-        String categoryId = StringUtils.trim(attrGroup.getCategoryId());
+        String categoryId = StringUtil.trim(attrGroup.getCategoryId());
         // 获取当前数据库中的attrGroup以获取旧的 sort 值
         AttrGroup existingAttrGroup = this.getById(attrGroup.getAttrGroupId());
         if (existingAttrGroup == null) {
@@ -241,4 +249,41 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
         this.removeById(id);
         attrAttrgroupRelationService.deleteAttrGroupRelation(id);
     }
+
+    @Override
+    public List<AttrGroupWithAttrsVo> getAttrGroupWithAttrsByCatelogId(String categoryId) {
+        //1.查询出所有的分组信息
+        QueryWrapper<AttrGroup> queryWrapper = new QueryWrapper<>();
+        List<AttrGroup> attrGroupList = this.list(queryWrapper.eq("category_id", categoryId));
+        //2.查询出所有属性
+        List<AttrGroupWithAttrsVo> list = attrGroupList.stream().map(group -> {
+            AttrGroupWithAttrsVo attrsVo = new AttrGroupWithAttrsVo();
+            BeanUtils.copyProperties(group, attrsVo);
+            List<Attr> attrs = this.getRelationAttr(attrsVo.getAttrGroupId());
+            attrsVo.setAttrs(attrs);
+            return attrsVo;
+        }).collect(Collectors.toList());
+        return list;
+    }
+    public List<Attr> getRelationAttr(String attrgroupId) {
+        /*
+         * 1.根据<属性分组id>查找<属性&属性分组关联表>对应数据
+         */
+        QueryWrapper<AttrAttrgroupRelation> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("attr_group_id", attrgroupId);
+        List<AttrAttrgroupRelation> list = attrAttrgroupRelationService.list(queryWrapper);
+        /**
+         * 2.遍历<属性&属性分组关联表>的数据获取所有是属性主键
+         */
+        List<String> attrIds = list.stream().map(AttrAttrgroupRelation::getAttrId).collect(Collectors.toList());
+        if (attrIds.isEmpty()) {
+            return null;
+        } else {
+            /**
+             * 3.根据属性主键查询所有数据
+             */
+            return attrService.listByIds(attrIds);
+        }
+    };
+
 }

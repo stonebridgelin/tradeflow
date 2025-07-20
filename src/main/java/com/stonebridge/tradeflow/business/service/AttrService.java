@@ -10,6 +10,7 @@ import com.stonebridge.tradeflow.business.entity.attribute.vo.AttrRespVo;
 import com.stonebridge.tradeflow.business.entity.attribute.vo.AttrVo;
 
 import java.util.List;
+import java.util.Map;
 
 
 public interface AttrService extends IService<Attr> {
@@ -29,5 +30,7 @@ public interface AttrService extends IService<Attr> {
     void deleteRelation(List<AttrAttrgroupRelationDto> attrGroupRelationDtos);
 
     Page<Attr> getNoRelationAttr(String attrGroupId, BasePageDTO basePageDTO);
+
+    Page<AttrRespVo> queryBaseAttrPage(Map<String, Object> params, String catelogId, String attrType);
 }
 

@@ -9,8 +9,8 @@ import com.stonebridge.tradeflow.business.service.BrandService;
 import com.stonebridge.tradeflow.business.service.CategoryBrandRelationService;
 import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import com.stonebridge.tradeflow.common.result.Result;
+import com.stonebridge.tradeflow.common.utils.StringUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -94,7 +94,7 @@ public class BrandServiceImpl extends ServiceImpl<BrandMapper, Brand> implements
     public List<Brand> queryBrandByCategoryId(String categoryId, String keyWord) {
         List<String> brandIds = categoryBrandRelationService.queryBrandIdsByCategoryId(categoryId);
         QueryWrapper<Brand> wrapper = new QueryWrapper<>();
-        keyWord = StringUtils.trim(keyWord);
+        keyWord = StringUtil.trim(keyWord);
         if (keyWord != null && !keyWord.isEmpty()) {
             wrapper.like("name", keyWord);
         }

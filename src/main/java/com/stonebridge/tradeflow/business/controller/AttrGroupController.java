@@ -2,6 +2,7 @@ package com.stonebridge.tradeflow.business.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.stonebridge.tradeflow.business.entity.attribute.AttrGroup;
+import com.stonebridge.tradeflow.business.entity.attribute.AttrGroupWithAttrsVo;
 import com.stonebridge.tradeflow.business.entity.attribute.dto.AttrGroupDTO;
 import com.stonebridge.tradeflow.business.entity.attribute.dto.AttrAttrgroupRelationDto;
 import com.stonebridge.tradeflow.business.entity.attribute.vo.AttrGroupVO;
@@ -73,5 +74,20 @@ public class AttrGroupController {
     public Result<Object> deleteRelation(@RequestBody List<AttrAttrgroupRelationDto> attrAttrgroupRelationDtos) {
         attrService.deleteRelation(attrAttrgroupRelationDtos);
         return Result.ok();
+    }
+
+    /**
+     * api/mallproduct/attrgroup/225/withattr
+     * 根据分类id查询出对应的所有属性分组，再查询出每个分组下的所有属性
+     *
+     * @param categoryId :分类id
+     * @return ：查询结果集
+     */
+    @GetMapping("attrGroupWithAttrs/{categoryId}")
+    public Result<List<AttrGroupWithAttrsVo>> getAttrGroupWithAttrs(@PathVariable("categoryId") String categoryId) {
+        //1.查出该分类下的所有属性分组
+        //2.查出每个属性分组的所有属性
+        List<AttrGroupWithAttrsVo> list = attrGroupService.getAttrGroupWithAttrsByCatelogId(categoryId);
+        return Result.ok(list);
     }
 }

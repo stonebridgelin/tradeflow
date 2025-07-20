@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -136,5 +137,22 @@ public class AttrController {
         }).collect(Collectors.toList());
         attrAttrgroupRelationService.saveBatch(attrgroupRelationEntityList);
         return Result.ok();
+    }
+
+    /**
+     * 查询查询条件查询属性表（pms_attr）的数据
+     * mallproduct/attr/base/list/225
+     *
+     * @param params    ：参数
+     * @param catelogId ：分类的id（pms_category.id）
+     * @param attrType  : 当为sale的时候查询<销售属性>attr_type=0，当为base的时候查询<所有属性>
+     * @return :结果集
+     */
+    @RequestMapping("/{attrType}/list/{catelogId}")
+    public Result<Object> baseList(@RequestParam Map<String, Object> params,
+                           @PathVariable("catelogId") String catelogId,
+                           @PathVariable("attrType") String attrType) {
+        Page<AttrRespVo> page = attrService.queryBaseAttrPage(params, catelogId, attrType);
+        return Result.ok(page);
     }
 }
