@@ -25,11 +25,11 @@ public interface AttrService extends IService<Attr> {
 
     void deleteAttrById(String attrId);
 
-    List<Attr> getAttrByAttrGoupId(String attrGroupId);
+    List<Attr> getAttrsByAttrGroupId(String attrGroupId);
 
     void deleteRelation(List<AttrAttrgroupRelationDto> attrGroupRelationDtos);
 
-    Page<Attr> getNoRelationAttr(String attrGroupId, BasePageDTO basePageDTO);
+    Page<Attr> getNoRelationAttrs(String attrGroupId, BasePageDTO basePageDTO);
 
     Page<AttrRespVo> queryBaseAttrPage(Map<String, Object> params, String catelogId, String attrType);
 }

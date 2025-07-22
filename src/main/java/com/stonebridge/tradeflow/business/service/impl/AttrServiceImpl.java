@@ -7,7 +7,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.stonebridge.tradeflow.business.entity.BasePageDTO;
 import com.stonebridge.tradeflow.business.entity.attribute.Attr;
 import com.stonebridge.tradeflow.business.entity.attribute.dto.AttrAttrgroupRelationDto;
-import com.stonebridge.tradeflow.business.entity.category.Category;
 import com.stonebridge.tradeflow.business.service.AttrGroupService;
 import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import com.stonebridge.tradeflow.business.entity.attribute.AttrAttrgroupRelation;
@@ -40,19 +39,31 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
     private final JdbcTemplate jdbcTemplate;
     private final AttrAttrGroupRelationMapper attrAttrGroupRelationMapper;
 
+    /**
+     * pms_attr.attr_type为"base"表销售属性
+     */
+    private final String ATTR_VALUE_BASE = "base";
+
+    /**
+     * pms_attr.attr_type为"sale"表基本属性
+     */
+    private final String ATTR_VALUE_SALE = "sale";
+
     private final AttrGroupMapper attrGroupMapper;
 
     private final AttrGroupService attrGroupService;
 
     private final MyRedisCache myRedisCache;
+    private final AttrMapper attrMapper;
 
     @Autowired
-    public AttrServiceImpl(AttrGroupService attrGroupService, AttrGroupMapper attrGroupMapper, MyRedisCache myRedisCache, @Qualifier("businessJdbcTemplate") JdbcTemplate jdbcTemplate, AttrAttrGroupRelationMapper attrAttrGroupRelationMapper) {
+    public AttrServiceImpl(AttrGroupService attrGroupService, AttrGroupMapper attrGroupMapper, MyRedisCache myRedisCache, @Qualifier("businessJdbcTemplate") JdbcTemplate jdbcTemplate, AttrAttrGroupRelationMapper attrAttrGroupRelationMapper, AttrMapper attrMapper) {
         this.attrGroupService = attrGroupService;
         this.attrGroupMapper = attrGroupMapper;
         this.myRedisCache = myRedisCache;
         this.jdbcTemplate = jdbcTemplate;
         this.attrAttrGroupRelationMapper = attrAttrGroupRelationMapper;
+        this.attrMapper = attrMapper;
     }
 
     @Override
@@ -95,7 +106,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
         // 构建分页对象
         Page<Attr> page = new Page<>(pageNum, size);
 
-        QueryWrapper<Attr> queryWrapper = new QueryWrapper<Attr>().eq("attr_type", "base".equalsIgnoreCase(type) ? Constant.AttrEnum.ATTR_TYPE_BASE.getCode() : Constant.AttrEnum.ATTR_TYPE_SALE.getCode());
+        QueryWrapper<Attr> queryWrapper = new QueryWrapper<Attr>().eq("attr_type", ATTR_VALUE_BASE.equalsIgnoreCase(type) ? Constant.AttrEnum.ATTR_TYPE_BASE.getCode() : Constant.AttrEnum.ATTR_TYPE_SALE.getCode());
 
         // 添加分类ID条件
         if (StringUtil.isNotBlank(categoryId)) {
@@ -125,15 +136,15 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
             AttrRespVo attrRespVo = new AttrRespVo();
             BeanUtils.copyProperties(attr, attrRespVo);
 
-            //设置分组名字
-            if ("base".equalsIgnoreCase(type)) {
+            //当type为"base"时，才加载对应的关联的属性分组数据;销售属性（type=sale）不设置分组名字
+            if (ATTR_VALUE_BASE.equalsIgnoreCase(type)) {
+                //根据attr_id去属性与属性分组关系表pms_attr_attrgroup_relation查询对应的属性分组的id(attr_group_id)
                 String sql = "select attr_group_id from pms_attr_attrgroup_relation where attr_id=?";
                 List<String> results = jdbcTemplate.query(sql,
                         (rs, rowNum) -> rs.getString("attr_group_id"),
                         attr.getAttrId());
-
-                if (!results.isEmpty()) {
-                    String attrGroupId = results.get(0);
+                String attrGroupId = results.isEmpty() ? null : results.get(0);
+                if (StringUtil.isNotBlank(attrGroupId)) {
                     AttrGroup attrGroup = attrGroupMapper.selectById(attrGroupId);
                     if (attrGroup != null) {
                         attrRespVo.setGroupName(attrGroup.getAttrGroupName());
@@ -148,16 +159,19 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
         return attrRespVoPage;
     }
 
+    /**
+     * 新建属性数据，以及当type为"base"时，保存对应的属性-属性分组关联关系数据
+     * @param attr :封装数据的AttrVo对象
+     */
     @Transactional
     @Override
     public void saveAttr(AttrVo attr) {
         Attr attrObject = new Attr();
-//        Attr.setAttrName(attr.getAttrName());
         BeanUtils.copyProperties(attr, attrObject);
-        //1、保存基本数据
+        //1、保存属性数据到pms_attr表
         attrObject.setAttrId(null);
         this.save(attrObject);
-        //2、保存关联关系
+        //2、保存属性-属性分组关联关系到pms_attr_attrgroup_relation表；当type为"base"时，保存对应的关联的属性分组数据;销售属性（type=sale）不需要保存属性-属性分组关联关系
         if (attr.getAttrType() == Constant.AttrEnum.ATTR_TYPE_BASE.getCode() && attr.getAttrGroupId() != null) {
             AttrAttrgroupRelation attrgroupRelation = new AttrAttrgroupRelation();
             attrgroupRelation.setAttrGroupId(String.valueOf(attr.getAttrGroupId()));
@@ -167,12 +181,17 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
     }
 
 
+    /**
+     * 根据属性的id，获取唯一的属性数据
+     * @param attrId ：pms_attr的唯一主键
+     * @return ：pms_attr的唯一数据
+     */
     @Override
     public AttrRespVo getAttrInfo(String attrId) {
         AttrRespVo respVo = new AttrRespVo();
         Attr Attr = this.getById(attrId);
         BeanUtils.copyProperties(Attr, respVo);
-
+        //当AttrType为1时，即为base属性时才加载对应的关联的属性分组数据;如果AttrType为0时，即为销售属性（type=sale），则无属性分组信息
         if (Attr.getAttrType() == Constant.AttrEnum.ATTR_TYPE_BASE.getCode()) {
             //1、设置分组信息
             AttrAttrgroupRelation attrgroupRelation = attrAttrGroupRelationMapper.selectOne(new QueryWrapper<AttrAttrgroupRelation>().eq("attr_id", attrId));
@@ -184,8 +203,6 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
                 }
             }
         }
-
-
         //2、设置分类信息
         String catelogId = Attr.getCategoryId();
         respVo.setCategoryName(myRedisCache.getCategoryNameById(catelogId));
@@ -195,22 +212,27 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
     @Transactional
     @Override
     public void updateAttr(AttrVo attr) {
-        Attr Attr = new Attr();
-        BeanUtils.copyProperties(attr, Attr);
-        this.updateById(Attr);
+        Attr attrObject = new Attr();
+        BeanUtils.copyProperties(attr, attrObject);
+        this.updateById(attrObject);
 
-        if (Attr.getAttrType() == Constant.AttrEnum.ATTR_TYPE_BASE.getCode()) {
+        if (attrObject.getAttrType() == Constant.AttrEnum.ATTR_TYPE_BASE.getCode()) {
             //1、修改分组关联
-            AttrAttrgroupRelation relationEntity = new AttrAttrgroupRelation();
+            AttrAttrgroupRelation attrAttrgroupRelation = new AttrAttrgroupRelation();
+            attrAttrgroupRelation.setAttrGroupId(String.valueOf(attr.getAttrGroupId()));
+            attrAttrgroupRelation.setAttrId(attr.getAttrId());
 
-            relationEntity.setAttrGroupId(String.valueOf(attr.getAttrGroupId()));
-            relationEntity.setAttrId(attr.getAttrId());
+            String sql = "SELECT id FROM pms_attr_attrgroup_relation WHERE attr_id=? AND attr_group_id=?";
+            List<String> results = jdbcTemplate.query(sql,
+                    (rs, rowNum) -> rs.getString("id"),
+                    attr.getAttrId(), String.valueOf(attr.getAttrGroupId()));
 
-            Integer count = Math.toIntExact(attrAttrGroupRelationMapper.selectCount(new QueryWrapper<AttrAttrgroupRelation>().eq("attr_id", attr.getAttrId())));
-            if (count > 0) {
-                attrAttrGroupRelationMapper.update(relationEntity, new UpdateWrapper<AttrAttrgroupRelation>().eq("attr_id", attr.getAttrId()));
+            String relationId = results.isEmpty() ? null : results.get(0);
+            if (StringUtil.isNotBlank(relationId)) {
+                attrAttrgroupRelation.setId(relationId);
+                attrAttrGroupRelationMapper.updateById(attrAttrgroupRelation);
             } else {
-                attrAttrGroupRelationMapper.insert(relationEntity);
+                attrAttrGroupRelationMapper.insert(attrAttrgroupRelation);
             }
         }
     }
@@ -218,20 +240,25 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
     @Transactional
     @Override
     public void deleteAttrById(String attrId) {
-        // 删除属性与分组的关联关系
-        attrAttrGroupRelationMapper.delete(new QueryWrapper<AttrAttrgroupRelation>().eq("attr_id", attrId));
-        // 删除属性本身
-        this.removeById(attrId);
+        Attr attr = attrMapper.selectById(attrId);
+        if (attr != null) {
+            if (attr.getAttrType() == Constant.AttrEnum.ATTR_TYPE_BASE.getCode()) {
+                // 删除属性与分组的关联关系
+                attrAttrGroupRelationMapper.delete(new QueryWrapper<AttrAttrgroupRelation>().eq("attr_id", attrId));
+            }
+            // 删除属性本身
+            this.removeById(attrId);
+        }
     }
 
     /**
-     * 根据attrGroupId先关联表pms_attr_attrgroup_relation查询已经关联的Attr表id数据，再根据id查询出所有的Attr数据
+     * 根据attrGroupId先从关联表pms_attr_attrgroup_relation查询已经关联的Attr表id数据的集合，再根据这些id查询的集合查询出所有的Attr数据
      *
      * @param attrGroupId :属性分组表的id
      * @return :已经关联了attrGroupId的基础属性数据
      */
     @Override
-    public List<Attr> getAttrByAttrGoupId(String attrGroupId) {
+    public List<Attr> getAttrsByAttrGroupId(String attrGroupId) {
         if (StringUtil.isBlank(attrGroupId)) {
             return Collections.emptyList();
         }
@@ -276,7 +303,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
      * @param attrGroupId 当前分组的id
      * @param basePageDTO 分页基础数据
      */
-    public Page<Attr> getNoRelationAttr(String attrGroupId, BasePageDTO basePageDTO) {
+    public Page<Attr> getNoRelationAttrs(String attrGroupId, BasePageDTO basePageDTO) {
         //1.根据attrgroupId获取对应<属性分组pms_attr_group>表中的数据，再获取分类主键pms_attr_group.category_id（pms_category的主键）
         //1.1.根据attrgroupId查询当前AttrGroup的数据
         AttrGroup attrGroup = attrGroupService.getById(attrGroupId);
@@ -343,7 +370,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
     @Override
     public Page<AttrRespVo> queryBaseAttrPage(Map<String, Object> params, String catelogId, String attrType) {
         QueryWrapper<Attr> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("attr_type", "base".equalsIgnoreCase(attrType) ? Constant.AttrEnum.ATTR_TYPE_BASE.getCode() : Constant.AttrEnum.ATTR_TYPE_SALE.getCode());
+        queryWrapper.eq("attr_type", ATTR_VALUE_BASE.equalsIgnoreCase(attrType) ? Constant.AttrEnum.ATTR_TYPE_BASE.getCode() : Constant.AttrEnum.ATTR_TYPE_SALE.getCode());
         //1.如果分组id为0,则表示分组id不作为条件查询所有的属性
         if (StringUtil.isNotBlank(catelogId)) {
             queryWrapper.eq("category_id", catelogId);
@@ -359,7 +386,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
         // - 关联pms_attr的pms_category的名字，他们通过中间表pms_attr_attrgroup_relation关联
         // - 关联pms_category的分类名称pms_attr.category_id。关联查询即可
         // 3.1.查询出pms_attr的数据
-        String sql = "selcect name FROM pms_category WHERE ID=?";
+        String sql = "select name FROM pms_category WHERE ID=?";
         // 修复分页参数
         long current = Long.parseLong(params.getOrDefault("page", "1").toString());
         long size = Long.parseLong(params.getOrDefault("limit", "500").toString());
@@ -372,7 +399,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
             BeanUtils.copyProperties(attr, attrRespVo);
             // 3.3.查询出关联pms_attr的pms_category的名字，他们通过中间表pms_attr_attrgroup_relation关联
             // 仅为规格属性为base时查询关联属性组表
-            if ("base".equalsIgnoreCase(attrType)) {
+            if (ATTR_VALUE_BASE.equalsIgnoreCase(attrType)) {
                 QueryWrapper<AttrAttrgroupRelation> queryWrapper1 = new QueryWrapper<>();
                 queryWrapper1.eq("attr_id", attr.getAttrId());
                 AttrAttrgroupRelation attrgroupRelation = attrAttrGroupRelationMapper.selectOne(queryWrapper1);

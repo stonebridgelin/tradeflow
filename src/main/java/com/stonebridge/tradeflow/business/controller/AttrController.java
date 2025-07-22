@@ -33,10 +33,11 @@ public class AttrController {
     }
 
     /**
-     * 根据attrId获取pms_attr表对应的所有信息，以及关联的pms_attr_attrgroup_relation表里面的信息
+     * 使用页面：src/components/attr/AddAttr.vue -->getAttrInfo-->/api/attr/attrInfo/attrId
+     * 根据主键attrId获取pms_attr表唯一对应的属性数据；如果attr_type="1"则查询关联的pms_attr_attrgroup_relation表里面的信息
      *
      * @param attrId ：pms_attr.attrId
-     * @return :封装的pms_attr对应的所有信息
+     * @return :主键attrId唯一对应的pms_attr的数据
      */
     @RequestMapping("/attrInfo/{attrId}")
     public Result<Object> info(@PathVariable("attrId") String attrId) {
@@ -44,12 +45,10 @@ public class AttrController {
         return Result.ok(respVo);
     }
 
-
     /**
-     * 列表
-     */
-    /**
-     * 以列表的形式展示符合条件的pms_attr表对应的所有信息，以及关联的pms_attr_attrgroup_relation表里面的信息
+     * 使用页面：src/components/attr/Attr.vue -->getAttrList-->/api/attr/list
+     * 属性页面根据查询条件以分页形式加载符合条件的pms_attr表对应的信息，
+     * 以及关联的pms_attr_attrgroup_relation表里面的信息（仅是pms_attr.attr_type='base'）才有pms_attr_attrgroup_relation关联关系
      *
      * @param attrDTO ：查询条件 ：关键字，分页信息等
      * @return ：符合条件的pms_attr表对应的所有信息，以及关联的pms_attr_attrgroup_relation表里面的信息封装的分页列表
@@ -61,7 +60,8 @@ public class AttrController {
     }
 
     /**
-     * 保存信息到pms_attr表，以及关联表pms_attr_attrgroup_relation
+     * 使用页面src/components/attr/AddAttr.vue --> saveAttr -->/api/attr/save
+     * 新建属性信息，将其保存到pms_attr表；如果是基础属性，则要保存属性与属性分组的关联关系到pms_attr_attrgroup_relation
      *
      * @param attr ：接收参数的Attr+attrGroupId
      * @return ：保存成功的状态
@@ -73,7 +73,8 @@ public class AttrController {
     }
 
     /**
-     * 更新信息到pms_attr表，以及关联表pms_attr_attrgroup_relation
+     * 使用页面：src/components/attr/AddAttr.vue -->updateAttr--> /api/attr/update
+     * 根据attrId更新信息pms_attr表指定的唯一信息，如果基础属性怎更新关联表pms_attr_attrgroup_relation
      *
      * @param attr 接收参数的Attr+attrGroupId
      * @return 更新成功的状态
@@ -86,30 +87,33 @@ public class AttrController {
 
 
     /**
+     * 使用页面：src/components/attr/AddAttr.vue --> deleteAttr --> /api/attr/delete
      * 根据attrId删除pms_attr表，以及关联表pms_attr_attrgroup_relation
      *
      * @param attrId attr.attrId
      * @return 删除成功
      */
-    @DeleteMapping("/delete")
+    @DeleteMapping("/delete/{attrId}")
     public Result<Object> delete(@PathVariable("attrId") String attrId) {
         attrService.deleteAttrById(attrId);
         return Result.ok();
     }
 
     /**
+     * 使用页面：src/components/attr/BindAttr.vue --> getAttrByAttrGroupId -->/api/attr/getAttrByAttrGroupId/attrGroupId
      * 根据attrGroupId获取已经绑定的Attr基础属性(Attr.type='base')
      *
      * @param attrGroupId :分组id
-     * @return ：
+     * @return ：基础属性的集合
      */
-    @GetMapping("getAttrByAttrGoupId/{attrGroupId}")
-    public Result<Object> getAttrByAttrGoupId(@PathVariable("attrGroupId") String attrGroupId) {
-        List<Attr> attrList = attrService.getAttrByAttrGoupId(attrGroupId);
+    @GetMapping("getAttrByAttrGroupId/{attrGroupId}")
+    public Result<Object> getAttrByAttrGroupId(@PathVariable("attrGroupId") String attrGroupId) {
+        List<Attr> attrList = attrService.getAttrsByAttrGroupId(attrGroupId);
         return Result.ok(attrList);
     }
 
     /**
+     * 使用页面：getAttrsByAttrGroupId --> getNoAttrRelation --> /api/attr/getNoAttrRelation/attrGroupId
      * 获取本分类下没有关联其他分组关联的属性
      *
      * @param attrGroupId 属性分组的id
@@ -118,7 +122,7 @@ public class AttrController {
      */
     @PostMapping("/getNoAttrRelation/{attrGroupId}")
     public Result<Object> attrNoRelation(@PathVariable("attrGroupId") String attrGroupId, @RequestBody BasePageDTO basePageDTO) {
-        Page<Attr> attrPage = attrService.getNoRelationAttr(attrGroupId, basePageDTO);
+        Page<Attr> attrPage = attrService.getNoRelationAttrs(attrGroupId, basePageDTO);
         return Result.ok(attrPage);
     }
 
