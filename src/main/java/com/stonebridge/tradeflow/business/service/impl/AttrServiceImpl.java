@@ -79,7 +79,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
         String categoryId = StringUtil.trim(attrDTO.getCategoryId());
         // 参数校验和转换
         int pageNum = 1;
-        int size = 10;
+        int size = 100;
 
         try {
             if (StringUtil.isNotBlank(pageNumber)) {
@@ -136,15 +136,15 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
             AttrRespVo attrRespVo = new AttrRespVo();
             BeanUtils.copyProperties(attr, attrRespVo);
 
-            //当type为"base"时，才加载对应的关联的属性分组数据;销售属性（type=sale）不设置分组名字
-            if (ATTR_VALUE_BASE.equalsIgnoreCase(type)) {
-                //根据attr_id去属性与属性分组关系表pms_attr_attrgroup_relation查询对应的属性分组的id(attr_group_id)
+            //设置分组名字
+            if ("base".equalsIgnoreCase(type)) {
                 String sql = "select attr_group_id from pms_attr_attrgroup_relation where attr_id=?";
                 List<String> results = jdbcTemplate.query(sql,
                         (rs, rowNum) -> rs.getString("attr_group_id"),
                         attr.getAttrId());
-                String attrGroupId = results.isEmpty() ? null : results.get(0);
-                if (StringUtil.isNotBlank(attrGroupId)) {
+
+                if (!results.isEmpty()) {
+                    String attrGroupId = results.get(0);
                     AttrGroup attrGroup = attrGroupMapper.selectById(attrGroupId);
                     if (attrGroup != null) {
                         attrRespVo.setGroupName(attrGroup.getAttrGroupName());

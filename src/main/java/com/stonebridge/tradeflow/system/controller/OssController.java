@@ -8,6 +8,7 @@ import com.aliyun.oss.model.PolicyConditions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stonebridge.tradeflow.common.result.Result;
+import com.stonebridge.tradeflow.common.utils.StringUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,12 +26,6 @@ import java.util.Map;
 @Slf4j
 @RequestMapping("system/aliyun")
 public class OssController {
-    private final static Map<String, String> dirMap = new HashMap<>();
-    static {
-        dirMap.put("brand_logo", "logo");
-        dirMap.put("user_avatar", "avatar");
-        dirMap.put("product", "product");
-    }
 
     @Value("${aliyun.oss.endpoint}")
     private String endpoint;
@@ -52,7 +47,7 @@ public class OssController {
         //https://gulimall-ciel.oss-cn-shanghai.aliyuncs.com/
         String host = "https://" + bucket + ".oss-cn-shanghai.aliyuncs.com"; // host的格式为 bucketname.endpoint
         // callbackUrl为上传回调服务器的URL，请将下面的IP和Port配置为您自己的真实信息。
-        String dir = dirMap.get(dirType) + "/" + new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "/";
+        String dir = dirType.replaceAll("^/+", "").replaceAll("/+$", "") + "/" + new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "/";
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode jsonObject = objectMapper.createObjectNode();
         try {

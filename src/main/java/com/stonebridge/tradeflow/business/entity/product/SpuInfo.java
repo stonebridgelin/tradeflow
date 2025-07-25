@@ -22,8 +22,8 @@ public class SpuInfo {
     @TableField("spu_description")
     private String spuDescription;//商品描述
 
-    @TableField(value = "catalog_id", typeHandler = StringToBigIntTypeHandler.class)
-    private String catalogId;//所属分类id
+    @TableField(value = "category_id", typeHandler = StringToBigIntTypeHandler.class)
+    private String categoryId;//所属分类id
 
     @TableField(value = "brand_id", typeHandler = StringToBigIntTypeHandler.class)
     private String brandId;//品牌id

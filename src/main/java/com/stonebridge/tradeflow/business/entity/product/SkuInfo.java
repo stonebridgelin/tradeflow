@@ -25,8 +25,8 @@ public class SkuInfo {
     @TableField("sku_desc")
     private String skuDesc;//sku介绍描述
 
-    @TableField(value = "catalog_id", typeHandler = StringToBigIntTypeHandler.class)
-    private String catalogId;//所属分类id
+    @TableField(value = "category_id", typeHandler = StringToBigIntTypeHandler.class)
+    private String categoryId;//所属分类id
 
     @TableField(value = "brand_id", typeHandler = StringToBigIntTypeHandler.class)
     private String brandId;//品牌id
