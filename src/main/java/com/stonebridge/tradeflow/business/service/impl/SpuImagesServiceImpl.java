@@ -9,6 +9,7 @@ import com.stonebridge.tradeflow.business.entity.product.SpuImages;
 import com.stonebridge.tradeflow.business.mapper.SpuImagesMapper;
 import com.stonebridge.tradeflow.business.service.SpuImagesService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -29,12 +30,13 @@ public class SpuImagesServiceImpl extends ServiceImpl<SpuImagesMapper, SpuImages
      * @param id
      * @param images
      */
+    @Transactional
     @Override
-    public void saveImages(String id, List<String> images) {
+    public void saveImages(String spuId, List<String> images) {
         if (!images.isEmpty()) {
             List<SpuImages> list = images.stream().map(img -> {
                 SpuImages spuImages = new SpuImages();
-                spuImages.setSpuId(id);
+                spuImages.setSpuId(spuId);
                 spuImages.setImgUrl(img);
                 return spuImages;
             }).collect(Collectors.toList());

@@ -1,6 +1,4 @@
 package com.stonebridge.tradeflow.business.entity.spu;
-
-import com.stonebridge.tradeflow.business.entity.attribute.Attr;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -15,10 +13,7 @@ public class Skus {
     private String skuSubtitle;
     private List<Images> images;
     private List<String> descar;
-    private int fullCount;
-    private BigDecimal discount;
-    private int countStatus;
-    private BigDecimal fullPrice;
-    private BigDecimal reducePrice;
-    private int priceStatus;
+    private String spuId;
+    private String categoryId;
+    private String brandId;
 }

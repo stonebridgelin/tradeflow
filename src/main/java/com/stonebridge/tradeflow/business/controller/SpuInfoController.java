@@ -23,11 +23,24 @@ import java.util.Map;
 @RequestMapping("api/spuInfo")
 public class SpuInfoController {
 
-    private SpuInfoService spuInfoService;
+    private final SpuInfoService spuInfoService;
 
     @Autowired
     public SpuInfoController(SpuInfoService spuInfoService) {
         this.spuInfoService = spuInfoService;
+    }
+
+    /**
+     * 使用页面src/pages/product/SpuAdd.vue --> submitSpuData -->/api/spuInfo/save
+     * 保存spu以及对应的多个sku的详细信息
+     *
+     * @param spuSaveVo ：封装接收的多个sku的详细信息
+     * @return ：保存成功的状态
+     */
+    @RequestMapping("/save")
+    public Result<Object> save(@RequestBody SpuSaveVo spuSaveVo) {
+        spuInfoService.saveSpuInfo(spuSaveVo);
+        return Result.ok();
     }
 
     /**
@@ -49,14 +62,6 @@ public class SpuInfoController {
         return Result.ok(spuInfo);
     }
 
-    /**
-     * 保存
-     */
-    @RequestMapping("/save")
-    public Result save(@RequestBody SpuSaveVo spuSaveVo) {
-        spuInfoService.saveSpuInfo(spuSaveVo);
-        return Result.ok();
-    }
 
     /**
      * 修改

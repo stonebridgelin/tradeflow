@@ -24,6 +24,7 @@ public class ProductAttrValueServiceImpl extends ServiceImpl<ProductAttrValueMap
         return null;
     }
 
+    @Transactional
     @Override
     public void saveProductAttr(List<ProductAttrValue> collect) {
         this.saveBatch(collect);
