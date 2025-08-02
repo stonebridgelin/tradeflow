@@ -1,5 +1,6 @@
 package com.stonebridge.tradeflow.business.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
@@ -7,6 +8,8 @@ import com.stonebridge.tradeflow.business.entity.product.*;
 import com.stonebridge.tradeflow.business.entity.spu.*;
 import com.stonebridge.tradeflow.business.mapper.SpuInfoMapper;
 import com.stonebridge.tradeflow.business.service.*;
+import com.stonebridge.tradeflow.common.exception.CustomizeException;
+import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
 import com.stonebridge.tradeflow.common.utils.StringUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -144,8 +148,122 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
         this.baseMapper.insert(spuInfo);
     }
 
+    /**
+     * 根据条件分页查询SPU信息
+     * 
+     * @param params 查询参数，包含以下字段：
+     *               - categoryId: 分类ID（可选）
+     *               - brandId: 品牌ID（可选，值为"0"时忽略）
+     *               - keyword: 关键词（可选，模糊匹配SPU名称或精确匹配ID）
+     *               - publishStatus: 发布状态（可选，0-下架，1-上架）
+     *               - currentPage: 当前页码（必需，默认为1）
+     *               - pageSize: 每页大小（必需，默认为10，最大为100）
+     * @return 分页结果
+     * @throws CustomizeException 当参数验证失败时抛出
+     */
     @Override
     public Page<SpuInfo> queryPageByCondition(Map<String, Object> params) {
-        return null;
+        // 参数空值检查
+        if (params == null) {
+            params = new HashMap<>();
+        }
+
+        // 安全获取并验证分页参数
+        long currentPage = 1L;
+        long pageSize = 10L;
+        
+        try {
+            // 获取当前页码
+            Object currentPageObj = params.get("currentPage");
+            if (currentPageObj != null) {
+                if (currentPageObj instanceof Number) {
+                    currentPage = ((Number) currentPageObj).longValue();
+                } else {
+                    currentPage = Long.parseLong(currentPageObj.toString().trim());
+                }
+            }
+            
+            // 获取页面大小
+            Object pageSizeObj = params.get("pageSize");
+            if (pageSizeObj != null) {
+                if (pageSizeObj instanceof Number) {
+                    pageSize = ((Number) pageSizeObj).longValue();
+                } else {
+                    pageSize = Long.parseLong(pageSizeObj.toString().trim());
+                }
+            }
+        } catch (NumberFormatException e) {
+            throw new CustomizeException(ResultCodeEnum.ARGUMENT_VALID_ERROR.getCode(), 
+                "分页参数格式错误，currentPage和pageSize必须为有效数字");
+        }
+
+        // 验证分页参数合理性
+        if (currentPage < 1) {
+            currentPage = 1L;
+        }
+        if (pageSize < 1) {
+            pageSize = 10L;
+        }
+        if (pageSize > 100) {
+            pageSize = 100L;
+        }
+
+        // 安全获取查询条件参数
+        String categoryId = StringUtil.trim(params.get("categoryId"));
+        String brandId = StringUtil.trim(params.get("brandId"));
+        String keyword = StringUtil.trim(params.get("keyword"));
+        String status = StringUtil.trim(params.get("publishStatus"));
+
+        // 构建查询条件
+        QueryWrapper<SpuInfo> queryWrapper = new QueryWrapper<>();
+        
+        // 添加分类ID条件
+        if (StringUtil.isNotEmpty(categoryId) && !"0".equalsIgnoreCase(categoryId)) {
+            queryWrapper.eq("category_id", categoryId);
+        }
+        
+        // 添加品牌ID条件
+        if (StringUtil.isNotEmpty(brandId) && !"0".equalsIgnoreCase(brandId)) {
+            queryWrapper.eq("brand_id", brandId);
+        }
+        
+        // 添加关键词搜索条件（支持ID精确匹配和名称模糊匹配）
+        if (StringUtil.isNotEmpty(keyword)) {
+            queryWrapper.and(w -> {
+                // 尝试数字匹配ID，如果关键词是数字则精确匹配ID
+                if (keyword.matches("\\d+")) {
+                    w.eq("id", keyword).or().like("spu_name", keyword);
+                } else {
+                    // 非数字则只进行名称模糊匹配
+                    w.like("spu_name", keyword);
+                }
+            });
+        }
+        
+        // 添加发布状态条件
+        if (StringUtil.isNotEmpty(status)) {
+            try {
+                int statusValue = Integer.parseInt(status);
+                if (statusValue == 0 || statusValue == 1) {
+                    queryWrapper.eq("publish_status", statusValue);
+                }
+            } catch (NumberFormatException e) {
+                // 状态值格式错误时忽略该条件，不抛出异常
+                // 这样可以保证查询的健壮性
+            }
+        }
+        
+        // 添加默认排序：按更新时间降序排列（新的在前）
+        queryWrapper.orderByDesc("update_time");
+
+        // 构建分页对象并执行查询
+        Page<SpuInfo> page = new Page<>(currentPage, pageSize);
+        
+        try {
+            return this.page(page, queryWrapper);
+        } catch (Exception e) {
+            throw new CustomizeException(ResultCodeEnum.DATA_ERROR.getCode(), 
+                "查询SPU信息时发生错误: " + e.getMessage());
+        }
     }
 }

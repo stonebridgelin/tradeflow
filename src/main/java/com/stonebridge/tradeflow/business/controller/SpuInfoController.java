@@ -46,8 +46,10 @@ public class SpuInfoController {
     /**
      * 列表
      */
-    @RequestMapping("/list")
-    public Result<Object> list(@RequestParam Map<String, Object> params) {
+    @RequestMapping("/list/{currentPage}/{pageSize}")
+    public Result<Object> list(@PathVariable("currentPage") String currentPage, @PathVariable("pageSize") String pageSize, @RequestParam Map<String, Object> params) {
+        params.put("currentPage", currentPage);
+        params.put("pageSize", pageSize);
         Page<SpuInfo> page = spuInfoService.queryPageByCondition(params);
         return Result.ok(page);
     }
