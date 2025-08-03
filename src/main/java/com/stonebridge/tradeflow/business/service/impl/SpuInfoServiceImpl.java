@@ -8,6 +8,7 @@ import com.stonebridge.tradeflow.business.entity.product.*;
 import com.stonebridge.tradeflow.business.entity.spu.*;
 import com.stonebridge.tradeflow.business.mapper.SpuInfoMapper;
 import com.stonebridge.tradeflow.business.service.*;
+import com.stonebridge.tradeflow.common.cache.MyRedisCache;
 import com.stonebridge.tradeflow.common.exception.CustomizeException;
 import com.stonebridge.tradeflow.common.result.ResultCodeEnum;
 import com.stonebridge.tradeflow.common.utils.StringUtil;
@@ -16,10 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service("spuInfoService")
@@ -39,8 +37,10 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
 
     private final SkuSaleAttrValueService skuSaleAttrValueService;
 
+    private final MyRedisCache  myRedisCache;
+
     @Autowired
-    public SpuInfoServiceImpl(SpuInfoDescService spuInfoDescService, SpuImagesService spuImagesService, AttrService attrService, ProductAttrValueService valueService, SkuInfoService skuInfoService, SkuImagesService skuImagesService, SkuSaleAttrValueService skuSaleAttrValueService) {
+    public SpuInfoServiceImpl(SpuInfoDescService spuInfoDescService, SpuImagesService spuImagesService, AttrService attrService, ProductAttrValueService valueService, SkuInfoService skuInfoService, SkuImagesService skuImagesService, SkuSaleAttrValueService skuSaleAttrValueService, MyRedisCache myRedisCache) {
         this.spuInfoDescService = spuInfoDescService;
         this.spuImagesService = spuImagesService;
         this.attrService = attrService;
@@ -48,6 +48,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
         this.skuInfoService = skuInfoService;
         this.skuImagesService = skuImagesService;
         this.skuSaleAttrValueService = skuSaleAttrValueService;
+        this.myRedisCache = myRedisCache;
     }
 
     @Override
@@ -149,7 +150,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
     }
 
     /**
-     * 根据条件分页查询SPU信息
+     * 根据条件分页查询SPU信息（带扩展信息）
      * 
      * @param params 查询参数，包含以下字段：
      *               - categoryId: 分类ID（可选）
@@ -158,11 +159,11 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
      *               - publishStatus: 发布状态（可选，0-下架，1-上架）
      *               - currentPage: 当前页码（必需，默认为1）
      *               - pageSize: 每页大小（必需，默认为10，最大为100）
-     * @return 分页结果
-     * @throws CustomizeException 当参数验证失败时抛出
+     * @return 包含分类名称和品牌名称的SPU分页结果
+     * @throws CustomizeException 当参数验证失败或查询失败时抛出
      */
     @Override
-    public Page<SpuInfo> queryPageByCondition(Map<String, Object> params) {
+    public Page<SpuInfoVo> queryPageByCondition(Map<String, Object> params) {
         // 参数空值检查
         if (params == null) {
             params = new HashMap<>();
@@ -258,9 +259,41 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
 
         // 构建分页对象并执行查询
         Page<SpuInfo> page = new Page<>(currentPage, pageSize);
-        
+        Page<SpuInfo> spuInfoPage = this.page(page, queryWrapper);
         try {
-            return this.page(page, queryWrapper);
+            List<SpuInfo> records = spuInfoPage.getRecords();
+            Page<SpuInfoVo> spuInfoVoPage = new Page<>();
+            BeanUtils.copyProperties(spuInfoPage, spuInfoVoPage);
+            
+            // 使用Stream API优化数据转换
+            List<SpuInfoVo> spuInfoVoList = records.stream().map(record -> {
+                SpuInfoVo spuInfoVo = new SpuInfoVo();
+                BeanUtils.copyProperties(record, spuInfoVo);
+                
+                // 安全地获取分类名称（包含异常处理）
+                try {
+                    String categoryName = myRedisCache.getCategoryNameById(record.getCategoryId());
+                    spuInfoVo.setCategoryName(StringUtil.isNotEmpty(categoryName) ? categoryName : "未知分类");
+                } catch (Exception e) {
+                    spuInfoVo.setCategoryName("未知分类");
+                    // 记录警告但不中断处理
+                }
+                
+                // 安全地获取品牌名称（包含空值检查和异常处理）
+                try {
+                    var brand = myRedisCache.getBrandById(record.getBrandId());
+                    String brandName = (brand != null && StringUtil.isNotEmpty(brand.getName())) ? brand.getName() : "未知品牌";
+                    spuInfoVo.setBrandName(brandName);
+                } catch (Exception e) {
+                    spuInfoVo.setBrandName("未知品牌");
+                    // 记录警告但不中断处理
+                }
+                
+                return spuInfoVo;
+            }).collect(Collectors.toList());
+            
+            spuInfoVoPage.setRecords(spuInfoVoList);
+            return spuInfoVoPage;
         } catch (Exception e) {
             throw new CustomizeException(ResultCodeEnum.DATA_ERROR.getCode(), 
                 "查询SPU信息时发生错误: " + e.getMessage());

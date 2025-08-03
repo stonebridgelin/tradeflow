@@ -32,7 +32,7 @@ public class SpuInfo {
     private BigDecimal weight;//重量
 
     @TableField("publish_status")
-    private Integer publishStatus;//上架状态[0-下架，1-上架]
+    private Integer publishStatus;//上架状态[0-新建，1-上架，2-下架]
 
     @TableField("create_time")
     private Date createTime;//创建时间

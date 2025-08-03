@@ -2,6 +2,7 @@ package com.stonebridge.tradeflow.business.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.stonebridge.tradeflow.business.entity.product.SpuInfo;
+import com.stonebridge.tradeflow.business.entity.spu.SpuInfoVo;
 import com.stonebridge.tradeflow.business.entity.spu.SpuSaveVo;
 import com.stonebridge.tradeflow.business.service.SpuInfoService;
 import com.stonebridge.tradeflow.common.result.Result;
@@ -50,7 +51,7 @@ public class SpuInfoController {
     public Result<Object> list(@PathVariable("currentPage") String currentPage, @PathVariable("pageSize") String pageSize, @RequestParam Map<String, Object> params) {
         params.put("currentPage", currentPage);
         params.put("pageSize", pageSize);
-        Page<SpuInfo> page = spuInfoService.queryPageByCondition(params);
+        Page<SpuInfoVo> page = spuInfoService.queryPageByCondition(params);
         return Result.ok(page);
     }
 
@@ -68,8 +69,8 @@ public class SpuInfoController {
     /**
      * 修改
      */
-    @RequestMapping("/update")
-    public Result update(@RequestBody SpuInfo spuInfo) {
+    @PostMapping("/updateStatus")
+    public Result<Object> update(@RequestBody SpuInfo spuInfo) {
         spuInfoService.updateById(spuInfo);
         return Result.ok();
     }
