@@ -299,4 +299,78 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
                 "查询SPU信息时发生错误: " + e.getMessage());
         }
     }
+
+    /**
+     * 根据spu的主键id删除，spu的信息以及涉及到的子表上的数据
+     * 删除顺序：先删除子表数据，最后删除主表数据
+     * 涉及表：
+     * 1. pms_sku_sale_attr_value (SKU销售属性值)
+     * 2. pms_sku_images (SKU图片)
+     * 3. pms_sku_info (SKU信息)
+     * 4. pms_product_attr_value (SPU规格参数)
+     * 5. pms_spu_images (SPU图片)
+     * 6. pms_spu_info_desc (SPU描述)
+     * 7. pms_spu_info (SPU基本信息)
+     * @param spuId SPU主键ID
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void deleteSpuById(String spuId) {
+        if (StringUtil.isEmpty(spuId)) {
+            throw new CustomizeException(ResultCodeEnum.ARGUMENT_VALID_ERROR.getCode(), "SPU ID不能为空");
+        }
+
+        try {
+            // 1. 首先查询该SPU下的所有SKU ID
+            QueryWrapper<SkuInfo> skuQueryWrapper = new QueryWrapper<>();
+            skuQueryWrapper.eq("spu_id", spuId);
+            List<SkuInfo> skuInfos = skuInfoService.list(skuQueryWrapper);
+            
+            if (!skuInfos.isEmpty()) {
+                // 获取所有SKU的ID集合
+                List<String> skuIds = skuInfos.stream()
+                    .map(SkuInfo::getSkuId)
+                    .collect(Collectors.toList());
+
+                // 2. 删除SKU销售属性值数据 (pms_sku_sale_attr_value)
+                if (!skuIds.isEmpty()) {
+                    QueryWrapper<SkuSaleAttrValue> skuSaleAttrWrapper = new QueryWrapper<>();
+                    skuSaleAttrWrapper.in("sku_id", skuIds);
+                    skuSaleAttrValueService.remove(skuSaleAttrWrapper);
+                }
+
+                // 3. 删除SKU图片数据 (pms_sku_images)
+                if (!skuIds.isEmpty()) {
+                    QueryWrapper<SkuImages> skuImagesWrapper = new QueryWrapper<>();
+                    skuImagesWrapper.in("sku_id", skuIds);
+                    skuImagesService.remove(skuImagesWrapper);
+                }
+
+                // 4. 删除SKU基本信息 (pms_sku_info)
+                skuInfoService.remove(skuQueryWrapper);
+            }
+
+            // 5. 删除SPU规格参数 (pms_product_attr_value)
+            QueryWrapper<ProductAttrValue> attrValueWrapper = new QueryWrapper<>();
+            attrValueWrapper.eq("spu_id", spuId);
+            valueService.remove(attrValueWrapper);
+
+            // 6. 删除SPU图片 (pms_spu_images)
+            QueryWrapper<SpuImages> spuImagesWrapper = new QueryWrapper<>();
+            spuImagesWrapper.eq("spu_id", spuId);
+            spuImagesService.remove(spuImagesWrapper);
+
+            // 7. 删除SPU描述信息 (pms_spu_info_desc)
+            QueryWrapper<SpuInfoDesc> spuDescWrapper = new QueryWrapper<>();
+            spuDescWrapper.eq("spu_id", spuId);
+            spuInfoDescService.remove(spuDescWrapper);
+
+            // 8. 最后删除SPU基本信息 (pms_spu_info)
+            this.removeById(spuId);
+
+        } catch (Exception e) {
+            throw new CustomizeException(ResultCodeEnum.DATA_ERROR.getCode(), 
+                "删除SPU数据时发生错误: " + e.getMessage());
+        }
+    }
 }

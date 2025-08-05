@@ -78,9 +78,9 @@ public class SpuInfoController {
     /**
      * 删除
      */
-    @RequestMapping("/delete")
-    public Result delete(@RequestBody Long[] ids) {
-        spuInfoService.removeByIds(Arrays.asList(ids));
+    @DeleteMapping("/delete/{id}")
+    public Result delete(@PathVariable("id") String spuId) {
+        spuInfoService.deleteSpuById(spuId);
         return Result.ok();
     }
 }
