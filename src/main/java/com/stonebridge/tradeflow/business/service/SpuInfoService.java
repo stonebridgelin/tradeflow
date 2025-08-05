@@ -17,4 +17,6 @@ public interface SpuInfoService extends IService<SpuInfo> {
     void saveBaseSpuInfo(SpuInfo spuInfo);
 
     Page<SpuInfoVo> queryPageByCondition(Map<String, Object> params);
+
+    void deleteSpuById(String spuId);
 }

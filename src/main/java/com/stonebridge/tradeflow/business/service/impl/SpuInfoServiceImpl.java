@@ -58,67 +58,92 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
         return null;
     }
 
+    /**
+     * 保存SPU完整信息（包括基本信息、描述、图片、规格参数和SKU信息）
+     * 
+     * 保存顺序：主表数据 -> 子表数据 -> SKU相关数据
+     * 涉及表：
+     * 1. pms_spu_info (SPU基本信息)
+     * 2. pms_spu_info_desc (SPU描述信息)
+     * 3. pms_spu_images (SPU图片集)
+     * 4. pms_product_attr_value (SPU规格参数)
+     * 5. pms_sku_info (SKU基本信息)
+     * 6. pms_sku_images (SKU图片)
+     * 7. pms_sku_sale_attr_value (SKU销售属性值)
+     * 
+     * @param spuSaveVo SPU保存数据传输对象，包含所有需要保存的SPU相关信息
+     */
     @Transactional
     @Override
     public void saveSpuInfo(SpuSaveVo spuSaveVo) {
         Date now = new Date();
-        //1.保存spu的基本信息到表pms_spu_info
+        
+        // ==================== 第一步：保存SPU基本信息 ====================
+        // 保存SPU基本信息到 pms_spu_info 表
         SpuInfo spuInfo = new SpuInfo();
         BeanUtils.copyProperties(spuSaveVo, spuInfo);
         spuInfo.setCreateTime(now);
         spuInfo.setUpdateTime(now);
         this.saveBaseSpuInfo(spuInfo);
-        String spuId = spuInfo.getId();
+        String spuId = spuInfo.getId(); // 获取生成的SPU主键ID，用于关联子表
 
-        //2.保存spu的描述图片到表pms_spu_info_desc
+        // ==================== 第二步：保存SPU描述信息 ====================
+        // 保存SPU的描述图片信息到 pms_spu_info_desc 表
         List<String> decripts = spuSaveVo.getDecript();
         SpuInfoDesc spuInfoDesc = new SpuInfoDesc();
         spuInfoDesc.setSpuId(spuId);
-        spuInfoDesc.setDescription(String.join(",", decripts));
+        spuInfoDesc.setDescription(String.join(",", decripts)); // 将描述图片URL数组转为逗号分隔字符串
         spuInfoDescService.saveSpuInfoDesc(spuInfoDesc);
 
-        //3.保存spu的图片集 pms_spu_images
+        // ==================== 第三步：保存SPU图片集 ====================
+        // 保存SPU的商品图片集合到 pms_spu_images 表
         List<String> images = spuSaveVo.getImages();
         spuImagesService.saveImages(spuId, images);
 
-        //4.保存spu的规格参数pms_product_attr_value
+        // ==================== 第四步：保存SPU规格参数 ====================
+        // 保存SPU的规格参数（基本属性）到 pms_product_attr_value 表
         List<BaseAttrs> baseAttrs = spuSaveVo.getBaseAttrs();
         List<ProductAttrValue> productAttrValues = baseAttrs.stream().map(item -> {
             ProductAttrValue productAttrValue = new ProductAttrValue();
             productAttrValue.setAttrId(String.valueOf(item.getAttrId()));
-            productAttrValue.setAttrName(attrService.getById(item.getAttrId()).getAttrName());
+            productAttrValue.setAttrName(attrService.getById(item.getAttrId()).getAttrName()); // 通过属性ID查询属性名称
             productAttrValue.setAttrValue(item.getAttrValues());
-            productAttrValue.setQuickShow(String.valueOf(item.getShowDesc()));
+            productAttrValue.setQuickShow(String.valueOf(item.getShowDesc())); // 是否在详情页快速展示
             productAttrValue.setSpuId(spuId);
             return productAttrValue;
         }).collect(Collectors.toList());
         valueService.saveProductAttr(productAttrValues);
 
-
-        //5.保存当前SPU对应的所有SKU信息
+        // ==================== 第五步：保存SKU相关信息 ====================
+        // 保存当前SPU对应的所有SKU信息及其子表数据
         List<Skus> skusList = spuSaveVo.getSkus();
         if (!skusList.isEmpty()) {
             for (Skus sku : skusList) {
+                // 查找SKU的默认图片URL
                 String defaultImg = "";
                 for (Images image : sku.getImages()) {
                     if (image.getDefaultImg() == 1) {
                         defaultImg = image.getImgUrl();
+                        break; // 找到默认图片后跳出循环
                     }
                 }
-                //5.1.sku的基本信息保存到pms_sku_info
-                // 从com.stonebridge.tradeflow.business.entity.spu.Skus拷贝数据到com.stonebridge.tradeflow.business.entity.product.SkuInfo
-                // 包括：spuId、skuName、price、skuTitle、skuSubtitle、defaultImg；（brandId、cayegoryId、SpuId）(来自 spuInfo)
+                
+                // 5.1 保存SKU基本信息到 pms_sku_info 表
+                // 数据映射：从 Skus VO 拷贝到 SkuInfo 实体
+                // 包括：skuName、price、skuTitle、skuSubtitle 等基本信息
+                // 补充：brandId、categoryId（来自SPU）、spuId、defaultImg、saleCount
                 SkuInfo skuInfo = new SkuInfo();
                 BeanUtils.copyProperties(sku, skuInfo);
-                skuInfo.setBrandId(spuInfo.getBrandId());
-                skuInfo.setCategoryId(spuInfo.getCategoryId());
-                skuInfo.setSaleCount(0L);
-                skuInfo.setSpuId(spuId);
-                skuInfo.setSkuDefaultImg(defaultImg);
+                skuInfo.setBrandId(spuInfo.getBrandId());     // 继承SPU的品牌ID
+                skuInfo.setCategoryId(spuInfo.getCategoryId()); // 继承SPU的分类ID
+                skuInfo.setSaleCount(0L);                     // 新商品销量初始化为0
+                skuInfo.setSpuId(spuId);                      // 关联SPU主键
+                skuInfo.setSkuDefaultImg(defaultImg);         // 设置默认显示图片
                 skuInfoService.saveSkuInfo(skuInfo);
-                String skuId = skuInfo.getSkuId();
+                String skuId = skuInfo.getSkuId(); // 获取生成的SKU主键ID
 
-                //5.2.保存每个sku对应的图片到pms_sku_images表
+                // 5.2 保存SKU图片信息到 pms_sku_images 表
+                // 将SKU的图片集合转换为数据库实体并过滤掉空图片URL
                 List<SkuImages> imagesEntities = sku.getImages().stream().map(img -> {
                     SkuImages skuImage = new SkuImages();
                     skuImage.setSkuId(skuId);
@@ -126,17 +151,18 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
                     skuImage.setDefaultImg(img.getDefaultImg());
                     return skuImage;
                 }).filter(entity -> {
-                    //返回true就是需要，false就是剔除
+                    // 过滤条件：只保留有效的图片URL（非空）
                     return !StringUtil.isEmpty(entity.getImgUrl());
                 }).collect(Collectors.toList());
                 skuImagesService.saveBatch(imagesEntities);
 
-                //5.3.sku的销售属性信息保存到pms_sku_sale_attr_value
+                // 5.3 保存SKU销售属性值到 pms_sku_sale_attr_value 表
+                // 销售属性：如颜色、尺寸等影响价格和库存的属性
                 List<Attr> attrs = sku.getAttr();
                 List<SkuSaleAttrValue> skuSaleAttrValues = attrs.stream().map(attr -> {
                     SkuSaleAttrValue skuSaleAttrValue = new SkuSaleAttrValue();
                     BeanUtils.copyProperties(attr, skuSaleAttrValue);
-                    skuSaleAttrValue.setSkuId(skuId);
+                    skuSaleAttrValue.setSkuId(skuId); // 关联SKU主键
                     return skuSaleAttrValue;
                 }).collect(Collectors.toList());
                 skuSaleAttrValueService.saveBatch(skuSaleAttrValues);
@@ -297,6 +323,80 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
         } catch (Exception e) {
             throw new CustomizeException(ResultCodeEnum.DATA_ERROR.getCode(), 
                 "查询SPU信息时发生错误: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 根据spu的主键id删除，spu的信息以及涉及到的子表上的数据
+     * 删除顺序：先删除子表数据，最后删除主表数据
+     * 涉及表：
+     * 1. pms_sku_sale_attr_value (SKU销售属性值)
+     * 2. pms_sku_images (SKU图片)
+     * 3. pms_sku_info (SKU信息)
+     * 4. pms_product_attr_value (SPU规格参数)
+     * 5. pms_spu_images (SPU图片)
+     * 6. pms_spu_info_desc (SPU描述)
+     * 7. pms_spu_info (SPU基本信息)
+     * @param spuId SPU主键ID
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void deleteSpuById(String spuId) {
+        if (StringUtil.isEmpty(spuId)) {
+            throw new CustomizeException(ResultCodeEnum.ARGUMENT_VALID_ERROR.getCode(), "SPU ID不能为空");
+        }
+
+        try {
+            // 1. 首先查询该SPU下的所有SKU ID
+            QueryWrapper<SkuInfo> skuQueryWrapper = new QueryWrapper<>();
+            skuQueryWrapper.eq("spu_id", spuId);
+            List<SkuInfo> skuInfos = skuInfoService.list(skuQueryWrapper);
+            
+            if (!skuInfos.isEmpty()) {
+                // 获取所有SKU的ID集合
+                List<String> skuIds = skuInfos.stream()
+                    .map(SkuInfo::getSkuId)
+                    .collect(Collectors.toList());
+
+                // 2. 删除SKU销售属性值数据 (pms_sku_sale_attr_value)
+                if (!skuIds.isEmpty()) {
+                    QueryWrapper<SkuSaleAttrValue> skuSaleAttrWrapper = new QueryWrapper<>();
+                    skuSaleAttrWrapper.in("sku_id", skuIds);
+                    skuSaleAttrValueService.remove(skuSaleAttrWrapper);
+                }
+
+                // 3. 删除SKU图片数据 (pms_sku_images)
+                if (!skuIds.isEmpty()) {
+                    QueryWrapper<SkuImages> skuImagesWrapper = new QueryWrapper<>();
+                    skuImagesWrapper.in("sku_id", skuIds);
+                    skuImagesService.remove(skuImagesWrapper);
+                }
+
+                // 4. 删除SKU基本信息 (pms_sku_info)
+                skuInfoService.remove(skuQueryWrapper);
+            }
+
+            // 5. 删除SPU规格参数 (pms_product_attr_value)
+            QueryWrapper<ProductAttrValue> attrValueWrapper = new QueryWrapper<>();
+            attrValueWrapper.eq("spu_id", spuId);
+            valueService.remove(attrValueWrapper);
+
+            // 6. 删除SPU图片 (pms_spu_images)
+            QueryWrapper<SpuImages> spuImagesWrapper = new QueryWrapper<>();
+            spuImagesWrapper.eq("spu_id", spuId);
+            spuImagesService.remove(spuImagesWrapper);
+
+            // 7. 删除SPU描述信息 (pms_spu_info_desc)
+            QueryWrapper<SpuInfoDesc> spuDescWrapper = new QueryWrapper<>();
+            spuDescWrapper.eq("spu_id", spuId);
+            spuInfoDescService.remove(spuDescWrapper);
+
+            // 8. 最后删除SPU基本信息 (pms_spu_info)
+            this.removeById(spuId);
+
+        } catch (Exception e) {
+            throw new CustomizeException(ResultCodeEnum.DATA_ERROR.getCode(), 
+                "删除SPU数据时发生错误: " + e.getMessage());
         }
     }
 }
