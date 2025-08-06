@@ -8,8 +8,10 @@ import com.stonebridge.tradeflow.business.entity.attribute.dto.AttrAttrgroupRela
 import com.stonebridge.tradeflow.business.entity.attribute.dto.AttrDTO;
 import com.stonebridge.tradeflow.business.entity.attribute.vo.AttrRespVo;
 import com.stonebridge.tradeflow.business.entity.attribute.vo.AttrVo;
+import com.stonebridge.tradeflow.business.entity.product.ProductAttrValue;
 import com.stonebridge.tradeflow.business.service.AttrAttrgroupRelationService;
 import com.stonebridge.tradeflow.business.service.AttrService;
+import com.stonebridge.tradeflow.business.service.impl.ProductAttrValueServiceImpl;
 import com.stonebridge.tradeflow.common.result.Result;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,11 +27,13 @@ public class AttrController {
     private final AttrService attrService;
 
     private final AttrAttrgroupRelationService attrAttrgroupRelationService;
+    private final ProductAttrValueServiceImpl productAttrValueService;
 
     @Autowired
-    public AttrController(AttrService attrService, AttrAttrgroupRelationService attrAttrgroupRelationService) {
+    public AttrController(AttrService attrService, AttrAttrgroupRelationService attrAttrgroupRelationService, ProductAttrValueServiceImpl productAttrValueService) {
         this.attrService = attrService;
         this.attrAttrgroupRelationService = attrAttrgroupRelationService;
+        this.productAttrValueService = productAttrValueService;
     }
 
     /**
@@ -158,5 +162,19 @@ public class AttrController {
                            @PathVariable("attrType") String attrType) {
         Page<AttrRespVo> page = attrService.queryBaseAttrPage(params, catelogId, attrType);
         return Result.ok(page);
+    }
+
+
+    //mallproduct/attr/base/listforspu/7
+    @GetMapping("baseAttrList/{spuId}")
+    public Result<Object> baseAttrList(@PathVariable("spuId") Long spuId) {
+        List<ProductAttrValue> entities = productAttrValueService.baseAttrListForSpu(spuId);
+        return Result.ok(entities);
+    }
+
+    @PostMapping("/update/{spuId}")
+    public Result<Object> updateSpuAtt(@PathVariable String spuId, @RequestBody List<ProductAttrValue> list) {
+        productAttrValueService.updateSpuAttr(spuId, list);
+        return Result.ok();
     }
 }

@@ -9,7 +9,6 @@ import com.stonebridge.tradeflow.common.result.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
 import java.util.Map;
 
 
@@ -60,7 +59,7 @@ public class SpuInfoController {
      * 信息
      */
     @RequestMapping("/info/{id}")
-    public Result info(@PathVariable("id") Long id) {
+    public Result<Object> info(@PathVariable("id") Long id) {
         SpuInfo spuInfo = spuInfoService.getById(id);
         return Result.ok(spuInfo);
     }

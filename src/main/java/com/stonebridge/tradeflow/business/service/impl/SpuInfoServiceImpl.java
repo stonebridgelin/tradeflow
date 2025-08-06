@@ -271,9 +271,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
         if (StringUtil.isNotEmpty(status)) {
             try {
                 int statusValue = Integer.parseInt(status);
-                if (statusValue == 0 || statusValue == 1) {
-                    queryWrapper.eq("publish_status", statusValue);
-                }
+                queryWrapper.eq("publish_status", statusValue);
             } catch (NumberFormatException e) {
                 // 状态值格式错误时忽略该条件，不抛出异常
                 // 这样可以保证查询的健壮性

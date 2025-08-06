@@ -30,23 +30,22 @@ public class ProductAttrValueServiceImpl extends ServiceImpl<ProductAttrValueMap
         this.saveBatch(collect);
     }
 
-    @Override
-    public List<ProductAttrValue> baseAttrlistforspu(Long spuId) {
-        List<ProductAttrValue> entities = this.baseMapper.selectList(new QueryWrapper<ProductAttrValue>().eq("spu_id", spuId));
-        return entities;
-    }
-
     @Transactional
     @Override
     public void updateSpuAttr(String spuId, List<ProductAttrValue> entities) {
         //1、删除这个spuId之前对应的所有属性
         this.baseMapper.delete(new QueryWrapper<ProductAttrValue>().eq("spu_id",spuId));
-
-
         List<ProductAttrValue> collect = entities.stream().map(item -> {item.setSpuId(spuId);
             return item;
         }).collect(Collectors.toList());
         this.saveBatch(collect);
+    }
+
+    @Override
+    public List<ProductAttrValue> baseAttrListForSpu(Long spuId) {
+        QueryWrapper<ProductAttrValue> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("spu_id", spuId);
+        return this.baseMapper.selectList(queryWrapper);
     }
 
 }
