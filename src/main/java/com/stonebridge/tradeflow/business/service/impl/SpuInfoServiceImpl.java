@@ -136,11 +136,19 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
                 BeanUtils.copyProperties(sku, skuInfo);
                 skuInfo.setBrandId(spuInfo.getBrandId());     // 继承SPU的品牌ID
                 skuInfo.setCategoryId(spuInfo.getCategoryId()); // 继承SPU的分类ID
-                skuInfo.setSaleCount(0L);                     // 新商品销量初始化为0
+                skuInfo.setSaleCount(0L);
                 skuInfo.setSpuId(spuId);                      // 关联SPU主键
                 skuInfo.setSkuDefaultImg(defaultImg);         // 设置默认显示图片
+                
+                // 执行保存操作
                 skuInfoService.saveSkuInfo(skuInfo);
                 String skuId = skuInfo.getSkuId(); // 获取生成的SKU主键ID
+                
+                // 验证SKU是否保存成功
+                if (StringUtil.isEmpty(skuId)) {
+                    throw new CustomizeException(ResultCodeEnum.DATA_ERROR.getCode(), 
+                        "SKU保存失败，无法获取生成的SKU ID");
+                }
 
                 // 5.2 保存SKU图片信息到 pms_sku_images 表
                 // 将SKU的图片集合转换为数据库实体并过滤掉空图片URL

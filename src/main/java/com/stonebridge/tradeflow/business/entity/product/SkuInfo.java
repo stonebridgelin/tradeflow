@@ -1,6 +1,8 @@
 package com.stonebridge.tradeflow.business.entity.product;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.stonebridge.tradeflow.business.typehandler.StringToBigIntTypeHandler;
 import lombok.Data;
@@ -13,6 +15,7 @@ import java.math.BigDecimal;
 @Data
 @TableName("pms_sku_info")
 public class SkuInfo {
+    @TableId(value = "sku_id", type = IdType.AUTO)
     @TableField(value = "sku_id", typeHandler = StringToBigIntTypeHandler.class)
     private String skuId;//skuId
 
