@@ -1,6 +1,7 @@
 package com.stonebridge.tradeflow.business.entity.product;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.stonebridge.tradeflow.business.typehandler.StringToBigIntTypeHandler;
 import lombok.Data;
@@ -12,7 +13,8 @@ import lombok.Data;
 @TableName("pms_sku_sale_attr_value")
 public class SkuSaleAttrValue {
 
-    @TableField(value = "id", typeHandler = StringToBigIntTypeHandler.class)
+    @TableId
+    @TableField(typeHandler = StringToBigIntTypeHandler.class)
     private String id;//主键id
 
     @TableField(value = "sku_id", typeHandler = StringToBigIntTypeHandler.class)

@@ -15,7 +15,7 @@ import lombok.Data;
 public class ProductAttrValue {
 
     @TableId(type = IdType.AUTO)
-    @TableField(value = "id", typeHandler = StringToBigIntTypeHandler.class)
+    @TableField(typeHandler = StringToBigIntTypeHandler.class)
     private String id;//主键ID
 
     @TableField(value = "spu_id", typeHandler = StringToBigIntTypeHandler.class)

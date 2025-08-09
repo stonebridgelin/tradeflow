@@ -1,6 +1,7 @@
 package com.stonebridge.tradeflow.business.entity.product;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.stonebridge.tradeflow.business.typehandler.StringToBigIntTypeHandler;
 import lombok.Data;
@@ -14,8 +15,9 @@ import java.util.Date;
 @Data
 @TableName("pms_spu_info")
 public class SpuInfo {
-    @TableField(value = "id", typeHandler = StringToBigIntTypeHandler.class)
-    private String id;//商品id
+    @TableId
+    @TableField(typeHandler = StringToBigIntTypeHandler.class)
+    private String id;//商品主键id
     @TableField("spu_name")
     private String spuName;//商品名称
 

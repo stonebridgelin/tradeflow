@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 @TableName("pms_sku_info")
 public class SkuInfo {
     @TableId(value = "sku_id", type = IdType.AUTO)
-    @TableField(value = "sku_id", typeHandler = StringToBigIntTypeHandler.class)
+    @TableField(typeHandler = StringToBigIntTypeHandler.class)
     private String skuId;//skuId
 
     @TableField(value = "spu_id", typeHandler = StringToBigIntTypeHandler.class)
