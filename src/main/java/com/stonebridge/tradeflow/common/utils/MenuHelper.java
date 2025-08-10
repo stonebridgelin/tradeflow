@@ -42,6 +42,10 @@ public class MenuHelper {
                 trees.add(menu);
             }
         }
+        
+        // 对顶级菜单按 sortValue 升序排序
+        trees.sort(Comparator.comparingInt(SysMenu::getSortValue));
+        
         return trees;
     }
 
