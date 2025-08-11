@@ -3,6 +3,7 @@ package com.stonebridge.tradeflow.common.utils;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 字符串工具类
@@ -76,11 +77,18 @@ import java.util.stream.Collectors;
  * // 随机字符串
  * StringUtil.random(6)                        → "aBc123" (随机)
  * StringUtil.random(4, "0123456789")          → "1234" (随机)
+ *
+ * // 参数解析
+ * Map<String, Object> params = Map.of("page", "2", "limit", "50", "enabled", "true");
+ * StringUtil.parseIntParameter(params, "page", 1, 1, 100)     → 2
+ * StringUtil.parseStringParameter(params, "name", "默认名称")   → "默认名称"
+ * StringUtil.parseBooleanParameter(params, "enabled", false)   → true
  * </pre>
  *
  * @author YourName
  * @since 1.0.0
  */
+@Slf4j
 public class StringUtil {
 
     public static final String EMPTY = "";
@@ -579,5 +587,142 @@ public class StringUtil {
         }
 
         return sb.toString();
+    }
+
+    // ================================= 参数解析相关方法 =================================
+
+    /**
+     * 从Map中解析整数参数，支持默认值和边界值限制
+     *
+     * @param params      参数Map
+     * @param paramName   参数名
+     * @param defaultValue 默认值
+     * @param minValue    最小值
+     * @param maxValue    最大值
+     * @return 解析后的整数值，在指定范围内
+     */
+    public static int parseIntParameter(Map<String, Object> params, String paramName, int defaultValue, int minValue, int maxValue) {
+        return Optional.ofNullable(params.get(paramName))
+                .map(Object::toString)
+                .filter(StringUtil::isNotBlank)
+                .map(value -> {
+                    try {
+                        return Integer.parseInt(value);
+                    } catch (NumberFormatException e) {
+                        log.warn("参数 {} 格式错误: {}, 使用默认值: {}", paramName, value, defaultValue);
+                        return defaultValue;
+                    }
+                })
+                .map(value -> Math.max(minValue, Math.min(maxValue, value)))
+                .orElse(defaultValue);
+    }
+
+    /**
+     * 从Map中解析长整数参数，支持默认值和边界值限制
+     *
+     * @param params      参数Map
+     * @param paramName   参数名
+     * @param defaultValue 默认值
+     * @param minValue    最小值
+     * @param maxValue    最大值
+     * @return 解析后的长整数值，在指定范围内
+     */
+    public static long parseLongParameter(Map<String, Object> params, String paramName, long defaultValue, long minValue, long maxValue) {
+        return Optional.ofNullable(params.get(paramName))
+                .map(Object::toString)
+                .filter(StringUtil::isNotBlank)
+                .map(value -> {
+                    try {
+                        return Long.parseLong(value);
+                    } catch (NumberFormatException e) {
+                        log.warn("参数 {} 格式错误: {}, 使用默认值: {}", paramName, value, defaultValue);
+                        return defaultValue;
+                    }
+                })
+                .map(value -> Math.max(minValue, Math.min(maxValue, value)))
+                .orElse(defaultValue);
+    }
+
+    /**
+     * 从Map中解析字符串参数，支持默认值和长度限制
+     *
+     * @param params      参数Map
+     * @param paramName   参数名
+     * @param defaultValue 默认值
+     * @param maxLength   最大长度（0表示不限制）
+     * @return 解析后的字符串，去除首尾空白并限制长度
+     */
+    public static String parseStringParameter(Map<String, Object> params, String paramName, String defaultValue, int maxLength) {
+        return Optional.ofNullable(params.get(paramName))
+                .map(Object::toString)
+                .map(StringUtil::trim)
+                .filter(StringUtil::isNotBlank)
+                .map(value -> maxLength > 0 && value.length() > maxLength ? value.substring(0, maxLength) : value)
+                .orElse(defaultValue);
+    }
+
+    /**
+     * 从Map中解析字符串参数（无长度限制）
+     *
+     * @param params      参数Map
+     * @param paramName   参数名
+     * @param defaultValue 默认值
+     * @return 解析后的字符串，去除首尾空白
+     */
+    public static String parseStringParameter(Map<String, Object> params, String paramName, String defaultValue) {
+        return parseStringParameter(params, paramName, defaultValue, 0);
+    }
+
+    /**
+     * 从Map中解析布尔参数
+     *
+     * @param params      参数Map
+     * @param paramName   参数名
+     * @param defaultValue 默认值
+     * @return 解析后的布尔值
+     */
+    public static boolean parseBooleanParameter(Map<String, Object> params, String paramName, boolean defaultValue) {
+        return Optional.ofNullable(params.get(paramName))
+                .map(Object::toString)
+                .map(StringUtil::trim)
+                .filter(StringUtil::isNotBlank)
+                .map(value -> {
+                    String lowerValue = value.toLowerCase();
+                    if ("true".equals(lowerValue) || "1".equals(lowerValue) || "yes".equals(lowerValue)) {
+                        return true;
+                    } else if ("false".equals(lowerValue) || "0".equals(lowerValue) || "no".equals(lowerValue)) {
+                        return false;
+                    } else {
+                        log.warn("参数 {} 格式错误: {}, 使用默认值: {}", paramName, value, defaultValue);
+                        return defaultValue;
+                    }
+                })
+                .orElse(defaultValue);
+    }
+
+    /**
+     * 从Map中解析双精度浮点数参数，支持默认值和边界值限制
+     *
+     * @param params      参数Map
+     * @param paramName   参数名
+     * @param defaultValue 默认值
+     * @param minValue    最小值
+     * @param maxValue    最大值
+     * @return 解析后的双精度浮点数值，在指定范围内
+     */
+    public static double parseDoubleParameter(Map<String, Object> params, String paramName, double defaultValue, double minValue, double maxValue) {
+        return Optional.ofNullable(params.get(paramName))
+                .map(Object::toString)
+                .filter(StringUtil::isNotBlank)
+                .map(value -> {
+                    try {
+                        return Double.parseDouble(value);
+                    } catch (NumberFormatException e) {
+                        log.warn("参数 {} 格式错误: {}, 使用默认值: {}", paramName, value, defaultValue);
+                        return defaultValue;
+                    }
+                })
+                .map(value -> Math.max(minValue, Math.min(maxValue, value)))
+                .orElse(defaultValue);
     }
 }

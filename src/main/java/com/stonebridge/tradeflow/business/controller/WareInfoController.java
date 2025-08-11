@@ -1,6 +1,5 @@
 package com.stonebridge.tradeflow.business.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.stonebridge.tradeflow.business.entity.wms.WareInfo;
 import com.stonebridge.tradeflow.business.service.WareInfoService;
 import com.stonebridge.tradeflow.common.result.Result;
@@ -9,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 
 /**
@@ -22,8 +20,12 @@ import java.util.Map;
 @RestController
 @RequestMapping("api/wareInfo")
 public class WareInfoController {
-    @Autowired
     private WareInfoService wareInfoService;
+
+    @Autowired
+    public WareInfoController(WareInfoService wareInfoService) {
+        this.wareInfoService = wareInfoService;
+    }
 
     /**
      * 列表
@@ -66,7 +68,7 @@ public class WareInfoController {
      * 删除
      */
     @RequestMapping("/delete")
-    public Result delete(@RequestBody Long[] ids) {
+    public Result<Object> delete(@RequestBody Long[] ids) {
         wareInfoService.removeByIds(Arrays.asList(ids));
         return Result.ok();
     }

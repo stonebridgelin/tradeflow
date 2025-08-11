@@ -17,8 +17,9 @@ public class WareInfoServiceImpl extends ServiceImpl<WareInfoMapper, WareInfo> i
     @Override
     public List<WareInfo> querylist(String keyWord) {
         QueryWrapper<WareInfo> queryWrapper = new QueryWrapper<>();
-        queryWrapper.like(StringUtil.isNotEmpty(keyWord), "key_word", keyWord);
-        List<WareInfo> list = baseMapper.selectList(queryWrapper);
-        return list;
+        if (StringUtil.isNotEmpty(keyWord)) {
+            queryWrapper.eq("id", keyWord).or().like("name", keyWord).or().like("address", keyWord).or().like("areacode", keyWord);
+        }
+        return baseMapper.selectList(queryWrapper);
     }
 }

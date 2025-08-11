@@ -19,16 +19,20 @@ import java.util.Map;
  * @date 2021-12-12 11:36:20
  */
 @RestController
-@RequestMapping("mallware/waresku")
+@RequestMapping("api/wareSku")
 public class WareSkuController {
+    private final WareSkuService wareSkuService;
+
     @Autowired
-    private WareSkuService wareSkuService;
+    public WareSkuController(WareSkuService wareSkuService) {
+        this.wareSkuService = wareSkuService;
+    }
 
     /**
      * 列表
      */
     @RequestMapping("/list")
-    public Result list(@RequestParam Map<String, Object> params) {
+    public Result<Object> list(@RequestParam Map<String, Object> params) {
         Page<WareSku> page = wareSkuService.queryPage(params);
         return Result.ok(page);
     }
@@ -38,7 +42,7 @@ public class WareSkuController {
      * 信息
      */
     @RequestMapping("/info/{id}")
-    public Result info(@PathVariable("id") Long id) {
+    public Result<Object> info(@PathVariable("id") Long id) {
         WareSku wareSku = wareSkuService.getById(id);
 
         return Result.ok(wareSku);
@@ -48,9 +52,8 @@ public class WareSkuController {
      * 保存
      */
     @RequestMapping("/save")
-    public Result save(@RequestBody WareSku wareSku) {
+    public Result<Object> save(@RequestBody WareSku wareSku) {
         wareSkuService.save(wareSku);
-
         return Result.ok();
     }
 
@@ -58,7 +61,7 @@ public class WareSkuController {
      * 修改
      */
     @RequestMapping("/update")
-    public Result update(@RequestBody WareSku wareSku) {
+    public Result<Object> update(@RequestBody WareSku wareSku) {
         wareSkuService.updateById(wareSku);
 
         return Result.ok();
@@ -68,7 +71,7 @@ public class WareSkuController {
      * 删除
      */
     @RequestMapping("/delete")
-    public Result delete(@RequestBody Long[] ids) {
+    public Result<Object> delete(@RequestBody Long[] ids) {
         wareSkuService.removeByIds(Arrays.asList(ids));
         return Result.ok();
     }
