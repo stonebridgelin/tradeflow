@@ -8,6 +8,7 @@ import com.stonebridge.tradeflow.system.service.DataDictionaryService;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -70,6 +71,21 @@ public class DataDictionaryController {
     @GetMapping("getDdByType")
     public Result<Object> getDdByType(String type) {
         List<DataDictionary> list = myRedisCache.getDataDictionaryByType(StringUtils.trimWhitespace(type));
+        if ("transport_status".equals(type)) {
+            list.sort(Comparator.comparingInt(item -> {
+                String t = item.getCode();
+                if (t != null && t.length() > 2) {
+                    try {
+                        return Integer.parseInt(t.substring(2));
+                    } catch (NumberFormatException e) {
+                        // 遇到非数字的就放最后
+                        return Integer.MAX_VALUE;
+                    }
+                }
+                return Integer.MAX_VALUE;
+            }));
+        }
+
         return Result.ok(list);
     }
 }

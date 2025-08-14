@@ -22,10 +22,15 @@ import java.util.Map;
  * @date 2021-12-12 11:36:21
  */
 @RestController
-@RequestMapping("mallware/purchase")
+@RequestMapping("api/purchase")
 public class PurchaseController {
+
+    private final PurchaseService purchaseService;
+
     @Autowired
-    private PurchaseService purchaseService;
+    public PurchaseController(PurchaseService purchaseService) {
+        this.purchaseService = purchaseService;
+    }
 
     @PostMapping("merge")
     private Result<Object> merge(@RequestBody MergeVo mergeVo) {
@@ -72,7 +77,7 @@ public class PurchaseController {
      * 列表
      */
     @RequestMapping("/list")
-    public Result list(@RequestParam Map<String, Object> params) {
+    public Result<Object> list(@RequestParam Map<String, Object> params) {
         Page<Purchase> page = purchaseService.queryPage(params);
         return Result.ok(page);
     }
@@ -81,7 +86,7 @@ public class PurchaseController {
      * 信息
      */
     @RequestMapping("/info/{id}")
-    public Result info(@PathVariable("id") Long id) {
+    public Result<Object> info(@PathVariable("id") Long id) {
         Purchase purchase = purchaseService.getById(id);
         return Result.ok(purchase);
     }
@@ -90,7 +95,7 @@ public class PurchaseController {
      * 保存
      */
     @RequestMapping("/save")
-    public Result save(@RequestBody Purchase purchase) {
+    public Result<Object> save(@RequestBody Purchase purchase) {
         purchase.setUpdateTime(new Date());
         purchase.setCreateTime(new Date());
         purchaseService.save(purchase);
@@ -101,7 +106,7 @@ public class PurchaseController {
      * 修改
      */
     @RequestMapping("/update")
-    public Result update(@RequestBody Purchase purchase) {
+    public Result<Object> update(@RequestBody Purchase purchase) {
         purchaseService.updateById(purchase);
         return Result.ok();
     }
@@ -110,7 +115,7 @@ public class PurchaseController {
      * 删除
      */
     @RequestMapping("/delete")
-    public Result delete(@RequestBody Long[] ids) {
+    public Result<Object> delete(@RequestBody Long[] ids) {
         purchaseService.removeByIds(Arrays.asList(ids));
         return Result.ok();
     }

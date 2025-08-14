@@ -2,6 +2,7 @@ package com.stonebridge.tradeflow.business.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.stonebridge.tradeflow.business.entity.wms.PurchaseDetail;
+import com.stonebridge.tradeflow.business.entity.wms.vo.PurchaseDetailVo;
 import com.stonebridge.tradeflow.business.service.PurchaseDetailService;
 import com.stonebridge.tradeflow.common.result.Result;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,17 +18,21 @@ import java.util.Map;
  * @date 2021-12-12 11:36:21
  */
 @RestController
-@RequestMapping("mallware/purchasedetail")
+@RequestMapping("api/purchaseDetail")
 public class PurchaseDetailController {
-    @Autowired
     private PurchaseDetailService purchaseDetailService;
+
+    @Autowired
+    public PurchaseDetailController(PurchaseDetailService purchaseDetailService) {
+        this.purchaseDetailService = purchaseDetailService;
+    }
 
     /**
      * 列表
      */
     @RequestMapping("/list")
     public Result<Object> list(@RequestParam Map<String, Object> params) {
-        Page<PurchaseDetail> page = purchaseDetailService.queryPage(params);
+        Page<PurchaseDetailVo> page = purchaseDetailService.queryPage(params);
         return Result.ok(page);
     }
 
@@ -36,7 +41,7 @@ public class PurchaseDetailController {
      * 信息
      */
     @RequestMapping("/info/{id}")
-    public Result info(@PathVariable("id") Long id) {
+    public Result<Object> info(@PathVariable("id") Long id) {
         PurchaseDetail purchaseDetail = purchaseDetailService.getById(id);
 
         return Result.ok(purchaseDetail);
@@ -45,10 +50,9 @@ public class PurchaseDetailController {
     /**
      * 保存
      */
-    @RequestMapping("/save")
-    public Result save(@RequestBody PurchaseDetail purchaseDetail) {
+    @PostMapping("/save")
+    public Result<Object> save(@RequestBody PurchaseDetail purchaseDetail) {
         purchaseDetailService.save(purchaseDetail);
-
         return Result.ok();
     }
 
@@ -56,7 +60,7 @@ public class PurchaseDetailController {
      * 修改
      */
     @RequestMapping("/update")
-    public Result update(@RequestBody PurchaseDetail purchaseDetail) {
+    public Result<Object> update(@RequestBody PurchaseDetail purchaseDetail) {
         purchaseDetailService.updateById(purchaseDetail);
 
         return Result.ok();
@@ -66,7 +70,7 @@ public class PurchaseDetailController {
      * 删除
      */
     @RequestMapping("/delete")
-    public Result delete(@RequestBody Long[] ids) {
+    public Result<Object> delete(@RequestBody Long[] ids) {
         purchaseDetailService.removeByIds(Arrays.asList(ids));
 
         return Result.ok();

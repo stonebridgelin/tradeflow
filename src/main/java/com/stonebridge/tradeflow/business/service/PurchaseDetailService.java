@@ -3,6 +3,7 @@ package com.stonebridge.tradeflow.business.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.stonebridge.tradeflow.business.entity.wms.PurchaseDetail;
+import com.stonebridge.tradeflow.business.entity.wms.vo.PurchaseDetailVo;
 
 import java.util.List;
 import java.util.Map;
@@ -14,7 +15,7 @@ import java.util.Map;
  */
 public interface PurchaseDetailService extends IService<PurchaseDetail> {
 
-    Page<PurchaseDetail> queryPage(Map<String, Object> params);
+    Page<PurchaseDetailVo> queryPage(Map<String, Object> params);
 
     List<PurchaseDetail> listDetailByPurchaseId(Long id);
 }

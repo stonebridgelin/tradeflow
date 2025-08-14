@@ -20,7 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("api/wareInfo")
 public class WareInfoController {
-    private WareInfoService wareInfoService;
+    private final WareInfoService wareInfoService;
 
     @Autowired
     public WareInfoController(WareInfoService wareInfoService) {

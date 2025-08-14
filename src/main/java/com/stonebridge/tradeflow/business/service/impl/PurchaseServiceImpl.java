@@ -13,6 +13,7 @@ import com.stonebridge.tradeflow.business.service.PurchaseDetailService;
 import com.stonebridge.tradeflow.business.service.PurchaseService;
 import com.stonebridge.tradeflow.business.service.WareSkuService;
 import com.stonebridge.tradeflow.common.constant.WareConstant;
+import com.stonebridge.tradeflow.common.utils.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,8 +39,23 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, Purchase> i
 
     @Override
     public Page<Purchase> queryPage(Map<String, Object> params) {
-//        IPage<Purchase> page = this.page(new Query<Purchase>().getPage(params), new QueryWrapper<>());
-        return null;
+        String status = StringUtil.parseStringParameter(params, "status", "");
+        String keyWord = StringUtil.parseStringParameter(params, "key", "");
+        int page = StringUtil.parseIntParameter(params, "page", 1,1,Integer.MAX_VALUE);
+        int limit = StringUtil.parseIntParameter(params, "limit", 1,1,Integer.MAX_VALUE);
+
+        QueryWrapper<Purchase> queryWrapper = new QueryWrapper<>();
+        if (StringUtil.isNotEmpty(keyWord)) {
+            queryWrapper.like("key", keyWord);
+        }
+        if (StringUtil.isNotEmpty(status)) {
+            queryWrapper.eq("status", status);
+        }
+        // 执行分页查询
+        Page<Purchase> queryPage = new Page<>(page, limit);
+        queryWrapper.orderByAsc("update_Time");
+
+        return this.page(queryPage, queryWrapper);
     }
 
     @Override
@@ -69,7 +85,7 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, Purchase> i
             PurchaseDetail detailEntity = new PurchaseDetail();
             detailEntity.setId(String.valueOf(item));
             detailEntity.setPurchaseId(Long.valueOf(finalPurchaseId));
-            detailEntity.setStatus(WareConstant.PurchaseDetailStatusEnum.ASSIGNED.getCode());
+//            detailEntity.setStatus(WareConstant.PurchaseDetailStatusEnum.ASSIGNED.getCode());
             return detailEntity;
         }).collect(Collectors.toList());
         purchaseDetailService.updateBatchById(list);
@@ -105,7 +121,7 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, Purchase> i
             List<PurchaseDetail> purchaseDetailEntities = list.stream().map(entity -> {
                 PurchaseDetail purchaseDetail = new PurchaseDetail();
                 purchaseDetail.setId(entity.getId());
-                purchaseDetail.setStatus(WareConstant.PurchaseDetailStatusEnum.BUYING.getCode());
+//                purchaseDetail.setStatus(WareConstant.PurchaseDetailStatusEnum.BUYING.getCode());
                 return purchaseDetail;
             }).collect(Collectors.toList());
             purchaseDetailService.updateBatchById(purchaseDetailEntities);
@@ -126,9 +142,9 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, Purchase> i
             PurchaseDetail detailEntity = new PurchaseDetail();
             if (item.getStatus() == WareConstant.PurchaseDetailStatusEnum.HASERROR.getCode()) {
                 flag = false;
-                detailEntity.setStatus(item.getStatus());
+//                detailEntity.setStatus(item.getStatus());
             } else {
-                detailEntity.setStatus(WareConstant.PurchaseDetailStatusEnum.FINISH.getCode());
+//                detailEntity.setStatus(WareConstant.PurchaseDetailStatusEnum.FINISH.getCode());
                 //入库
                 PurchaseDetail entity = purchaseDetailService.getById(item.getItemId());
                 wareSkuService.addStock(entity.getSkuId(), entity.getWareId(), entity.getSkuNum());
