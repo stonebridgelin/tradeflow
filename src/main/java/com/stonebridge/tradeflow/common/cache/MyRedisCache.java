@@ -5,8 +5,11 @@ import com.stonebridge.tradeflow.business.entity.brand.Brand;
 import com.stonebridge.tradeflow.business.entity.category.Category;
 import com.stonebridge.tradeflow.business.mapper.BrandMapper;
 import com.stonebridge.tradeflow.business.mapper.CategoryMapper;
+import com.stonebridge.tradeflow.common.utils.StringUtil;
 import com.stonebridge.tradeflow.system.entity.DataDictionary;
+import com.stonebridge.tradeflow.system.entity.SysUser;
 import com.stonebridge.tradeflow.system.mapper.DataDictionaryMapper;
+import com.stonebridge.tradeflow.system.mapper.SysUserMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -32,6 +35,7 @@ public class MyRedisCache implements CommandLineRunner {
     private final DataDictionaryMapper dataDictionaryMapper;
     private final CategoryMapper categoryMapper;
     private final BrandMapper brandMapper;
+    private final SysUserMapper sysUserMapper;
 
 
     
@@ -40,11 +44,12 @@ public class MyRedisCache implements CommandLineRunner {
 
     public MyRedisCache(DataDictionaryMapper dataDictionaryMapper, RedisTemplate<String, Object> redisTemplate,
                         CategoryMapper categoryMapper,
-                        BrandMapper brandMapper) {
+                        BrandMapper brandMapper, SysUserMapper sysUserMapper) {
         this.dataDictionaryMapper = dataDictionaryMapper;
         this.categoryMapper = categoryMapper;
         this.redisTemplate = redisTemplate;
         this.brandMapper = brandMapper;
+        this.sysUserMapper = sysUserMapper;
 
         // 初始化缓存加载器
         initializeCacheLoaders();
@@ -62,11 +67,13 @@ public class MyRedisCache implements CommandLineRunner {
         public static final String TYPE_DATA_DICTIONARY = "dataDictionary";
         public static final String TYPE_CATEGORY = "category";
         public static final String TYPE_BRAND = "brand";
+        public static final String TYPE_SYS_USER = "sysUser";
 
         // 缓存键模式
         public static final String CATEGORY_PATTERN = CACHE_PREFIX + "category:*";
         public static final String BRAND_PATTERN = CACHE_PREFIX + "brand:*";
         public static final String DICT_PATTERN = CACHE_PREFIX + "dict:*";
+        public static final String SYS_USER_PATTERN = CACHE_PREFIX + "sysUser:*";
 
         /**
          * 生成 DataDictionary 的 type 键。
@@ -108,6 +115,11 @@ public class MyRedisCache implements CommandLineRunner {
         static String getBrandKey(String id) {
             return CACHE_PREFIX + "brand:" + id;
         }
+
+
+        static String getSysUserKey(String id) {
+            return CACHE_PREFIX + "sysUser:" + id;
+        }
     }
 
     /**
@@ -122,6 +134,9 @@ public class MyRedisCache implements CommandLineRunner {
 
         // 注册 Brand 缓存加载器
         cacheLoaders.put(CacheConstants.TYPE_BRAND, new CacheLoader(() -> loadBrand()));
+
+        //注册 Sys_user 缓存加载器
+        cacheLoaders.put(CacheConstants.TYPE_SYS_USER,new CacheLoader(()->loadSysUser()));
     }
 
     @Override
@@ -305,6 +320,51 @@ public class MyRedisCache implements CommandLineRunner {
         } catch (Exception e) {
             log.error("Failed to load Brand cache. Error: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to load Brand cache", e);
+        }
+    }
+
+    private void loadSysUser() {
+        try {
+            List<SysUser> list = sysUserMapper.selectList(null);
+            if (list == null || list.isEmpty()) {
+                log.warn("No SysUser data found in database.");
+                return;
+            }
+            safeDeleteKeys(CacheConstants.SYS_USER_PATTERN);
+            for (SysUser sysUser : list) {
+                String key = CacheConstants.getSysUserKey(sysUser.getId());
+                redisTemplate.opsForValue().set(key, sysUser);
+            }
+            log.info("Loaded {} SysUser records into Redis cache.", list.size());
+
+        } catch (Exception e) {
+            log.error("Failed to load SysUser cache. Error: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to load SysUser cache", e);
+        }
+    }
+
+
+    public SysUser getSysUserById(String id) {
+        if (StringUtil.isBlank(id)) {
+            return null;
+        }
+        try {
+            String key = CacheConstants.getSysUserKey(id);
+            SysUser sysUser = (SysUser) redisTemplate.opsForValue().get(key);
+            if (sysUser == null) {
+                log.debug("Cache miss for sysUser ID: {}. Loading from database...", id);
+                sysUser = sysUserMapper.selectById(id);
+                if (sysUser != null) {
+                    redisTemplate.opsForValue().set(key, sysUser);
+                    log.debug("Loaded sysUser ID: {} from database and cached in Redis.", id);
+                } else {
+                    log.warn("sysUser ID: {} not found in database.", id);
+                }
+            }
+            return sysUser;
+        } catch (Exception e) {
+            log.error("Failed to load sysUser ID: {}. Error: {}", id, e.getMessage(), e);
+            return null;
         }
     }
 

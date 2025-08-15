@@ -5,6 +5,7 @@ import com.stonebridge.tradeflow.business.entity.wms.PurchaseDetail;
 import com.stonebridge.tradeflow.business.entity.wms.vo.PurchaseDetailVo;
 import com.stonebridge.tradeflow.business.service.PurchaseDetailService;
 import com.stonebridge.tradeflow.common.result.Result;
+import com.stonebridge.tradeflow.security.utils.SecurityContextHolderUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +22,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("api/purchaseDetail")
 public class PurchaseDetailController {
-    private PurchaseDetailService purchaseDetailService;
+    private final PurchaseDetailService purchaseDetailService;
 
     @Autowired
     public PurchaseDetailController(PurchaseDetailService purchaseDetailService) {
@@ -44,7 +45,6 @@ public class PurchaseDetailController {
     @RequestMapping("/info/{id}")
     public Result<Object> info(@PathVariable("id") Long id) {
         PurchaseDetail purchaseDetail = purchaseDetailService.getById(id);
-
         return Result.ok(purchaseDetail);
     }
 
@@ -54,6 +54,7 @@ public class PurchaseDetailController {
     @PostMapping("/save")
     public Result<Object> save(@RequestBody PurchaseDetail purchaseDetail) {
         purchaseDetail.setCreateTime(new Date());
+        purchaseDetail.setCreateBy(SecurityContextHolderUtil.getUserId());
         purchaseDetailService.save(purchaseDetail);
         return Result.ok();
     }
@@ -64,6 +65,7 @@ public class PurchaseDetailController {
     @RequestMapping("/update")
     public Result<Object> update(@RequestBody PurchaseDetail purchaseDetail) {
         purchaseDetail.setUpdateTime(new Date());
+        purchaseDetail.setUpdateBy(SecurityContextHolderUtil.getUserId());
         purchaseDetailService.updateById(purchaseDetail);
         return Result.ok();
     }
