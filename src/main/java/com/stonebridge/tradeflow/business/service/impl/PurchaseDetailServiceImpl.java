@@ -9,6 +9,7 @@ import com.stonebridge.tradeflow.business.mapper.PurchaseDetailMapper;
 import com.stonebridge.tradeflow.business.mapper.SkuInfoMapper;
 import com.stonebridge.tradeflow.business.mapper.WareInfoMapper;
 import com.stonebridge.tradeflow.business.service.PurchaseDetailService;
+import com.stonebridge.tradeflow.common.utils.DateUtil;
 import com.stonebridge.tradeflow.common.utils.StringUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,6 +81,12 @@ public class PurchaseDetailServiceImpl extends ServiceImpl<PurchaseDetailMapper,
             }
             if (wareInfoId != null) {
                 purchaseDetailVo.setWareName(wareNameMap.get(wareInfoId));
+            }
+            if (purchaseDetail.getCreateTime() != null) {
+                purchaseDetailVo.setCreateTimeStr(DateUtil.format(purchaseDetail.getCreateTime(), DateUtil.DEFAULT_DATETIME_PATTERN));
+            }
+            if (purchaseDetail.getUpdateTime() != null) {
+                purchaseDetailVo.setUpdateTimeStr(DateUtil.format(purchaseDetail.getUpdateTime(), DateUtil.DEFAULT_DATETIME_PATTERN));
             }
             purchaseDetailVoList.add(purchaseDetailVo);
         }

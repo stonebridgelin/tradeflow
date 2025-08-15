@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Map;
 
 
@@ -52,6 +53,7 @@ public class PurchaseDetailController {
      */
     @PostMapping("/save")
     public Result<Object> save(@RequestBody PurchaseDetail purchaseDetail) {
+        purchaseDetail.setCreateTime(new Date());
         purchaseDetailService.save(purchaseDetail);
         return Result.ok();
     }
@@ -61,8 +63,8 @@ public class PurchaseDetailController {
      */
     @RequestMapping("/update")
     public Result<Object> update(@RequestBody PurchaseDetail purchaseDetail) {
+        purchaseDetail.setUpdateTime(new Date());
         purchaseDetailService.updateById(purchaseDetail);
-
         return Result.ok();
     }
 
@@ -72,8 +74,6 @@ public class PurchaseDetailController {
     @RequestMapping("/delete")
     public Result<Object> delete(@RequestBody Long[] ids) {
         purchaseDetailService.removeByIds(Arrays.asList(ids));
-
         return Result.ok();
     }
-
 }

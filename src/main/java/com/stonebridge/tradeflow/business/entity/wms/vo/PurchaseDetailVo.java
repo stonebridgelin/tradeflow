@@ -15,4 +15,8 @@ public class PurchaseDetailVo extends PurchaseDetail implements Serializable {
 
     private String wareName;
 
+    private String updateTimeStr;
+
+    private String createTimeStr;
+
 }

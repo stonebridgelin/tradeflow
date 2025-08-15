@@ -83,7 +83,7 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, Purchase> i
         String finalPurchaseId = purchaseId;
         List<PurchaseDetail> list = items.stream().map(item -> {
             PurchaseDetail detailEntity = new PurchaseDetail();
-            detailEntity.setId(String.valueOf(item));
+            detailEntity.setId(item);
             detailEntity.setPurchaseId(Long.valueOf(finalPurchaseId));
 //            detailEntity.setStatus(WareConstant.PurchaseDetailStatusEnum.ASSIGNED.getCode());
             return detailEntity;
@@ -149,7 +149,7 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, Purchase> i
                 PurchaseDetail entity = purchaseDetailService.getById(item.getItemId());
                 wareSkuService.addStock(entity.getSkuId(), entity.getWareId(), entity.getSkuNum());
             }
-            detailEntity.setId(String.valueOf(item.getItemId()));
+            detailEntity.setId(item.getItemId());
             updates.add(detailEntity);
         }
         purchaseDetailService.updateBatchById(updates);
