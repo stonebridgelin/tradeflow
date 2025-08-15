@@ -52,4 +52,9 @@ public class PurchaseDetail implements Serializable {
      */
     private String status;
 
+    /**
+     * 币种
+     */
+    private String currency;
+
 }
